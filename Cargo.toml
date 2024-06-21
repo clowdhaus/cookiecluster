@@ -1,0 +1,26 @@
+[package]
+name = "cookiecluster"
+version = "0.1.0"
+authors = ["Bryant Biggs <bryantbiggs@gmail.com>"]
+documentation = "https://github.com/clowdhaus/cookiecluster"
+homepage = "https://github.com/clowdhaus/cookiecluster"
+repository = "https://github.com/clowdhaus/cookiecluster"
+license = "Apache-2.0"
+edition = "2021"
+categories = [
+  "command-line-utilities",
+]
+
+[[bin]]
+name = "cc"
+path = "src/main.rs"
+
+[dependencies]
+anstyle = "1.0"
+anyhow = "1.0"
+clap = { version = "4.2", features = ["derive", "env", "color", "unstable-styles"] }
+clap-verbosity-flag = "2.0"
+serde = { version = "1.0", features = ["derive"] }
+tracing = { version = "0.1", default-features = false, features = ["log-always"] }
+tracing-log = "0.2"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std", "ansi"] }
