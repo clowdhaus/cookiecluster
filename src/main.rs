@@ -12,5 +12,5 @@ fn main() -> Result<()> {
     .finish();
   tracing::subscriber::set_global_default(subscriber).expect("Setting default subscriber failed");
 
-  Ok(())
+  cli.write()
 }
