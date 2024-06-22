@@ -1,6 +1,11 @@
-[package]
-name = "cookiecluster"
-version = "0.1.0"
+[workspace]
+members = [
+  "cc",
+  "xtask",
+]
+resolver = "2"
+
+[workspace.package]
 authors = ["Bryant Biggs <bryantbiggs@gmail.com>"]
 documentation = "https://github.com/clowdhaus/cookiecluster"
 homepage = "https://github.com/clowdhaus/cookiecluster"
@@ -11,18 +16,13 @@ categories = [
   "command-line-utilities",
 ]
 
-[[bin]]
-name = "cc"
-path = "src/main.rs"
-
-[dependencies]
-anstyle = "1.0"
+[workspace.dependencies]
 anyhow = "1.0"
-clap = { version = "4.2", features = ["derive", "env", "color", "unstable-styles"] }
-clap-verbosity-flag = "2.0"
-handlebars = "5.0"
-rust-embed = { version = "8.0", features = ["compression"] }
 serde = { version = "1.0", features = ["derive"] }
 tracing = { version = "0.1", default-features = false, features = ["log-always"] }
 tracing-log = "0.2"
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std", "ansi"] }
+
+[profile.release]
+strip = true
+lto = "fat"

@@ -1,4 +1,5 @@
 pub mod cli;
+pub mod instances;
 
 use rust_embed::RustEmbed;
 

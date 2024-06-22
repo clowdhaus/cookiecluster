@@ -1,0 +1,19 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+authors.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+aws-config = {version="1.0", features=["behavior-version-latest"]}
+aws-types = "1.3"
+aws-sdk-ec2 = "1.53"
+tokio = { version = "1.38", default-features = false, features = ["macros", "rt-multi-thread"] }
+tracing.workspace = true
+tracing-log.workspace = true
+tracing-subscriber.workspace = true

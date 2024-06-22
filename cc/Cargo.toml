@@ -1,0 +1,28 @@
+[package]
+name = "cookiecluster"
+version = "0.1.0"
+authors.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+edition.workspace = true
+categories.workspace = true
+
+default-run = "cc"
+
+[[bin]]
+name = "cc"
+path = "src/main.rs"
+
+[dependencies]
+anstyle = "1.0"
+anyhow.workspace = true
+clap = { version = "4.2", features = ["derive", "env", "color", "unstable-styles"] }
+clap-verbosity-flag = "2.0"
+handlebars = "5.0"
+rust-embed = { version = "8.0", features = ["compression"] }
+serde.workspace = true
+tracing.workspace = true
+tracing-log.workspace = true
+tracing-subscriber.workspace = true
