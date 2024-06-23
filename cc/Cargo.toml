@@ -20,6 +20,7 @@ anstyle = "1.0"
 anyhow.workspace = true
 clap = { version = "4.2", features = ["derive", "env", "color", "unstable-styles"] }
 clap-verbosity-flag = "2.0"
+console = "*"
 dialoguer = "0.11"
 handlebars = "5.0"
 rust-embed = { version = "8.0", features = ["compression"] }
