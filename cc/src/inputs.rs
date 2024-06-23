@@ -59,16 +59,21 @@ impl Inputs {
   }
 
   fn collect_instance_types(mut self) -> Result<Inputs> {
+    let instance_types = INSTANCE_TYPES
+      .iter()
+      .map(|i| i.instance_type.to_string())
+      .collect::<Vec<String>>();
+
     let instance_type_indices = MultiSelect::with_theme(&ColorfulTheme::default())
       .with_prompt("Instance type(s)")
-      .items(INSTANCE_TYPES)
+      .items(&instance_types)
       .interact()?;
 
-    let instance_types = instance_type_indices
+    let selected_instance_types = instance_type_indices
       .iter()
-      .map(|&i| INSTANCE_TYPES[i].to_string())
+      .map(|&i| instance_types[i].to_string())
       .collect::<Vec<String>>();
-    self.instance_types = instance_types;
+    self.instance_types = selected_instance_types;
 
     Ok(self)
   }
