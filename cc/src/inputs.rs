@@ -9,7 +9,6 @@ pub const REMOVED_INSTANCE_TYPES: &[&str] = &[""];
 
 #[derive(Debug)]
 pub struct Inputs {
-  workload: WorkloadType,
   enable_efa: bool,
   accelerator: AcceleratorType,
   reservation: ReservationType,
@@ -22,7 +21,6 @@ pub struct Inputs {
 impl Default for Inputs {
   fn default() -> Self {
     Inputs {
-      workload: WorkloadType::Standard,
       enable_efa: false,
       accelerator: AcceleratorType::None,
       reservation: ReservationType::None,
@@ -32,13 +30,6 @@ impl Default for Inputs {
       ami_type: AmiTypes::Al2023X8664Standard,
     }
   }
-}
-
-#[derive(Debug, PartialEq)]
-enum WorkloadType {
-  Standard,
-  /// Machine learning or high-performance computing
-  MlHpc,
 }
 
 #[derive(Debug, PartialEq)]
@@ -84,9 +75,8 @@ impl Inputs {
 
   pub fn collect(self) -> Result<Self> {
     let inputs = self
-      .collect_workload_type()?
-      .collect_enable_efa()?
       .collect_accelerator_type()?
+      .collect_enable_efa()?
       .collect_reservation_type()?
       .collect_compute_scaling_type()?
       .collect_cpu_arch()?
@@ -96,48 +86,32 @@ impl Inputs {
     Ok(inputs)
   }
 
-  fn collect_workload_type(mut self) -> Result<Inputs> {
-    let workload_idx = Select::with_theme(&ColorfulTheme::default())
-      .with_prompt("Workload type")
-      .item("Standard")
-      .item("ML/HPC")
-      .default(0)
-      .interact()?;
-
-    let workload = match workload_idx {
-      1 => WorkloadType::MlHpc,
-      _ => WorkloadType::Standard,
-    };
-    self.workload = workload;
-
-    Ok(self)
-  }
-
   fn collect_enable_efa(mut self) -> Result<Inputs> {
-    if self.workload == WorkloadType::MlHpc {
-      self.enable_efa = Confirm::new().with_prompt("Enable EFA support").interact()?;
+    match self.accelerator {
+      AcceleratorType::Nvidia | AcceleratorType::Neuron => {
+        self.enable_efa = Confirm::new().with_prompt("Enable EFA support").interact()?
+      }
+      _ => {}
     }
 
     Ok(self)
   }
 
   fn collect_accelerator_type(mut self) -> Result<Inputs> {
-    if self.workload == WorkloadType::MlHpc {
-      let accelerator_idx = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Accelerator type")
-        .item("None")
-        .item("NVIDIA GPU")
-        .item("AWS Neuron")
-        .default(0)
-        .interact()?;
+    let accelerator_idx = Select::with_theme(&ColorfulTheme::default())
+      .with_prompt("Accelerator type")
+      .item("None")
+      .item("NVIDIA GPU")
+      .item("AWS Neuron")
+      .default(0)
+      .interact()?;
 
-      let accelerator = match accelerator_idx {
-        1 => AcceleratorType::Nvidia,
-        2 => AcceleratorType::Neuron,
-        _ => AcceleratorType::None,
-      };
-      self.accelerator = accelerator;
-    }
+    let accelerator = match accelerator_idx {
+      1 => AcceleratorType::Nvidia,
+      2 => AcceleratorType::Neuron,
+      _ => AcceleratorType::None,
+    };
+    self.accelerator = accelerator;
 
     Ok(self)
   }
@@ -187,6 +161,10 @@ impl Inputs {
   fn collect_cpu_arch(mut self) -> Result<Inputs> {
     // Inf/Trn instances only support x86-64 at this time
     if self.accelerator == AcceleratorType::Neuron {
+      return Ok(self);
+    }
+
+    if self.accelerator == AcceleratorType::Nvidia && self.enable_efa {
       return Ok(self);
     }
 
@@ -250,7 +228,11 @@ impl Inputs {
   fn collect_ami_type(mut self) -> Result<Inputs> {
     let ami_types = match self.accelerator {
       AcceleratorType::Nvidia => {
-        vec!["AL2_x86_64_GPU", "BOTTLEROCKET_x86_64_NVIDIA", "CUSTOM"]
+        if self.enable_efa {
+          vec!["AL2_x86_64_GPU", "CUSTOM"]
+        } else {
+          vec!["AL2_x86_64_GPU", "BOTTLEROCKET_x86_64_NVIDIA", "CUSTOM"]
+        }
       }
       AcceleratorType::Neuron => {
         vec!["AL2_x86_64", "CUSTOM"]
