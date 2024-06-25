@@ -1739,6 +1739,15 @@ pub const INSTANCE_TYPES: &[InstanceInfo] = &[
     os_arch: "x86_64",
   },
   InstanceInfo {
+    instance_type: "dl2q.24xlarge",
+    instance_storage_supported: false,
+    efa_supported: true,
+    gpu_supported: false,
+    neuron_supported: false,
+    cbr_supported: false,
+    os_arch: "x86_64",
+  },
+  InstanceInfo {
     instance_type: "f1.16xlarge",
     instance_storage_supported: true,
     efa_supported: false,
@@ -4517,6 +4526,15 @@ pub const INSTANCE_TYPES: &[InstanceInfo] = &[
     gpu_supported: true,
     neuron_supported: false,
     cbr_supported: true,
+    os_arch: "x86_64",
+  },
+  InstanceInfo {
+    instance_type: "p4de.24xlarge",
+    instance_storage_supported: true,
+    efa_supported: true,
+    gpu_supported: true,
+    neuron_supported: false,
+    cbr_supported: false,
     os_arch: "x86_64",
   },
   InstanceInfo {

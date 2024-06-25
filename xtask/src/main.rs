@@ -1,7 +1,8 @@
-use std::{env, fs, io::Write};
+use std::{collections::BTreeMap, env, fs, io::Write};
 
 use anyhow::Result;
 use aws_sdk_ec2::types::{ArchitectureType, UsageClassType};
+use aws_types::region::Region;
 use handlebars::Handlebars;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -94,48 +95,80 @@ pub const INSTANCE_TYPES: &[InstanceInfo] = &[
 ];
 ";
 
-/// Generate the CRD and copy it into the Helm chart directory
-async fn update_ec2_instances() -> Result<()> {
-  let config = aws_config::load_from_env().await;
+/// Get EC2 instance details for the given region provided
+async fn get_ec2_instances(
+  region: Region,
+  mut instances: BTreeMap<String, InstanceInfo>,
+) -> Result<BTreeMap<String, InstanceInfo>> {
+  let config = aws_config::from_env().region(region).load().await;
   let client = aws_sdk_ec2::Client::new(&config);
 
-  let mut instances = client
+  let instances_info = client
     .describe_instance_types()
     .into_paginator()
     .items()
     .send()
     .collect::<Result<Vec<_>, _>>()
-    .await?
-    .into_iter()
-    .map(|info| {
-      let efa_supported = info.network_info.as_ref().unwrap().efa_supported.unwrap_or(false);
-      let gpu_supported = info.gpu_info.is_some();
-      let neuron_supported = info.neuron_info.is_some();
-      let cbr_supported = info
-        .supported_usage_classes
-        .unwrap()
-        .contains(&UsageClassType::CapacityBlock);
-      let os_arches = info.processor_info.unwrap().supported_architectures.unwrap();
-      let os_arch = if os_arches.contains(&ArchitectureType::Arm64) | os_arches.contains(&ArchitectureType::Arm64Mac) {
-        "arm64".to_owned()
-      } else if os_arches.contains(&ArchitectureType::X8664) | os_arches.contains(&ArchitectureType::X8664Mac) {
-        "x86_64".to_owned()
-      } else {
-        "unknown".to_owned()
-      };
+    .await?;
 
+  for inst in instances_info.iter() {
+    let efa_supported = inst.network_info.as_ref().unwrap().efa_supported.unwrap_or(false);
+    let gpu_supported = inst.gpu_info.is_some();
+    let neuron_supported = inst.neuron_info.is_some();
+    let cbr_supported = inst
+      .supported_usage_classes
+      .to_owned()
+      .unwrap()
+      .contains(&UsageClassType::CapacityBlock);
+    let os_arches = inst.processor_info.to_owned().unwrap().supported_architectures.unwrap();
+    let os_arch = if os_arches.contains(&ArchitectureType::Arm64) | os_arches.contains(&ArchitectureType::Arm64Mac) {
+      "arm64".to_owned()
+    } else if os_arches.contains(&ArchitectureType::X8664) | os_arches.contains(&ArchitectureType::X8664Mac) {
+      "x86_64".to_owned()
+    } else {
+      "unknown".to_owned()
+    };
+
+    let instance_type = inst.instance_type.to_owned().unwrap().as_str().to_owned();
+    instances.insert(
+      instance_type.clone(),
       InstanceInfo {
-        instance_type: info.instance_type.unwrap().as_str().to_owned(),
-        instance_storage_supported: info.instance_storage_supported.unwrap(),
+        instance_type,
+        instance_storage_supported: inst.instance_storage_supported.unwrap(),
         efa_supported,
         gpu_supported,
         neuron_supported,
         cbr_supported,
         os_arch,
-      }
-    })
-    .collect::<Vec<InstanceInfo>>();
-  instances.sort_by_key(|i| i.instance_type.clone());
+      },
+    );
+  }
+
+  Ok(instances)
+}
+
+/// Collect the EC2 instance details and populate the instances.rs file
+async fn update_ec2_instances() -> Result<()> {
+  let regions = vec!["us-east-1", "us-west-2"];
+  let mut instances: BTreeMap<String, InstanceInfo> = BTreeMap::new();
+
+  // Not GA and requires allow listing
+  instances.insert(
+    "p4de.24xlarge".to_owned(),
+    InstanceInfo {
+      instance_type: "p4de.24xlarge".to_owned(),
+      instance_storage_supported: true,
+      efa_supported: true,
+      gpu_supported: true,
+      neuron_supported: false,
+      cbr_supported: false,
+      os_arch: "x86_64".to_owned(),
+    },
+  );
+
+  for region in regions {
+    instances = get_ec2_instances(Region::new(region.to_owned()), instances).await?;
+  }
 
   let reg = Handlebars::new();
   let rendered = reg.render_template(EC2_INSTANCES_TEMPLATE, &json!({"instances": instances}))?;
