@@ -2,8 +2,8 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
 
-  cluster_name    = "{{ name }}"
-  cluster_version = "1.29"
+  cluster_name    = "example"
+  cluster_version = "{{ cluster_version }}"
 
   # To facilitate easier interaction for demonstration purposes
   cluster_endpoint_public_access = true
@@ -12,7 +12,6 @@ module "eks" {
   # allow deploying resources into the cluster
   enable_cluster_creator_admin_permissions = true
 
-  # EKS Addons
   cluster_addons = {
     coredns    = {}
     kube-proxy = {}
@@ -21,13 +20,6 @@ module "eks" {
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
-
-  eks_managed_node_group_defaults = {
-    iam_role_additional_policies = {
-      # Not required, but used in the example to access the nodes to inspect drivers and devices
-      AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-    }
-  }
 
   eks_managed_node_groups = {
     # This node group is for core addons such as CoreDNS
@@ -70,5 +62,7 @@ module "eks" {
     }
   }
 
-  tags = module.tags.tags
+  tags = {
+    Environment = "test"
+  }
 }

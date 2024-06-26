@@ -53,20 +53,13 @@ impl Default for Tmpl {
 }
 
 impl Cli {
-  pub fn write(self) -> Result<()> {
+  pub fn write(self, inputs: crate::Inputs) -> Result<()> {
     let template = crate::Templates::get("eks.tpl").unwrap();
 
     let mut handlebars = Handlebars::new();
     handlebars.register_template_string("tpl", std::str::from_utf8(template.data.as_ref())?)?;
 
-    let data = Eks {
-      name: "example".to_string(),
-      region: "us-west-2".to_string(),
-      node_type: "m5.large".to_string(),
-      node_count: 2,
-    };
-
-    let rendered = handlebars.render("tpl", &data)?;
+    let rendered = handlebars.render("tpl", &inputs)?;
     fs::write(Path::new("eks.tf"), rendered)?;
 
     Ok(())

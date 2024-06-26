@@ -2,13 +2,17 @@ use std::fmt;
 
 use anyhow::{bail, Result};
 use dialoguer::{theme::ColorfulTheme, Confirm, MultiSelect, Select};
+use serde::{Deserialize, Serialize};
 
 use crate::INSTANCE_TYPES;
 
 pub const REMOVED_INSTANCE_TYPES: &[&str] = &[""];
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Inputs {
+  cluster_version: ClusterVersion,
+  cluster_endpoint_public_access: bool,
+  enable_cluster_creator_admin_permissions: bool,
   enable_efa: bool,
   accelerator: AcceleratorType,
   reservation: ReservationType,
@@ -21,6 +25,9 @@ pub struct Inputs {
 impl Default for Inputs {
   fn default() -> Self {
     Inputs {
+      cluster_version: ClusterVersion::K129,
+      cluster_endpoint_public_access: false,
+      enable_cluster_creator_admin_permissions: false,
       enable_efa: false,
       accelerator: AcceleratorType::None,
       reservation: ReservationType::None,
@@ -32,14 +39,23 @@ impl Default for Inputs {
   }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+enum ClusterVersion {
+  K125,
+  K126,
+  K127,
+  K128,
+  K129,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 enum AcceleratorType {
   Nvidia,
   Neuron,
   None,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 enum ReservationType {
   OnDemandCapacityReservation,
   MlCapacityBlockReservation,
@@ -56,14 +72,14 @@ impl std::convert::From<&str> for ReservationType {
   }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 enum ComputeScalingType {
   ClusterAutoscaler,
   Karpenter,
   None,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 enum CpuArch {
   X8664,
   Arm64,
@@ -74,6 +90,66 @@ impl fmt::Display for CpuArch {
     match self {
       CpuArch::X8664 => write!(f, "x86-64"),
       CpuArch::Arm64 => write!(f, "arm64"),
+    }
+  }
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+enum AmiTypes {
+  Al2023Arm64Standard,
+  Al2023X8664Standard,
+  Al2Arm64,
+  Al2X8664,
+  Al2X8664Gpu,
+  BottlerocketArm64,
+  BottlerocketArm64Nvidia,
+  BottlerocketX8664,
+  BottlerocketX8664Nvidia,
+  Custom,
+  WindowsCore2019X8664,
+  WindowsCore2022X8664,
+  WindowsFull2019X8664,
+  WindowsFull2022X8664,
+}
+
+impl std::fmt::Display for AmiTypes {
+  fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    match self {
+      AmiTypes::Al2023Arm64Standard => write!(f, "AL2023_ARM_64_STANDARD"),
+      AmiTypes::Al2023X8664Standard => write!(f, "AL2023_x86_64_STANDARD"),
+      AmiTypes::Al2Arm64 => write!(f, "AL2_ARM_64"),
+      AmiTypes::Al2X8664 => write!(f, "AL2_x86_64"),
+      AmiTypes::Al2X8664Gpu => write!(f, "AL2_x86_64_GPU"),
+      AmiTypes::BottlerocketArm64 => write!(f, "BOTTLEROCKET_ARM_64"),
+      AmiTypes::BottlerocketArm64Nvidia => write!(f, "BOTTLEROCKET_ARM_64_NVIDIA"),
+      AmiTypes::BottlerocketX8664 => write!(f, "BOTTLEROCKET_x86_64"),
+      AmiTypes::BottlerocketX8664Nvidia => write!(f, "BOTTLEROCKET_x86_64_NVIDIA"),
+      AmiTypes::Custom => write!(f, "CUSTOM"),
+      AmiTypes::WindowsCore2019X8664 => write!(f, "WINDOWS_CORE_2019_x86_64"),
+      AmiTypes::WindowsCore2022X8664 => write!(f, "WINDOWS_CORE_2022_x86_64"),
+      AmiTypes::WindowsFull2019X8664 => write!(f, "WINDOWS_FULL_2019_x86_64"),
+      AmiTypes::WindowsFull2022X8664 => write!(f, "WINDOWS_FULL_2022_x86_64"),
+    }
+  }
+}
+
+impl std::convert::From<&str> for AmiTypes {
+  fn from(s: &str) -> Self {
+    match s {
+      "AL2023_ARM_64_STANDARD" => AmiTypes::Al2023Arm64Standard,
+      "AL2023_x86_64_STANDARD" => AmiTypes::Al2023X8664Standard,
+      "AL2_ARM_64" => AmiTypes::Al2Arm64,
+      "AL2_x86_64" => AmiTypes::Al2X8664,
+      "AL2_x86_64_GPU" => AmiTypes::Al2X8664Gpu,
+      "BOTTLEROCKET_ARM_64" => AmiTypes::BottlerocketArm64,
+      "BOTTLEROCKET_ARM_64_NVIDIA" => AmiTypes::BottlerocketArm64Nvidia,
+      "BOTTLEROCKET_x86_64" => AmiTypes::BottlerocketX8664,
+      "BOTTLEROCKET_x86_64_NVIDIA" => AmiTypes::BottlerocketX8664Nvidia,
+      "WINDOWS_CORE_2019_x86_64" => AmiTypes::WindowsCore2019X8664,
+      "WINDOWS_CORE_2022_x86_64" => AmiTypes::WindowsCore2022X8664,
+      "WINDOWS_FULL_2019_x86_64" => AmiTypes::WindowsFull2019X8664,
+      "WINDOWS_FULL_2022_x86_64" => AmiTypes::WindowsFull2022X8664,
+      _ => AmiTypes::Custom,
     }
   }
 }
@@ -302,65 +378,5 @@ impl Inputs {
     self.instances = instances;
 
     Ok(self)
-  }
-}
-
-#[derive(Debug, PartialEq)]
-enum AmiTypes {
-  Al2023Arm64Standard,
-  Al2023X8664Standard,
-  Al2Arm64,
-  Al2X8664,
-  Al2X8664Gpu,
-  BottlerocketArm64,
-  BottlerocketArm64Nvidia,
-  BottlerocketX8664,
-  BottlerocketX8664Nvidia,
-  Custom,
-  WindowsCore2019X8664,
-  WindowsCore2022X8664,
-  WindowsFull2019X8664,
-  WindowsFull2022X8664,
-}
-
-impl std::fmt::Display for AmiTypes {
-  fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-    match self {
-      AmiTypes::Al2023Arm64Standard => write!(f, "AL2023_ARM_64_STANDARD"),
-      AmiTypes::Al2023X8664Standard => write!(f, "AL2023_x86_64_STANDARD"),
-      AmiTypes::Al2Arm64 => write!(f, "AL2_ARM_64"),
-      AmiTypes::Al2X8664 => write!(f, "AL2_x86_64"),
-      AmiTypes::Al2X8664Gpu => write!(f, "AL2_x86_64_GPU"),
-      AmiTypes::BottlerocketArm64 => write!(f, "BOTTLEROCKET_ARM_64"),
-      AmiTypes::BottlerocketArm64Nvidia => write!(f, "BOTTLEROCKET_ARM_64_NVIDIA"),
-      AmiTypes::BottlerocketX8664 => write!(f, "BOTTLEROCKET_x86_64"),
-      AmiTypes::BottlerocketX8664Nvidia => write!(f, "BOTTLEROCKET_x86_64_NVIDIA"),
-      AmiTypes::Custom => write!(f, "CUSTOM"),
-      AmiTypes::WindowsCore2019X8664 => write!(f, "WINDOWS_CORE_2019_x86_64"),
-      AmiTypes::WindowsCore2022X8664 => write!(f, "WINDOWS_CORE_2022_x86_64"),
-      AmiTypes::WindowsFull2019X8664 => write!(f, "WINDOWS_FULL_2019_x86_64"),
-      AmiTypes::WindowsFull2022X8664 => write!(f, "WINDOWS_FULL_2022_x86_64"),
-    }
-  }
-}
-
-impl std::convert::From<&str> for AmiTypes {
-  fn from(s: &str) -> Self {
-    match s {
-      "AL2023_ARM_64_STANDARD" => AmiTypes::Al2023Arm64Standard,
-      "AL2023_x86_64_STANDARD" => AmiTypes::Al2023X8664Standard,
-      "AL2_ARM_64" => AmiTypes::Al2Arm64,
-      "AL2_x86_64" => AmiTypes::Al2X8664,
-      "AL2_x86_64_GPU" => AmiTypes::Al2X8664Gpu,
-      "BOTTLEROCKET_ARM_64" => AmiTypes::BottlerocketArm64,
-      "BOTTLEROCKET_ARM_64_NVIDIA" => AmiTypes::BottlerocketArm64Nvidia,
-      "BOTTLEROCKET_x86_64" => AmiTypes::BottlerocketX8664,
-      "BOTTLEROCKET_x86_64_NVIDIA" => AmiTypes::BottlerocketX8664Nvidia,
-      "WINDOWS_CORE_2019_x86_64" => AmiTypes::WindowsCore2019X8664,
-      "WINDOWS_CORE_2022_x86_64" => AmiTypes::WindowsCore2022X8664,
-      "WINDOWS_FULL_2019_x86_64" => AmiTypes::WindowsFull2019X8664,
-      "WINDOWS_FULL_2022_x86_64" => AmiTypes::WindowsFull2022X8664,
-      _ => AmiTypes::Custom,
-    }
   }
 }
