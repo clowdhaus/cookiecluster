@@ -13,6 +13,7 @@ pub struct Inputs {
   cluster_version: ClusterVersion,
   cluster_endpoint_public_access: bool,
   enable_cluster_creator_admin_permissions: bool,
+  add_ons: Vec<AddOn>,
   enable_efa: bool,
   accelerator: AcceleratorType,
   reservation: ReservationType,
@@ -28,6 +29,7 @@ impl Default for Inputs {
       cluster_version: ClusterVersion::K129,
       cluster_endpoint_public_access: false,
       enable_cluster_creator_admin_permissions: false,
+      add_ons: vec![],
       enable_efa: false,
       accelerator: AcceleratorType::None,
       reservation: ReservationType::None,
@@ -46,6 +48,21 @@ enum ClusterVersion {
   K127,
   K128,
   K129,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+enum AddOn {
+  CoreDns,
+  KubeProxy,
+  VpcCni,
+  EksPodIdentityAgent,
+  AwsEbsCsiDriver,
+  AwsEfsCsiDriver,
+  AwsMountpointS3CsiDriver,
+  SnapshotController,
+  Adot,
+  AwsGuarddutyAgent,
+  AmazonCloudwatchObservability,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]

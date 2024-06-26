@@ -5,17 +5,21 @@ module "eks" {
   cluster_name    = "example"
   cluster_version = "{{ cluster_version }}"
 
+  {{ #if cluster_endpoint_public_access }}
   # To facilitate easier interaction for demonstration purposes
   cluster_endpoint_public_access = true
+  {{ /if }}
 
+  {{ #if enable_cluster_creator_admin_permissions }}
   # Gives Terraform identity admin access to cluster which will
   # allow deploying resources into the cluster
   enable_cluster_creator_admin_permissions = true
+  {{ /if }}
 
   cluster_addons = {
-    coredns    = {}
-    kube-proxy = {}
-    vpc-cni    = {}
+  {{#each addons as |a| }}
+    {{ a }}
+  {{/each}}
   }
 
   vpc_id     = module.vpc.vpc_id
@@ -24,10 +28,10 @@ module "eks" {
   eks_managed_node_groups = {
     # This node group is for core addons such as CoreDNS
     default = {
-      instance_types = ["m5.large"]
+      instance_types = ["m5.xlarge"]
 
       min_size     = 1
-      max_size     = 2
+      max_size     = 3
       desired_size = 2
     }
 
