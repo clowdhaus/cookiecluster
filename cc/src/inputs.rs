@@ -47,11 +47,17 @@ impl Default for Inputs {
 
 #[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
 enum ClusterVersion {
+  #[serde(rename(serialize = "1.30"))]
   K130,
+  #[serde(rename(serialize = "1.29"))]
   K129,
+  #[serde(rename(serialize = "1.28"))]
   K128,
+  #[serde(rename(serialize = "1.27"))]
   K127,
+  #[serde(rename(serialize = "1.26"))]
   K126,
+  #[serde(rename(serialize = "1.25"))]
   K125,
 }
 
@@ -83,16 +89,27 @@ impl std::convert::From<&str> for ClusterVersion {
 
 #[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
 enum AddOn {
+  #[serde(rename(serialize = "core-dns"))]
   CoreDns,
+  #[serde(rename(serialize = "kube-proxy"))]
   KubeProxy,
+  #[serde(rename(serialize = "vpc-cni"))]
   VpcCni,
+  #[serde(rename(serialize = "eks-pod-identity-agent"))]
   EksPodIdentityAgent,
+  #[serde(rename(serialize = "aws-ebs-csi-driver"))]
   AwsEbsCsiDriver,
+  #[serde(rename(serialize = "aws-efs-csi-driver"))]
   AwsEfsCsiDriver,
+  #[serde(rename(serialize = "aws-mountpoint-s3-csi-driver"))]
   AwsMountpointS3CsiDriver,
+  #[serde(rename(serialize = "snapshot-controller"))]
   SnapshotController,
+  #[serde(rename(serialize = "adot"))]
   Adot,
+  #[serde(rename(serialize = "aws-guardduty-agent"))]
   AwsGuarddutyAgent,
+  #[serde(rename(serialize = "amazon-cloudwatch-observability"))]
   AmazonCloudwatchObservability,
 }
 

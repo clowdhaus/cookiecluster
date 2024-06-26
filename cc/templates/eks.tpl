@@ -17,8 +17,8 @@ module "eks" {
   {{ /if }}
 
   cluster_addons = {
-  {{#each addons as |a| }}
-    {{ a }}
+  {{#each add_ons }}
+    {{ this }} = {}
   {{/each}}
   }
 
