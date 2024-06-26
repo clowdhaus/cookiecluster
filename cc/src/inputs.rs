@@ -46,6 +46,16 @@ enum ReservationType {
   None,
 }
 
+impl std::convert::From<&str> for ReservationType {
+  fn from(s: &str) -> Self {
+    match s {
+      "On-demand capacity reservation" => ReservationType::OnDemandCapacityReservation,
+      "ML capacity block reservation" => ReservationType::MlCapacityBlockReservation,
+      _ => ReservationType::None,
+    }
+  }
+}
+
 #[derive(Debug, PartialEq)]
 enum ComputeScalingType {
   ClusterAutoscaler,
@@ -80,8 +90,8 @@ impl Inputs {
       .collect_reservation_type()?
       .collect_compute_scaling_type()?
       .collect_cpu_arch()?
-      .collect_instance_types()?
-      .collect_ami_type()?;
+      .collect_ami_type()?
+      .collect_instance_types()?;
 
     Ok(inputs)
   }
@@ -89,7 +99,9 @@ impl Inputs {
   fn collect_enable_efa(mut self) -> Result<Inputs> {
     match self.accelerator {
       AcceleratorType::Nvidia | AcceleratorType::Neuron => {
-        self.enable_efa = Confirm::new().with_prompt("Enable EFA support").interact()?
+        self.enable_efa = Confirm::with_theme(&ColorfulTheme::default())
+          .with_prompt("Enable EFA support")
+          .interact()?
       }
       _ => {}
     }
@@ -117,21 +129,22 @@ impl Inputs {
   }
 
   fn collect_reservation_type(mut self) -> Result<Inputs> {
+    let items = match self.accelerator {
+      AcceleratorType::Nvidia => vec![
+        "None",
+        "On-demand capacity reservation",
+        "ML capacity block reservation",
+      ],
+      _ => vec!["None", "On-demand capacity reservation"],
+    };
+
     let reservation_idx = Select::with_theme(&ColorfulTheme::default())
       .with_prompt("EC2 capacity reservation")
-      .item("None")
-      .item("On-demand capacity reservation")
-      .item("ML capacity block reservation")
+      .items(&items[..])
       .default(0)
       .interact()?;
 
-    let reservation = match reservation_idx {
-      1 => ReservationType::OnDemandCapacityReservation,
-      2 => ReservationType::MlCapacityBlockReservation,
-      _ => ReservationType::None,
-    };
-    self.reservation = reservation;
-
+    self.reservation = ReservationType::from(items[reservation_idx]);
     Ok(self)
   }
 
@@ -159,6 +172,11 @@ impl Inputs {
   }
 
   fn collect_cpu_arch(mut self) -> Result<Inputs> {
+    // Set on Karpenter NodeClass
+    if self.compute_scaling == ComputeScalingType::Karpenter {
+      return Ok(self);
+    }
+
     // Inf/Trn instances only support x86-64 at this time
     if self.accelerator == AcceleratorType::Neuron {
       return Ok(self);
@@ -184,54 +202,21 @@ impl Inputs {
     Ok(self)
   }
 
-  fn collect_instance_types(mut self) -> Result<Inputs> {
-    let instance_types = INSTANCE_TYPES
-      .iter()
-      .filter(|i| {
-        i.cpu_arch == self.cpu_arch.to_string()
-          && if self.enable_efa { i.efa_supported } else { true }
-          && if self.accelerator == AcceleratorType::Nvidia {
-            i.nvidia_gpu_supported
-          } else if self.accelerator == AcceleratorType::Neuron {
-            i.neuron_supported
-          } else {
-            true
-          }
-          && if self.reservation == ReservationType::MlCapacityBlockReservation {
-            i.cbr_supported
-          } else {
-            true
-          }
-      })
-      .map(|i| i.instance_type.to_string())
-      .collect::<Vec<String>>();
-
-    let instance_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
-      .with_prompt("Instance type(s)")
-      .items(&instance_types)
-      .interact()?;
-
-    let instances = instance_idxs
-      .iter()
-      .map(|&i| instance_types[i].to_string())
-      .collect::<Vec<String>>();
-
-    if instances.is_empty() {
-      bail!("At least one instance type needs to be selected");
+  fn collect_ami_type(mut self) -> Result<Inputs> {
+    // Set on Karpenter NodeClass
+    if self.compute_scaling == ComputeScalingType::Karpenter {
+      return Ok(self);
     }
 
-    self.instances = instances;
-
-    Ok(self)
-  }
-
-  fn collect_ami_type(mut self) -> Result<Inputs> {
     let ami_types = match self.accelerator {
       AcceleratorType::Nvidia => {
         if self.enable_efa {
           vec!["AL2_x86_64_GPU", "CUSTOM"]
         } else {
-          vec!["AL2_x86_64_GPU", "BOTTLEROCKET_x86_64_NVIDIA", "CUSTOM"]
+          match self.cpu_arch {
+            CpuArch::Arm64 => vec!["BOTTLEROCKET_ARM_64_NVIDIA", "CUSTOM"],
+            _ => vec!["AL2_x86_64_GPU", "BOTTLEROCKET_x86_64_NVIDIA", "CUSTOM"],
+          }
         }
       }
       AcceleratorType::Neuron => {
@@ -269,6 +254,52 @@ impl Inputs {
       .interact()?;
 
     self.ami_type = AmiTypes::from(ami_types[ami_type_idx]);
+
+    Ok(self)
+  }
+
+  fn collect_instance_types(mut self) -> Result<Inputs> {
+    // Set on Karpenter NodeClass
+    if self.compute_scaling == ComputeScalingType::Karpenter {
+      return Ok(self);
+    }
+
+    let instance_types = INSTANCE_TYPES
+      .iter()
+      .filter(|i| {
+        i.cpu_arch == self.cpu_arch.to_string()
+          && if self.enable_efa { i.efa_supported } else { true }
+          && if self.accelerator == AcceleratorType::Nvidia {
+            i.nvidia_gpu_supported
+          } else if self.accelerator == AcceleratorType::Neuron {
+            i.neuron_supported
+          } else {
+            true
+          }
+          && if self.reservation == ReservationType::MlCapacityBlockReservation {
+            i.cbr_supported
+          } else {
+            true
+          }
+      })
+      .map(|i| i.instance_type.to_string())
+      .collect::<Vec<String>>();
+
+    let instance_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
+      .with_prompt("Instance type(s)")
+      .items(&instance_types)
+      .interact()?;
+
+    let instances = instance_idxs
+      .iter()
+      .map(|&i| instance_types[i].to_string())
+      .collect::<Vec<String>>();
+
+    if instances.is_empty() {
+      bail!("At least one instance type needs to be selected");
+    }
+
+    self.instances = instances;
 
     Ok(self)
   }
