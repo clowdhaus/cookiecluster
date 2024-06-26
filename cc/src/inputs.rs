@@ -1,8 +1,10 @@
 use std::fmt;
 
 use anyhow::{bail, Result};
-use dialoguer::{theme::ColorfulTheme, Confirm, MultiSelect, Select};
+use dialoguer::{theme::ColorfulTheme, Confirm, Input, MultiSelect, Select};
 use serde::{Deserialize, Serialize};
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
 
 use crate::INSTANCE_TYPES;
 
@@ -10,6 +12,7 @@ pub const REMOVED_INSTANCE_TYPES: &[&str] = &[""];
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Inputs {
+  cluster_name: String,
   cluster_version: ClusterVersion,
   cluster_endpoint_public_access: bool,
   enable_cluster_creator_admin_permissions: bool,
@@ -26,6 +29,7 @@ pub struct Inputs {
 impl Default for Inputs {
   fn default() -> Self {
     Inputs {
+      cluster_name: String::from("example"),
       cluster_version: ClusterVersion::K129,
       cluster_endpoint_public_access: false,
       enable_cluster_creator_admin_permissions: false,
@@ -41,16 +45,43 @@ impl Default for Inputs {
   }
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
 enum ClusterVersion {
-  K125,
-  K126,
-  K127,
-  K128,
+  K130,
   K129,
+  K128,
+  K127,
+  K126,
+  K125,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+impl std::fmt::Display for ClusterVersion {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      ClusterVersion::K125 => write!(f, "1.25"),
+      ClusterVersion::K126 => write!(f, "1.26"),
+      ClusterVersion::K127 => write!(f, "1.27"),
+      ClusterVersion::K128 => write!(f, "1.28"),
+      ClusterVersion::K129 => write!(f, "1.29"),
+      ClusterVersion::K130 => write!(f, "1.30"),
+    }
+  }
+}
+
+impl std::convert::From<&str> for ClusterVersion {
+  fn from(s: &str) -> Self {
+    match s {
+      "1.25" => ClusterVersion::K125,
+      "1.26" => ClusterVersion::K126,
+      "1.27" => ClusterVersion::K127,
+      "1.28" => ClusterVersion::K128,
+      "1.29" => ClusterVersion::K129,
+      _ => ClusterVersion::K130,
+    }
+  }
+}
+
+#[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
 enum AddOn {
   CoreDns,
   KubeProxy,
@@ -63,6 +94,43 @@ enum AddOn {
   Adot,
   AwsGuarddutyAgent,
   AmazonCloudwatchObservability,
+}
+
+impl std::fmt::Display for AddOn {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      AddOn::CoreDns => write!(f, "CoreDNS"),
+      AddOn::KubeProxy => write!(f, "kube-proxy"),
+      AddOn::VpcCni => write!(f, "VPC CNI"),
+      AddOn::EksPodIdentityAgent => write!(f, "EKS Pod Identity agent"),
+      AddOn::AwsEbsCsiDriver => write!(f, "AWS EBS CSI driver"),
+      AddOn::AwsEfsCsiDriver => write!(f, "AWS EFS CSI driver"),
+      AddOn::AwsMountpointS3CsiDriver => write!(f, "AWS Mountpoint S3 CSI driver"),
+      AddOn::SnapshotController => write!(f, "Snapshot controller"),
+      AddOn::Adot => write!(f, "ADOT"),
+      AddOn::AwsGuarddutyAgent => write!(f, "AWS GuardDuty agent"),
+      AddOn::AmazonCloudwatchObservability => write!(f, "Amazon CloudWatch observability"),
+    }
+  }
+}
+
+impl std::convert::From<&str> for AddOn {
+  fn from(s: &str) -> Self {
+    match s {
+      "CoreDNS" => AddOn::CoreDns,
+      "kube-proxy" => AddOn::KubeProxy,
+      "VPC CNI" => AddOn::VpcCni,
+      "EKS Pod Identity agent" => AddOn::EksPodIdentityAgent,
+      "AWS EBS CSI driver" => AddOn::AwsEbsCsiDriver,
+      "AWS EFS CSI driver" => AddOn::AwsEfsCsiDriver,
+      "AWS Mountpoint S3 CSI driver" => AddOn::AwsMountpointS3CsiDriver,
+      "Snapshot controller" => AddOn::SnapshotController,
+      "ADOT" => AddOn::Adot,
+      "AWS GuardDuty agent" => AddOn::AwsGuarddutyAgent,
+      "Amazon CloudWatch observability" => AddOn::AmazonCloudwatchObservability,
+      _ => AddOn::CoreDns,
+    }
+  }
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -130,7 +198,7 @@ enum AmiTypes {
 }
 
 impl std::fmt::Display for AmiTypes {
-  fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       AmiTypes::Al2023Arm64Standard => write!(f, "AL2023_ARM_64_STANDARD"),
       AmiTypes::Al2023X8664Standard => write!(f, "AL2023_x86_64_STANDARD"),
@@ -178,6 +246,8 @@ impl Inputs {
 
   pub fn collect(self) -> Result<Self> {
     let inputs = self
+      .collect_cluster_settings()?
+      .collect_addons()?
       .collect_accelerator_type()?
       .collect_enable_efa()?
       .collect_reservation_type()?
@@ -187,6 +257,58 @@ impl Inputs {
       .collect_instance_types()?;
 
     Ok(inputs)
+  }
+
+  fn collect_cluster_settings(mut self) -> Result<Inputs> {
+    self.cluster_name = Input::with_theme(&ColorfulTheme::default())
+      .with_prompt("Cluster name")
+      .interact_text()?;
+
+    // This is ugly
+    // TODO - find better way to get from enum variants to &[&str]
+    let cluster_versions = ClusterVersion::iter().map(|v| v.to_string()).collect::<Vec<_>>();
+    let cluster_versions: Vec<&str> = cluster_versions.iter().map(|s| s as &str).collect();
+
+    let cluster_version_idx = Select::with_theme(&ColorfulTheme::default())
+      .with_prompt("Cluster version")
+      .items(&cluster_versions[..])
+      .default(0)
+      .interact()?;
+    self.cluster_version = ClusterVersion::from(cluster_versions[cluster_version_idx]);
+
+    self.cluster_endpoint_public_access = Confirm::with_theme(&ColorfulTheme::default())
+      .with_prompt("Enable public access to cluster endpoint")
+      .default(false)
+      .interact()?;
+
+    self.enable_cluster_creator_admin_permissions = Confirm::with_theme(&ColorfulTheme::default())
+      .with_prompt("Enable admin permissions for cluster creator")
+      .default(false)
+      .interact()?;
+
+    Ok(self)
+  }
+
+  fn collect_addons(mut self) -> Result<Inputs> {
+    // This is ugly
+    // TODO - find better way to get from enum variants to &[&str]
+    let all_add_ons = AddOn::iter().map(|v| v.to_string()).collect::<Vec<_>>();
+    let all_add_ons: Vec<&str> = all_add_ons.iter().map(|s| s as &str).collect();
+
+    let add_ons_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
+      .with_prompt("EKS add-on(s)")
+      .items(&all_add_ons[..])
+      .defaults(&[true, true, true, true])
+      .interact()?;
+
+    let add_ons = add_ons_idxs
+      .iter()
+      .map(|&i| AddOn::from(all_add_ons[i]))
+      .collect::<Vec<AddOn>>();
+
+    self.add_ons = add_ons;
+
+    Ok(self)
   }
 
   fn collect_enable_efa(mut self) -> Result<Inputs> {
@@ -344,6 +466,7 @@ impl Inputs {
     let ami_type_idx = Select::with_theme(&ColorfulTheme::default())
       .with_prompt("AMI type")
       .items(&ami_types[..])
+      .default(0)
       .interact()?;
 
     self.ami_type = AmiTypes::from(ami_types[ami_type_idx]);

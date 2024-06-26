@@ -25,6 +25,8 @@ dialoguer = "0.11"
 handlebars = "5.0"
 rust-embed = { version = "8.0", features = ["compression"] }
 serde.workspace = true
+strum = "0.26"
+strum_macros = "0.26"
 tracing.workspace = true
 tracing-log.workspace = true
 tracing-subscriber.workspace = true
