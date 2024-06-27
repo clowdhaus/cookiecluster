@@ -4,8 +4,8 @@ use anstyle::{AnsiColor, Color, Style};
 use anyhow::Result;
 use clap::{builder::Styles, Parser, ValueEnum};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
-use handlebars::Handlebars;
-use serde::{Deserialize, Serialize};
+use handlebars::{handlebars_helper, Handlebars};
+use serde_json::{value::Map, Value};
 
 /// Styles for CLI
 fn get_styles() -> Styles {
@@ -56,20 +56,20 @@ impl Cli {
   pub fn write(self, inputs: crate::Inputs) -> Result<()> {
     let template = crate::Templates::get("eks.tpl").unwrap();
 
+    handlebars_helper!(isEqual: |v1: Value, v2: Value| v1 == v2);
+
     let mut handlebars = Handlebars::new();
+    handlebars.register_helper("isEqual", Box::new(isEqual));
     handlebars.register_template_string("tpl", std::str::from_utf8(template.data.as_ref())?)?;
 
-    let rendered = handlebars.render("tpl", &inputs)?;
+    let mut data = Map::new();
+    // Handlebars prefers json/maps instead of nested rust data types
+    data.insert("add_ons".to_string(), handlebars::to_json(&inputs.add_ons));
+    data.insert("inputs".to_string(), handlebars::to_json(&inputs));
+
+    let rendered = handlebars.render("tpl", &data)?;
     fs::write(Path::new("eks.tf"), rendered)?;
 
     Ok(())
   }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Eks {
-  name: String,
-  region: String,
-  node_type: String,
-  node_count: u32,
 }

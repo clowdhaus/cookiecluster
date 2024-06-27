@@ -563,6 +563,7 @@ dependencies = [
  "handlebars",
  "rust-embed",
  "serde",
+ "serde_json",
  "strum",
  "strum_macros",
  "tracing",

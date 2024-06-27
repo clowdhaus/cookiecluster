@@ -2,27 +2,29 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
 
-  cluster_name    = "{{ inputs.cluster_name }}"
-  cluster_version = "{{ inputs.cluster_version }}"
-{{ #if inputs.cluster_endpoint_public_access }}
-
-  # To facilitate easier interaction for demonstration purposes
-  cluster_endpoint_public_access = true
-{{ /if }}
-{{ #if inputs.enable_cluster_creator_admin_permissions }}
-
-  # Gives Terraform identity admin access to cluster which will
-  # allow deploying resources into the cluster
-  enable_cluster_creator_admin_permissions = true
-{{ /if }}
+  cluster_name    = "example"
+  cluster_version = "1.30"
 
   cluster_addons = {
-  {{ #each add_ons as |a| }}
-    {{ a.name }} = {{ #if a.configuration.service_account_role_arn }}{
-      service_account_role_arn = {{ a.configuration.service_account_role_arn }}
+    coredns =  {}
+    kube-proxy =  {}
+    vpc-cni =  {}
+    eks-pod-identity-agent =  {}
+    aws-ebs-csi-driver = {
+      service_account_role_arn = module.aws_ebs_csi_driver_irsa.iam_role_arn
     }
-    {{ ~else }} {}{{ /if }}
-  {{ /each}}
+    aws-efs-csi-driver = {
+      service_account_role_arn = module.aws_efs_csi_driver_irsa.iam_role_arn
+    }
+    aws-mountpoint-s3-csi-driver = {
+      service_account_role_arn = module.aws_mountpoint_s3_csi_driver_irsa.iam_role_arn
+    }
+    snapshot-controller =  {}
+    adot =  {}
+    aws-guardduty-agent =  {}
+    amazon-cloudwatch-observability = {
+      service_account_role_arn = module.amazon_cloudwatch_observability_irsa.iam_role_arn
+    }
   }
 
   vpc_id     = module.vpc.vpc_id
@@ -31,7 +33,7 @@ module "eks" {
   eks_managed_node_groups = {
     # This node group is for core addons such as CoreDNS
     default = {
-      ami_type       = "{{ inputs.ami_type }}"
+      ami_type       = "AL2023_x86_64_STANDARD"
       instance_types = ["m5.xlarge"]
 
       min_size     = 1
@@ -72,14 +74,11 @@ module "eks" {
 
   tags = module.tags.tags
 }
-{{ #each add_ons as |a| }}
-{{ #if a.configuration.service_account_role_arn }}
 
-module "{{ a.under_name }}_irsa" {
+module "aws_ebs_csi_driver_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.39"
 
-  {{ #if (isEqual a.name "aws-ebs-csi-driver") }}
   role_name             = "aws-ebs-csi-driver"
   attach_ebs_csi_policy = true
 
@@ -89,8 +88,14 @@ module "{{ a.under_name }}_irsa" {
       namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
     }
   }
-  {{ /if }}
-  {{ #if (isEqual a.name "aws-efs-csi-driver") }}
+
+  tags = module.tags.tags
+}
+
+module "aws_efs_csi_driver_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.39"
+
   role_name             = "aws-efs-csi-driver"
   attach_efs_csi_policy = true
 
@@ -100,8 +105,14 @@ module "{{ a.under_name }}_irsa" {
       namespace_service_accounts = ["kube-system:efs-csi-controller-sa"]
     }
   }
-  {{ /if }}
-  {{ #if (isEqual a.name "aws-mountpoint-s3-csi-driver") }}
+
+  tags = module.tags.tags
+}
+
+module "aws_mountpoint_s3_csi_driver_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.39"
+
   role_name                       = "aws-mountpoint-s3-csi-driver"
   attach_mountpoint_s3_csi_policy = true
   # TODO - update with your respective S3 bucket ARN(s) and path(s)
@@ -114,8 +125,14 @@ module "{{ a.under_name }}_irsa" {
       namespace_service_accounts = ["kube-system:s3-csi-driver-sa"]
     }
   }
-  {{ /if }}
-  {{ #if (isEqual a.name "amazon-cloudwatch-observability") }}
+
+  tags = module.tags.tags
+}
+
+module "amazon_cloudwatch_observability_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.39"
+
   role_name                              = "amazon-cloudwatch-observability"
   attach_cloudwatch_observability_policy = true
 
@@ -125,12 +142,9 @@ module "{{ a.under_name }}_irsa" {
       namespace_service_accounts = ["amazon-cloudwatch:cloudwatch-agent"]
     }
   }
-  {{ /if }}
 
   tags = module.tags.tags
 }
-{{ /if }}
-{{ /each }}
 
 module "tags" {
   source  = "clowdhaus/tags/aws"

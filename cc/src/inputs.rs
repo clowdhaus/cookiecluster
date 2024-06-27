@@ -8,15 +8,13 @@ use strum_macros::EnumIter;
 
 use crate::INSTANCE_TYPES;
 
-pub const REMOVED_INSTANCE_TYPES: &[&str] = &[""];
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Inputs {
   cluster_name: String,
   cluster_version: ClusterVersion,
   cluster_endpoint_public_access: bool,
   enable_cluster_creator_admin_permissions: bool,
-  add_ons: Vec<AddOn>,
+  pub add_ons: Vec<AddOn>,
   enable_efa: bool,
   accelerator: AcceleratorType,
   reservation: ReservationType,
@@ -47,17 +45,17 @@ impl Default for Inputs {
 
 #[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
 enum ClusterVersion {
-  #[serde(rename(serialize = "1.30"))]
+  #[serde(rename = "1.30")]
   K130,
-  #[serde(rename(serialize = "1.29"))]
+  #[serde(rename = "1.29")]
   K129,
-  #[serde(rename(serialize = "1.28"))]
+  #[serde(rename = "1.28")]
   K128,
-  #[serde(rename(serialize = "1.27"))]
+  #[serde(rename = "1.27")]
   K127,
-  #[serde(rename(serialize = "1.26"))]
+  #[serde(rename = "1.26")]
   K126,
-  #[serde(rename(serialize = "1.25"))]
+  #[serde(rename = "1.25")]
   K125,
 }
 
@@ -88,64 +86,66 @@ impl std::convert::From<&str> for ClusterVersion {
 }
 
 #[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
-enum AddOn {
-  #[serde(rename(serialize = "core-dns"))]
+#[serde(rename_all = "kebab-case")]
+enum AddOnType {
   CoreDns,
-  #[serde(rename(serialize = "kube-proxy"))]
   KubeProxy,
-  #[serde(rename(serialize = "vpc-cni"))]
   VpcCni,
-  #[serde(rename(serialize = "eks-pod-identity-agent"))]
   EksPodIdentityAgent,
-  #[serde(rename(serialize = "aws-ebs-csi-driver"))]
   AwsEbsCsiDriver,
-  #[serde(rename(serialize = "aws-efs-csi-driver"))]
   AwsEfsCsiDriver,
-  #[serde(rename(serialize = "aws-mountpoint-s3-csi-driver"))]
   AwsMountpointS3CsiDriver,
-  #[serde(rename(serialize = "snapshot-controller"))]
   SnapshotController,
-  #[serde(rename(serialize = "adot"))]
   Adot,
-  #[serde(rename(serialize = "aws-guardduty-agent"))]
   AwsGuarddutyAgent,
-  #[serde(rename(serialize = "amazon-cloudwatch-observability"))]
   AmazonCloudwatchObservability,
 }
 
-impl std::fmt::Display for AddOn {
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct AddOn {
+  name: String,
+  under_name: String,
+  configuration: AddOnConfiguration,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+struct AddOnConfiguration {
+  service_account_role_arn: Option<String>,
+}
+
+impl std::fmt::Display for AddOnType {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      AddOn::CoreDns => write!(f, "CoreDNS"),
-      AddOn::KubeProxy => write!(f, "kube-proxy"),
-      AddOn::VpcCni => write!(f, "VPC CNI"),
-      AddOn::EksPodIdentityAgent => write!(f, "EKS Pod Identity agent"),
-      AddOn::AwsEbsCsiDriver => write!(f, "AWS EBS CSI driver"),
-      AddOn::AwsEfsCsiDriver => write!(f, "AWS EFS CSI driver"),
-      AddOn::AwsMountpointS3CsiDriver => write!(f, "AWS Mountpoint S3 CSI driver"),
-      AddOn::SnapshotController => write!(f, "Snapshot controller"),
-      AddOn::Adot => write!(f, "ADOT"),
-      AddOn::AwsGuarddutyAgent => write!(f, "AWS GuardDuty agent"),
-      AddOn::AmazonCloudwatchObservability => write!(f, "Amazon CloudWatch observability"),
+      AddOnType::CoreDns => write!(f, "coredns"),
+      AddOnType::KubeProxy => write!(f, "kube-proxy"),
+      AddOnType::VpcCni => write!(f, "vpc-cni"),
+      AddOnType::EksPodIdentityAgent => write!(f, "eks-pod-identity-agent"),
+      AddOnType::AwsEbsCsiDriver => write!(f, "aws-ebs-csi-driver"),
+      AddOnType::AwsEfsCsiDriver => write!(f, "aws-efs-csi-driver"),
+      AddOnType::AwsMountpointS3CsiDriver => write!(f, "aws-mountpoint-s3-csi-driver"),
+      AddOnType::SnapshotController => write!(f, "snapshot-controller"),
+      AddOnType::Adot => write!(f, "adot"),
+      AddOnType::AwsGuarddutyAgent => write!(f, "aws-guardduty-agent"),
+      AddOnType::AmazonCloudwatchObservability => write!(f, "amazon-cloudwatch-observability"),
     }
   }
 }
 
-impl std::convert::From<&str> for AddOn {
+impl std::convert::From<&str> for AddOnType {
   fn from(s: &str) -> Self {
     match s {
-      "CoreDNS" => AddOn::CoreDns,
-      "kube-proxy" => AddOn::KubeProxy,
-      "VPC CNI" => AddOn::VpcCni,
-      "EKS Pod Identity agent" => AddOn::EksPodIdentityAgent,
-      "AWS EBS CSI driver" => AddOn::AwsEbsCsiDriver,
-      "AWS EFS CSI driver" => AddOn::AwsEfsCsiDriver,
-      "AWS Mountpoint S3 CSI driver" => AddOn::AwsMountpointS3CsiDriver,
-      "Snapshot controller" => AddOn::SnapshotController,
-      "ADOT" => AddOn::Adot,
-      "AWS GuardDuty agent" => AddOn::AwsGuarddutyAgent,
-      "Amazon CloudWatch observability" => AddOn::AmazonCloudwatchObservability,
-      _ => AddOn::CoreDns,
+      "coredns" => AddOnType::CoreDns,
+      "kube-proxy" => AddOnType::KubeProxy,
+      "vpc-cni" => AddOnType::VpcCni,
+      "eks-pod-identity-agent" => AddOnType::EksPodIdentityAgent,
+      "aws-ebs-csi-driver" => AddOnType::AwsEbsCsiDriver,
+      "aws-efs-csi-driver" => AddOnType::AwsEfsCsiDriver,
+      "aws-mountpoint-s3-csi-driver" => AddOnType::AwsMountpointS3CsiDriver,
+      "snapshot-controller" => AddOnType::SnapshotController,
+      "adot" => AddOnType::Adot,
+      "aws-guardduty-agent" => AddOnType::AwsGuarddutyAgent,
+      "amazon-cloudwatch-observability" => AddOnType::AmazonCloudwatchObservability,
+      _ => AddOnType::CoreDns,
     }
   }
 }
@@ -198,19 +198,33 @@ impl fmt::Display for CpuArch {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 enum AmiTypes {
+  #[serde(rename = "AL2023_ARM_64_STANDARD")]
   Al2023Arm64Standard,
+  #[serde(rename = "AL2023_x86_64_STANDARD")]
   Al2023X8664Standard,
+  #[serde(rename = "AL2_ARM_64")]
   Al2Arm64,
+  #[serde(rename = "AL2_x86_64")]
   Al2X8664,
+  #[serde(rename = "AL2_x86_64_GPU")]
   Al2X8664Gpu,
+  #[serde(rename = "BOTTLEROCKET_ARM_64")]
   BottlerocketArm64,
+  #[serde(rename = "BOTTLEROCKET_ARM_64_NVIDIA")]
   BottlerocketArm64Nvidia,
+  #[serde(rename = "BOTTLEROCKET_x86_64")]
   BottlerocketX8664,
+  #[serde(rename = "BOTTLEROCKET_x86_64_NVIDIA")]
   BottlerocketX8664Nvidia,
+  #[serde(rename = "CUSTOM")]
   Custom,
+  #[serde(rename = "WINDOWS_CORE_2019_x86_64")]
   WindowsCore2019X8664,
+  #[serde(rename = "WINDOWS_CORE_2022_x86_64")]
   WindowsCore2022X8664,
+  #[serde(rename = "WINDOWS_FULL_2019_x86_64")]
   WindowsFull2019X8664,
+  #[serde(rename = "WINDOWS_FULL_2022_x86_64")]
   WindowsFull2022X8664,
 }
 
@@ -264,7 +278,7 @@ impl Inputs {
   pub fn collect(self) -> Result<Self> {
     let inputs = self
       .collect_cluster_settings()?
-      .collect_addons()?
+      .collect_add_ons()?
       .collect_accelerator_type()?
       .collect_enable_efa()?
       .collect_reservation_type()?
@@ -306,10 +320,10 @@ impl Inputs {
     Ok(self)
   }
 
-  fn collect_addons(mut self) -> Result<Inputs> {
+  fn collect_add_ons(mut self) -> Result<Inputs> {
     // This is ugly
     // TODO - find better way to get from enum variants to &[&str]
-    let all_add_ons = AddOn::iter().map(|v| v.to_string()).collect::<Vec<_>>();
+    let all_add_ons = AddOnType::iter().map(|v| v.to_string()).collect::<Vec<_>>();
     let all_add_ons: Vec<&str> = all_add_ons.iter().map(|s| s as &str).collect();
 
     let add_ons_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
@@ -320,7 +334,32 @@ impl Inputs {
 
     let add_ons = add_ons_idxs
       .iter()
-      .map(|&i| AddOn::from(all_add_ons[i]))
+      .map(|&i| {
+        let add_on = AddOnType::from(all_add_ons[i]);
+        match add_on {
+          // Not adding vpc-cni since it still requires permissions on node IAM role to start
+          AddOnType::AwsEbsCsiDriver
+          | AddOnType::AwsEfsCsiDriver
+          | AddOnType::AwsMountpointS3CsiDriver
+          | AddOnType::AmazonCloudwatchObservability => {
+            let under_name = add_on.to_string().replace('-', "_");
+            AddOn {
+              name: add_on.to_string(),
+              under_name: under_name.to_string(),
+              configuration: AddOnConfiguration {
+                service_account_role_arn: Some(format!("module.{under_name}_irsa.iam_role_arn")),
+              },
+            }
+          }
+          _ => AddOn {
+            name: add_on.to_string(),
+            under_name: add_on.to_string().replace('-', "_"),
+            configuration: AddOnConfiguration {
+              service_account_role_arn: None,
+            },
+          },
+        }
+      })
       .collect::<Vec<AddOn>>();
 
     self.add_ons = add_ons;
@@ -518,10 +557,14 @@ impl Inputs {
       .map(|i| i.instance_type.to_string())
       .collect::<Vec<String>>();
 
-    let instance_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
+    let mut instance_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
       .with_prompt("Instance type(s)")
       .items(&instance_types)
       .interact()?;
+
+    if instance_idxs.is_empty() {
+      instance_idxs.push(0);
+    }
 
     let instances = instance_idxs
       .iter()
