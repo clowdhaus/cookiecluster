@@ -56,10 +56,12 @@ impl Cli {
   pub fn write(self, inputs: crate::Inputs) -> Result<()> {
     let template = crate::Templates::get("eks.tpl").unwrap();
 
-    handlebars_helper!(isEqual: |v1: Value, v2: Value| v1 == v2);
+    handlebars_helper!(eq: |v1: Value, v2: Value| v1 == v2);
+    handlebars_helper!(or: |v1: bool, v2: bool| v1 | v2 );
 
     let mut handlebars = Handlebars::new();
-    handlebars.register_helper("isEqual", Box::new(isEqual));
+    handlebars.register_helper("eq", Box::new(eq));
+    handlebars.register_helper("or", Box::new(or));
     handlebars.register_template_string("tpl", std::str::from_utf8(template.data.as_ref())?)?;
 
     let instance_types = &inputs.instances_types;

@@ -1,20 +1,38 @@
+data "aws_subnets" "control_plane" {
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
+}
+
+data "aws_subnets" "data_plane" {
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
+}
+
+################################################################################
+# EKS Cluster
+################################################################################
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
 
   cluster_name    = "{{ inputs.cluster_name }}"
   cluster_version = "{{ inputs.cluster_version }}"
-{{ #if inputs.cluster_endpoint_public_access }}
+  {{ #if inputs.cluster_endpoint_public_access }}
 
   # To facilitate easier interaction for demonstration purposes
   cluster_endpoint_public_access = true
-{{ /if }}
-{{ #if inputs.enable_cluster_creator_admin_permissions }}
+  {{ /if }}
+  {{ #if inputs.enable_cluster_creator_admin_permissions }}
 
   # Gives Terraform identity admin access to cluster which will
   # allow deploying resources into the cluster
   enable_cluster_creator_admin_permissions = true
-{{ /if }}
+  {{ /if }}
 
   cluster_addons = {
   {{ #each add_ons as |a| }}
@@ -24,6 +42,12 @@ module "eks" {
     {{ ~else }} {}{{ /if }}
   {{ /each}}
   }
+  {{ #if inputs.enable_efa}}
+
+  # Add security group rules on the node group security group to
+  # allow EFA traffic
+  enable_efa_support = true
+  {{ /if }}
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
@@ -42,36 +66,6 @@ module "eks" {
       max_size     = 3
       desired_size = 2
     }
-
-    gpu = {
-      ami_type       = "AL2_x86_64_GPU"
-      instance_types = ["g5.8xlarge"]
-
-      min_size     = 1
-      max_size     = 1
-      desired_size = 1
-
-      # Default AMI has only 8GB of storage
-      block_device_mappings = {
-        xvda = {
-          device_name = "/dev/xvda"
-          ebs = {
-            volume_size           = 256
-            volume_type           = "gp3"
-            delete_on_termination = true
-          }
-        }
-      }
-
-      taints = {
-        # Ensure only GPU workloads are scheduled on this node group
-        gpu = {
-          key    = "nvidia.com/gpu"
-          value  = "true"
-          effect = "NO_SCHEDULE"
-        }
-      }
-    }
   }
 
   tags = module.tags.tags
@@ -79,11 +73,15 @@ module "eks" {
 {{ #each add_ons as |a| }}
 {{ #if a.configuration.service_account_role_arn }}
 
+################################################################################
+# Add-On IAM Role(s) for Service Account(s)
+################################################################################
+
 module "{{ a.under_name }}_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.39"
 
-  {{ #if (isEqual a.name "aws-ebs-csi-driver") }}
+  {{ #if (eq a.name "aws-ebs-csi-driver") }}
   role_name             = "aws-ebs-csi-driver"
   attach_ebs_csi_policy = true
 
@@ -94,7 +92,7 @@ module "{{ a.under_name }}_irsa" {
     }
   }
   {{ /if }}
-  {{ #if (isEqual a.name "aws-efs-csi-driver") }}
+  {{ #if (eq a.name "aws-efs-csi-driver") }}
   role_name             = "aws-efs-csi-driver"
   attach_efs_csi_policy = true
 
@@ -105,7 +103,7 @@ module "{{ a.under_name }}_irsa" {
     }
   }
   {{ /if }}
-  {{ #if (isEqual a.name "aws-mountpoint-s3-csi-driver") }}
+  {{ #if (eq a.name "aws-mountpoint-s3-csi-driver") }}
   role_name                       = "aws-mountpoint-s3-csi-driver"
   attach_mountpoint_s3_csi_policy = true
   # TODO - update with your respective S3 bucket ARN(s) and path(s)
@@ -119,7 +117,7 @@ module "{{ a.under_name }}_irsa" {
     }
   }
   {{ /if }}
-  {{ #if (isEqual a.name "amazon-cloudwatch-observability") }}
+  {{ #if (eq a.name "amazon-cloudwatch-observability") }}
   role_name                              = "amazon-cloudwatch-observability"
   attach_cloudwatch_observability_policy = true
 
@@ -135,6 +133,10 @@ module "{{ a.under_name }}_irsa" {
 }
 {{ /if }}
 {{ /each }}
+
+################################################################################
+# Tags - Replace with your own tags implementation
+################################################################################
 
 module "tags" {
   source  = "clowdhaus/tags/aws"

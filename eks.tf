@@ -39,44 +39,11 @@ module "eks" {
         "c5.24xlarge",
         "c5.2xlarge",
         "c5.4xlarge",
-        "c5.9xlarge",
-        "c5.large",
-        "c5.xlarge",
       ]
 
       min_size     = 1
       max_size     = 3
       desired_size = 2
-    }
-
-    gpu = {
-      ami_type       = "AL2_x86_64_GPU"
-      instance_types = ["g5.8xlarge"]
-
-      min_size     = 1
-      max_size     = 1
-      desired_size = 1
-
-      # Default AMI has only 8GB of storage
-      block_device_mappings = {
-        xvda = {
-          device_name = "/dev/xvda"
-          ebs = {
-            volume_size           = 256
-            volume_type           = "gp3"
-            delete_on_termination = true
-          }
-        }
-      }
-
-      taints = {
-        # Ensure only GPU workloads are scheduled on this node group
-        gpu = {
-          key    = "nvidia.com/gpu"
-          value  = "true"
-          effect = "NO_SCHEDULE"
-        }
-      }
     }
   }
 
