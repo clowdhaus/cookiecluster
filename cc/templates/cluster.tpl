@@ -1,16 +1,16 @@
-data "aws_subnets" "control_plane" {
-  filter {
-    name   = "vpc-id"
-    values = [var.vpc_id]
-  }
-}
+# data "aws_subnets" "control_plane" {
+#   filter {
+#     name   = "vpc-id"
+#     values = [var.vpc_id]
+#   }
+# }
 
-data "aws_subnets" "data_plane" {
-  filter {
-    name   = "vpc-id"
-    values = [var.vpc_id]
-  }
-}
+# data "aws_subnets" "data_plane" {
+#   filter {
+#     name   = "vpc-id"
+#     values = [var.vpc_id]
+#   }
+# }
 
 ################################################################################
 # EKS Cluster
@@ -66,6 +66,12 @@ module "eks" {
       max_size     = 3
       desired_size = 2
     }
+    {{ #if (eq inputs.accelerator "Neuron") }}
+    {{{ neuron_node_group }}}
+    {{ /if }}
+    {{ #if (eq inputs.accelerator "NVIDIA") }}
+    {{{ nvidia_node_group }}}
+    {{ /if }}
   }
 
   tags = module.tags.tags
@@ -133,6 +139,35 @@ module "{{ a.under_name }}_irsa" {
 }
 {{ /if }}
 {{ /each }}
+
+################################################################################
+# Resource Group
+################################################################################
+
+resource "aws_resourcegroups_group" "odcr" {
+  name        = "{{ inputs.cluster_name }}-odcr"
+  description = "On-demand capacity reservations"
+
+  configuration {
+    type = "AWS::EC2::CapacityReservationPool"
+  }
+
+  configuration {
+    type = "AWS::ResourceGroups::Generic"
+
+    parameters {
+      name   = "allowed-resource-types"
+      values = ["AWS::EC2::CapacityReservation"]
+    }
+  }
+}
+
+resource "aws_resourcegroups_resource" "odcr" {
+  count = length(var.capacity_reservation_arns)
+
+  group_arn    = aws_resourcegroups_group.odcr.arn
+  resource_arn = element(var.capacity_reservation_arns, count.index)
+}
 
 ################################################################################
 # Tags - Replace with your own tags implementation

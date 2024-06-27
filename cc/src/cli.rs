@@ -54,7 +54,9 @@ impl Default for Tmpl {
 
 impl Cli {
   pub fn write(self, inputs: crate::Inputs) -> Result<()> {
-    let template = crate::Templates::get("eks.tpl").unwrap();
+    let cluster_tpl = crate::Templates::get("cluster.tpl").unwrap();
+    let neuron_node_group_tpl = crate::Templates::get("neuron.tpl").unwrap();
+    let nvidia_node_group_tpl = crate::Templates::get("nvidia.tpl").unwrap();
 
     handlebars_helper!(eq: |v1: Value, v2: Value| v1 == v2);
     handlebars_helper!(or: |v1: bool, v2: bool| v1 | v2 );
@@ -62,7 +64,15 @@ impl Cli {
     let mut handlebars = Handlebars::new();
     handlebars.register_helper("eq", Box::new(eq));
     handlebars.register_helper("or", Box::new(or));
-    handlebars.register_template_string("tpl", std::str::from_utf8(template.data.as_ref())?)?;
+    handlebars.register_template_string("cluster", std::str::from_utf8(cluster_tpl.data.as_ref())?)?;
+    handlebars.register_template_string(
+      "neuron_node_group",
+      std::str::from_utf8(neuron_node_group_tpl.data.as_ref())?,
+    )?;
+    handlebars.register_template_string(
+      "nvidia_node_group",
+      std::str::from_utf8(nvidia_node_group_tpl.data.as_ref())?,
+    )?;
 
     let instance_types = &inputs.instances_types;
 
@@ -72,7 +82,18 @@ impl Cli {
     data.insert("instance_types".to_string(), handlebars::to_json(instance_types));
     data.insert("inputs".to_string(), handlebars::to_json(&inputs));
 
-    let rendered = handlebars.render("tpl", &data)?;
+    let neuron_node_group_rendered = handlebars.render("neuron_node_group", &data)?;
+    data.insert(
+      "neuron_node_group".to_string(),
+      handlebars::to_json(neuron_node_group_rendered),
+    );
+    let nvidia_node_group_rendered = handlebars.render("nvidia_node_group", &data)?;
+    data.insert(
+      "nvidia_node_group".to_string(),
+      handlebars::to_json(nvidia_node_group_rendered),
+    );
+
+    let rendered = handlebars.render("cluster", &data)?;
     fs::write(Path::new("eks.tf"), rendered)?;
 
     Ok(())

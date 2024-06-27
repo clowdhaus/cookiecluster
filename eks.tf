@@ -1,8 +1,26 @@
+# data "aws_subnets" "control_plane" {
+#   filter {
+#     name   = "vpc-id"
+#     values = [var.vpc_id]
+#   }
+# }
+
+# data "aws_subnets" "data_plane" {
+#   filter {
+#     name   = "vpc-id"
+#     values = [var.vpc_id]
+#   }
+# }
+
+################################################################################
+# EKS Cluster
+################################################################################
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
 
-  cluster_name    = "ex"
+  cluster_name    = "example"
   cluster_version = "1.30"
 
   cluster_addons = {
@@ -10,22 +28,11 @@ module "eks" {
     kube-proxy =  {}
     vpc-cni =  {}
     eks-pod-identity-agent =  {}
-    aws-ebs-csi-driver = {
-      service_account_role_arn = module.aws_ebs_csi_driver_irsa.iam_role_arn
-    }
-    aws-efs-csi-driver = {
-      service_account_role_arn = module.aws_efs_csi_driver_irsa.iam_role_arn
-    }
-    aws-mountpoint-s3-csi-driver = {
-      service_account_role_arn = module.aws_mountpoint_s3_csi_driver_irsa.iam_role_arn
-    }
-    snapshot-controller =  {}
-    adot =  {}
-    aws-guardduty-agent =  {}
-    amazon-cloudwatch-observability = {
-      service_account_role_arn = module.amazon_cloudwatch_observability_irsa.iam_role_arn
-    }
   }
+
+  # Add security group rules on the node group security group to
+  # allow EFA traffic
+  enable_efa_support = true
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
@@ -33,93 +40,71 @@ module "eks" {
   eks_managed_node_groups = {
     # This node group is for core addons such as CoreDNS
     default = {
-      ami_type       = "AL2023_x86_64_STANDARD"
+      ami_type       = "AL2_x86_64_GPU"
       instance_types = [
-        "c5.18xlarge",
-        "c5.24xlarge",
-        "c5.2xlarge",
-        "c5.4xlarge",
+        "inf1.24xlarge",
       ]
 
       min_size     = 1
       max_size     = 3
       desired_size = 2
     }
-  }
+    neuron = {
+      ami_type       = "AL2_x86_64_GPU"
+      instance_types = [
+        "inf1.24xlarge",
+      ]
 
-  tags = module.tags.tags
-}
+      min_size     = 2
+      max_size     = 5
+      desired_size = 2
 
-module "aws_ebs_csi_driver_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.39"
+      pre_bootstrap_user_data = <<-EOT
+        #!/usr/bin/env bash
 
-  role_name             = "aws-ebs-csi-driver"
-  attach_ebs_csi_policy = true
+        # Mount instance store volumes in RAID-0 for Kubelet and Containerd (raid0)
+        # https://github.com/awslabs/amazon-eks-ami/blob/master/doc/USER_GUIDE.md#raid-0-for-kubelet-and-containerd-raid0
+        /bin/setup-local-disks raid0
+      EOT
 
-  oidc_providers = {
-    this = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
+      # Default AMI has only 8GB of storage
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+          volume_size           = 256
+          volume_type           = "gp3"
+          delete_on_termination = true
+          }
+        }
+      }
+
+      # Add security group rules on the node group security group to
+      # allow EFA traffic
+      enable_efa_support = true
+
+      labels = {
+        "vpc.amazonaws.com/efa.present" = "true"
+        "aws.amazon.com/neuron.present" = "true"
+      }
+
+      taints = {
+        # Ensure only GPU workloads are scheduled on this node group
+        neuron = {
+          key    = "aws.amazon.com/neuron"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        }
+      }
     }
   }
 
   tags = module.tags.tags
 }
 
-module "aws_efs_csi_driver_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.39"
-
-  role_name             = "aws-efs-csi-driver"
-  attach_efs_csi_policy = true
-
-  oidc_providers = {
-    this = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:efs-csi-controller-sa"]
-    }
-  }
-
-  tags = module.tags.tags
-}
-
-module "aws_mountpoint_s3_csi_driver_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.39"
-
-  role_name                       = "aws-mountpoint-s3-csi-driver"
-  attach_mountpoint_s3_csi_policy = true
-  # TODO - update with your respective S3 bucket ARN(s) and path(s)
-  mountpoint_s3_csi_bucket_arns   = ["arn:aws:s3:::mountpoint-s3-csi-bucket"]
-  mountpoint_s3_csi_path_arns     = ["arn:aws:s3:::mountpoint-s3-csi-bucket/example/*"]
-
-  oidc_providers = {
-    this = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:s3-csi-driver-sa"]
-    }
-  }
-
-  tags = module.tags.tags
-}
-
-module "amazon_cloudwatch_observability_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.39"
-
-  role_name                              = "amazon-cloudwatch-observability"
-  attach_cloudwatch_observability_policy = true
-
-  oidc_providers = {
-    this = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["amazon-cloudwatch:cloudwatch-agent"]
-    }
-  }
-
-  tags = module.tags.tags
-}
+################################################################################
+# Tags - Replace with your own tags implementation
+################################################################################
 
 module "tags" {
   source  = "clowdhaus/tags/aws"

@@ -152,9 +152,22 @@ impl std::convert::From<&str> for AddOnType {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 enum AcceleratorType {
+  #[serde(rename = "NVIDIA")]
   Nvidia,
+  #[serde(rename = "Neuron")]
   Neuron,
+  #[serde(rename = "None")]
   None,
+}
+
+impl std::fmt::Display for AcceleratorType {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      AcceleratorType::Nvidia => write!(f, "NVIDIA"),
+      AcceleratorType::Neuron => write!(f, "Neuron"),
+      AcceleratorType::None => write!(f, "None"),
+    }
+  }
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -492,7 +505,7 @@ impl Inputs {
         }
       }
       AcceleratorType::Neuron => {
-        vec!["AL2_x86_64", "CUSTOM"]
+        vec!["AL2_x86_64_GPU", "CUSTOM"]
       }
       _ => match self.cpu_arch {
         CpuArch::Arm64 => {
