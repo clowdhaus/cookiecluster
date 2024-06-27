@@ -20,7 +20,7 @@ pub struct Inputs {
   reservation: ReservationType,
   compute_scaling: ComputeScalingType,
   cpu_arch: CpuArch,
-  instances: Vec<String>,
+  pub instances_types: Vec<String>,
   ami_type: AmiTypes,
 }
 
@@ -37,7 +37,7 @@ impl Default for Inputs {
       reservation: ReservationType::None,
       compute_scaling: ComputeScalingType::None,
       cpu_arch: CpuArch::X8664,
-      instances: vec![],
+      instances_types: vec![],
       ami_type: AmiTypes::Al2023X8664Standard,
     }
   }
@@ -372,6 +372,7 @@ impl Inputs {
       AcceleratorType::Nvidia | AcceleratorType::Neuron => {
         self.enable_efa = Confirm::with_theme(&ColorfulTheme::default())
           .with_prompt("Enable EFA support")
+          .default(true)
           .interact()?
       }
       _ => {}
@@ -566,16 +567,16 @@ impl Inputs {
       instance_idxs.push(0);
     }
 
-    let instances = instance_idxs
+    let instances_types = instance_idxs
       .iter()
       .map(|&i| instance_types[i].to_string())
       .collect::<Vec<String>>();
 
-    if instances.is_empty() {
+    if instances_types.is_empty() {
       bail!("At least one instance type needs to be selected");
     }
 
-    self.instances = instances;
+    self.instances_types = instances_types;
 
     Ok(self)
   }

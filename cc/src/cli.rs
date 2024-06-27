@@ -62,9 +62,12 @@ impl Cli {
     handlebars.register_helper("isEqual", Box::new(isEqual));
     handlebars.register_template_string("tpl", std::str::from_utf8(template.data.as_ref())?)?;
 
+    let instance_types = &inputs.instances_types;
+
     let mut data = Map::new();
     // Handlebars prefers json/maps instead of nested rust data types
     data.insert("add_ons".to_string(), handlebars::to_json(&inputs.add_ons));
+    data.insert("instance_types".to_string(), handlebars::to_json(instance_types));
     data.insert("inputs".to_string(), handlebars::to_json(&inputs));
 
     let rendered = handlebars.render("tpl", &data)?;

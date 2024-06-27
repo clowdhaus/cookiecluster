@@ -32,7 +32,11 @@ module "eks" {
     # This node group is for core addons such as CoreDNS
     default = {
       ami_type       = "{{ inputs.ami_type }}"
-      instance_types = ["m5.xlarge"]
+      instance_types = [
+      {{ #each instance_types }}
+        "{{ this }}",
+      {{ /each }}
+      ]
 
       min_size     = 1
       max_size     = 3

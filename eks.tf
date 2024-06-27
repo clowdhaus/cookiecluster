@@ -2,7 +2,7 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
 
-  cluster_name    = "example"
+  cluster_name    = "ex"
   cluster_version = "1.30"
 
   cluster_addons = {
@@ -34,7 +34,15 @@ module "eks" {
     # This node group is for core addons such as CoreDNS
     default = {
       ami_type       = "AL2023_x86_64_STANDARD"
-      instance_types = ["m5.xlarge"]
+      instance_types = [
+        "c5.18xlarge",
+        "c5.24xlarge",
+        "c5.2xlarge",
+        "c5.4xlarge",
+        "c5.9xlarge",
+        "c5.large",
+        "c5.xlarge",
+      ]
 
       min_size     = 1
       max_size     = 3
