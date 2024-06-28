@@ -70,12 +70,9 @@ impl Cli {
     handlebars.register_template_string("neuron_node_group", from_utf8(neuron_node_group_tpl.data.as_ref())?)?;
     handlebars.register_template_string("nvidia_node_group", from_utf8(nvidia_node_group_tpl.data.as_ref())?)?;
 
-    let instance_types = &inputs.instances_types;
-
     let mut data = Map::new();
     // Handlebars prefers json/maps instead of nested rust data types
     data.insert("add_ons".to_string(), handlebars::to_json(&inputs.add_ons));
-    data.insert("instance_types".to_string(), handlebars::to_json(instance_types));
     data.insert("inputs".to_string(), handlebars::to_json(&inputs));
 
     let neuron_node_group_rendered = handlebars.render("neuron_node_group", &data)?;

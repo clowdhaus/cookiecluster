@@ -57,7 +57,7 @@ module "eks" {
     default = {
       ami_type = "{{ inputs.ami_type }}"
       instance_types = [
-      {{ #each instance_types }}
+      {{ #each inputs.instance_types }}
         "{{ this }}",
       {{ /each }}
       ]

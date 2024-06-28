@@ -20,7 +20,7 @@ pub struct Inputs {
   pub reservation: ReservationType,
   compute_scaling: ComputeScalingType,
   cpu_arch: CpuArch,
-  pub instances_types: Vec<String>,
+  instance_types: Vec<String>,
   ami_type: AmiTypes,
 }
 
@@ -37,7 +37,7 @@ impl Default for Inputs {
       reservation: ReservationType::None,
       compute_scaling: ComputeScalingType::None,
       cpu_arch: CpuArch::X8664,
-      instances_types: vec![],
+      instance_types: vec![],
       ami_type: AmiTypes::Al2023X8664Standard,
     }
   }
@@ -583,16 +583,16 @@ impl Inputs {
       instance_idxs.push(0);
     }
 
-    let instances_types = instance_idxs
+    let instance_types = instance_idxs
       .iter()
       .map(|&i| instance_types[i].to_string())
       .collect::<Vec<String>>();
 
-    if instances_types.is_empty() {
+    if instance_types.is_empty() {
       bail!("At least one instance type needs to be selected");
     }
 
-    self.instances_types = instances_types;
+    self.instance_types = instance_types;
 
     Ok(self)
   }
