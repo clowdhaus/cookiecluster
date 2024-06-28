@@ -16,8 +16,12 @@ pub struct Inputs {
   cluster_endpoint_public_access: bool,
   cluster_name: String,
   cluster_version: ClusterVersion,
-  compute_scaling: ComputeScalingType,
+  pub compute_scaling: ComputeScalingType,
   cpu_arch: CpuArch,
+  /// AMI type used on default node group when secondary node group (accelerated, Windows, etc) is used
+  default_ami_type: AmiType,
+  /// Instance types used on default node group when secondary node group (accelerated, Windows, etc) is used
+  default_instance_types: Vec<String>,
   enable_cluster_creator_admin_permissions: bool,
   enable_efa: bool,
   instance_types: Vec<String>,
@@ -35,6 +39,8 @@ impl Default for Inputs {
       cluster_version: ClusterVersion::K130,
       compute_scaling: ComputeScalingType::None,
       cpu_arch: CpuArch::X8664,
+      default_ami_type: AmiType::Al2023X8664Standard,
+      default_instance_types: vec![],
       enable_cluster_creator_admin_permissions: false,
       enable_efa: false,
       instance_types: vec![],
@@ -244,14 +250,24 @@ impl std::convert::From<&str> for ClusterVersion {
   }
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-enum ComputeScalingType {
-  #[serde(rename = "cluster-autoscaler")]
-  ClusterAutoscaler,
+#[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
+pub enum ComputeScalingType {
   #[serde(rename = "karpenter")]
   Karpenter,
+  #[serde(rename = "cluster-autoscaler")]
+  ClusterAutoscaler,
   #[serde(rename = "None")]
   None,
+}
+
+impl std::convert::From<&str> for ComputeScalingType {
+  fn from(s: &str) -> Self {
+    match s {
+      "karpenter" => ComputeScalingType::Karpenter,
+      "cluster-autoscaler" => ComputeScalingType::ClusterAutoscaler,
+      _ => ComputeScalingType::None,
+    }
+  }
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -304,7 +320,8 @@ impl Inputs {
       .collect_compute_scaling_type()?
       .collect_cpu_arch()?
       .collect_ami_type()?
-      .collect_instance_types()?;
+      .collect_instance_types()?
+      .collect_default_node_group_settings()?;
 
     Ok(inputs)
   }
@@ -440,10 +457,9 @@ impl Inputs {
   }
 
   fn collect_compute_scaling_type(mut self) -> Result<Inputs> {
-    let mut items = vec!["None", "cluster-autoscaler"];
-
+    let mut items = vec!["cluster-autoscaler", "None"];
     if self.reservation == ReservationType::None {
-      items.push("Karpenter");
+      items = vec!["karpenter", "cluster-autoscaler", "None"];
     }
 
     let compute_scaling_idx = Select::with_theme(&ColorfulTheme::default())
@@ -452,12 +468,7 @@ impl Inputs {
       .default(0)
       .interact()?;
 
-    let compute_scaling = match compute_scaling_idx {
-      1 => ComputeScalingType::ClusterAutoscaler,
-      2 => ComputeScalingType::Karpenter,
-      _ => ComputeScalingType::None,
-    };
-    self.compute_scaling = compute_scaling;
+    self.compute_scaling = ComputeScalingType::from(items[compute_scaling_idx]);
 
     Ok(self)
   }
@@ -494,11 +505,6 @@ impl Inputs {
   }
 
   fn collect_ami_type(mut self) -> Result<Inputs> {
-    // Set on Karpenter NodeClass
-    if self.compute_scaling == ComputeScalingType::Karpenter {
-      return Ok(self);
-    }
-
     let ami_types = match self.accelerator {
       AcceleratorType::Nvidia => {
         if self.enable_efa {
@@ -551,11 +557,6 @@ impl Inputs {
   }
 
   fn collect_instance_types(mut self) -> Result<Inputs> {
-    // Set on Karpenter NodeClass
-    if self.compute_scaling == ComputeScalingType::Karpenter {
-      return Ok(self);
-    }
-
     let instance_types = INSTANCE_TYPES
       .iter()
       .filter(|i| {
@@ -596,6 +597,31 @@ impl Inputs {
     }
 
     self.instance_types = instance_types;
+
+    Ok(self)
+  }
+
+  fn collect_default_node_group_settings(mut self) -> Result<Inputs> {
+    // Based on the AMI type selected, set the default AMI type equivalent for the default node group
+    self.default_ami_type = match self.accelerator {
+      AcceleratorType::Nvidia | AcceleratorType::Neuron => match self.ami_type {
+        AmiType::Al2X8664Gpu => AmiType::Al2023X8664Standard,
+        AmiType::BottlerocketX8664Nvidia | AmiType::BottlerocketArm64Nvidia => AmiType::BottlerocketX8664,
+        _ => AmiType::Al2023X8664Standard,
+      },
+      _ => match self.cpu_arch {
+        CpuArch::X8664 => AmiType::Al2023X8664Standard,
+        CpuArch::Arm64 => AmiType::Al2023X8664Standard,
+      },
+    };
+
+    // Based on the default AMI type selected, set the default instance type(s) for the default node group
+    self.default_instance_types = match self.default_ami_type {
+      AmiType::Al2Arm64 | AmiType::Al2X8664 | AmiType::BottlerocketArm64Nvidia => {
+        vec!["m7g.xlarge".to_string(), "m6g.xlarge".to_string()]
+      }
+      _ => vec!["m7a.xlarge".to_string(), "m7i.xlarge".to_string()],
+    };
 
     Ok(self)
   }

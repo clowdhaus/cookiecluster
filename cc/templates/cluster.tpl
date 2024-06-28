@@ -39,6 +39,19 @@ module "eks" {
     {{ a.name }} = {{ #if a.configuration.service_account_role_arn }}{
       service_account_role_arn = {{ a.configuration.service_account_role_arn }}
     }
+    {{ else if (and (eq a.name "coredns") (eq ../inputs.compute_scaling "karpenter")) }}{
+      configuration_values = jsonencode({
+        tolerations = [
+          # Allow CoreDNS to run on the same nodes as the Karpenter controller
+          # for use during cluster creation when Karpenter nodes do not yet exist
+          {
+            key    = "karpenter.sh/controller"
+            value  = "true"
+            effect = "NoSchedule"
+          }
+        ]
+      })
+    }
     {{ ~else }} {}{{ /if }}
   {{ /each}}
   }
@@ -53,7 +66,49 @@ module "eks" {
   subnet_ids = module.vpc.private_subnets
 
   eks_managed_node_groups = {
+    {{ #if (or (eq inputs.accelerator "Neuron") (eq inputs.accelerator "NVIDIA")) }}
     # This node group is for core addons such as CoreDNS
+    default = {
+      ami_type = "{{ inputs.default_ami_type }}"
+      instance_types = [
+      {{ #each inputs.default_instance_types }}
+        "{{ this }}",
+      {{ /each }}
+      ]
+
+      min_size     = 2
+      max_size     = 3
+      desired_size = 2
+    }
+    {{ else if (eq inputs.compute_scaling "karpenter") }}
+    karpenter = {
+      ami_type = "{{ inputs.default_ami_type }}"
+      instance_types = [
+      {{ #each inputs.default_instance_types }}
+        "{{ this }}",
+      {{ /each }}
+      ]
+
+      min_size     = 2
+      max_size     = 3
+      desired_size = 2
+
+      labels = {
+        # Used to ensure Karpenter runs on nodes that it does not manage
+        "karpenter.sh/controller" = "true"
+      }
+
+      taints = {
+        # The pods that do not tolerate this taint should run on nodes
+        # created by Karpenter
+        karpenter = {
+          key    = "karpenter.sh/controller"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        }
+      }
+    }
+    {{ else }}
     default = {
       ami_type = "{{ inputs.ami_type }}"
       instance_types = [
@@ -62,10 +117,11 @@ module "eks" {
       {{ /each }}
       ]
 
-      min_size     = 1
+      min_size     = 2
       max_size     = 3
       desired_size = 2
     }
+    {{ /if }}
     {{ #if (eq inputs.accelerator "Neuron") }}
     {{{ neuron_node_group }}}
     {{ /if }}
@@ -74,8 +130,37 @@ module "eks" {
     {{ /if }}
   }
 
+  {{ #if (eq inputs.compute_scaling "karpenter") }}
+  tags = merge(module.tags.tags, {
+    # NOTE - if creating multiple security groups with this module, only tag the
+    # security group that Karpenter should utilize with the following tag
+    # (i.e. - at most, only one security group should have this tag in your account)
+    "karpenter.sh/discovery" = {{ inputs.cluster_name }}
+  })
+  {{ else }}
+  tags = module.tags.tags
+  {{ /if }}
+}
+{{ #if (eq inputs.compute_scaling "karpenter") }}
+
+################################################################################
+# Controller & Node IAM roles, SQS Queue, Eventbridge Rules
+################################################################################
+
+module "karpenter" {
+  source  = "terraform-aws-modules/eks/aws//modules/karpenter"
+  version = "~> 20.0"
+
+  cluster_name = module.eks.cluster_name
+
+  # Name needs to match role name passed to the EC2NodeClass
+  node_iam_role_use_name_prefix   = false
+  node_iam_role_name              = "{{ inputs.cluster_name }}-karpenter-node"
+  create_pod_identity_association = true
+
   tags = module.tags.tags
 }
+{{ /if }}
 {{ #each add_ons as |a| }}
 {{ #if a.configuration.service_account_role_arn }}
 
@@ -169,8 +254,8 @@ resource "aws_resourcegroups_resource" "odcr" {
   group_arn    = aws_resourcegroups_group.odcr.arn
   resource_arn = element(var.on_demand_capacity_reservation_arns, count.index)
 }
-
 {{ /if }}
+
 ################################################################################
 # Tags - Replace with your own tags implementation
 ################################################################################

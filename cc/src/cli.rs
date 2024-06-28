@@ -60,10 +60,12 @@ impl Cli {
     let nvidia_node_group_tpl = crate::Templates::get("nvidia.tpl").unwrap();
 
     handlebars_helper!(eq: |v1: Value, v2: Value| v1 == v2);
-    handlebars_helper!(or: |v1: bool, v2: bool| v1 | v2 );
+    handlebars_helper!(and: |v1: bool, v2: bool| v1 && v2 );
+    handlebars_helper!(or: |v1: bool, v2: bool| v1 || v2 );
 
     let mut handlebars = Handlebars::new();
     handlebars.register_helper("eq", Box::new(eq));
+    handlebars.register_helper("and", Box::new(and));
     handlebars.register_helper("or", Box::new(or));
     handlebars.register_template_string("cluster", from_utf8(cluster_tpl.data.as_ref())?)?;
     handlebars.register_template_string("variables", from_utf8(variables_tpl.data.as_ref())?)?;
