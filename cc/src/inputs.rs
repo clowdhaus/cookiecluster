@@ -10,77 +10,55 @@ use crate::INSTANCE_TYPES;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Inputs {
+  accelerator: AcceleratorType,
+  pub add_ons: Vec<AddOn>,
+  ami_type: AmiType,
+  cluster_endpoint_public_access: bool,
   cluster_name: String,
   cluster_version: ClusterVersion,
-  cluster_endpoint_public_access: bool,
-  enable_cluster_creator_admin_permissions: bool,
-  pub add_ons: Vec<AddOn>,
-  enable_efa: bool,
-  accelerator: AcceleratorType,
-  pub reservation: ReservationType,
   compute_scaling: ComputeScalingType,
   cpu_arch: CpuArch,
+  enable_cluster_creator_admin_permissions: bool,
+  enable_efa: bool,
   instance_types: Vec<String>,
-  ami_type: AmiTypes,
+  pub reservation: ReservationType,
 }
 
 impl Default for Inputs {
   fn default() -> Self {
     Inputs {
-      cluster_name: String::from("example"),
-      cluster_version: ClusterVersion::K129,
-      cluster_endpoint_public_access: false,
-      enable_cluster_creator_admin_permissions: false,
-      add_ons: vec![],
-      enable_efa: false,
       accelerator: AcceleratorType::None,
-      reservation: ReservationType::None,
+      add_ons: vec![],
+      ami_type: AmiType::Al2023X8664Standard,
+      cluster_endpoint_public_access: false,
+      cluster_name: String::from("example"),
+      cluster_version: ClusterVersion::K130,
       compute_scaling: ComputeScalingType::None,
       cpu_arch: CpuArch::X8664,
+      enable_cluster_creator_admin_permissions: false,
+      enable_efa: false,
       instance_types: vec![],
-      ami_type: AmiTypes::Al2023X8664Standard,
+      reservation: ReservationType::None,
     }
   }
 }
 
-#[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
-enum ClusterVersion {
-  #[serde(rename = "1.30")]
-  K130,
-  #[serde(rename = "1.29")]
-  K129,
-  #[serde(rename = "1.28")]
-  K128,
-  #[serde(rename = "1.27")]
-  K127,
-  #[serde(rename = "1.26")]
-  K126,
-  #[serde(rename = "1.25")]
-  K125,
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+enum AcceleratorType {
+  #[serde(rename = "NVIDIA")]
+  Nvidia,
+  #[serde(rename = "Neuron")]
+  Neuron,
+  #[serde(rename = "None")]
+  None,
 }
 
-impl std::fmt::Display for ClusterVersion {
+impl std::fmt::Display for AcceleratorType {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      ClusterVersion::K125 => write!(f, "1.25"),
-      ClusterVersion::K126 => write!(f, "1.26"),
-      ClusterVersion::K127 => write!(f, "1.27"),
-      ClusterVersion::K128 => write!(f, "1.28"),
-      ClusterVersion::K129 => write!(f, "1.29"),
-      ClusterVersion::K130 => write!(f, "1.30"),
-    }
-  }
-}
-
-impl std::convert::From<&str> for ClusterVersion {
-  fn from(s: &str) -> Self {
-    match s {
-      "1.25" => ClusterVersion::K125,
-      "1.26" => ClusterVersion::K126,
-      "1.27" => ClusterVersion::K127,
-      "1.28" => ClusterVersion::K128,
-      "1.29" => ClusterVersion::K129,
-      _ => ClusterVersion::K130,
+      AcceleratorType::Nvidia => write!(f, "NVIDIA"),
+      AcceleratorType::Neuron => write!(f, "Neuron"),
+      AcceleratorType::None => write!(f, "None"),
     }
   }
 }
@@ -151,69 +129,7 @@ impl std::convert::From<&str> for AddOnType {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-enum AcceleratorType {
-  #[serde(rename = "NVIDIA")]
-  Nvidia,
-  #[serde(rename = "Neuron")]
-  Neuron,
-  #[serde(rename = "None")]
-  None,
-}
-
-impl std::fmt::Display for AcceleratorType {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      AcceleratorType::Nvidia => write!(f, "NVIDIA"),
-      AcceleratorType::Neuron => write!(f, "Neuron"),
-      AcceleratorType::None => write!(f, "None"),
-    }
-  }
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReservationType {
-  #[serde(rename = "ODCR")]
-  OnDemandCapacityReservation,
-  #[serde(rename = "CBR")]
-  MlCapacityBlockReservation,
-  #[serde(rename = "None")]
-  None,
-}
-
-impl std::convert::From<&str> for ReservationType {
-  fn from(s: &str) -> Self {
-    match s {
-      "On-demand capacity reservation" => ReservationType::OnDemandCapacityReservation,
-      "ML capacity block reservation" => ReservationType::MlCapacityBlockReservation,
-      _ => ReservationType::None,
-    }
-  }
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-enum ComputeScalingType {
-  ClusterAutoscaler,
-  Karpenter,
-  None,
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-enum CpuArch {
-  X8664,
-  Arm64,
-}
-
-impl fmt::Display for CpuArch {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      CpuArch::X8664 => write!(f, "x86-64"),
-      CpuArch::Arm64 => write!(f, "arm64"),
-    }
-  }
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-enum AmiTypes {
+enum AmiType {
   #[serde(rename = "AL2023_ARM_64_STANDARD")]
   Al2023Arm64Standard,
   #[serde(rename = "AL2023_x86_64_STANDARD")]
@@ -244,44 +160,131 @@ enum AmiTypes {
   WindowsFull2022X8664,
 }
 
-impl std::fmt::Display for AmiTypes {
+impl std::fmt::Display for AmiType {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      AmiTypes::Al2023Arm64Standard => write!(f, "AL2023_ARM_64_STANDARD"),
-      AmiTypes::Al2023X8664Standard => write!(f, "AL2023_x86_64_STANDARD"),
-      AmiTypes::Al2Arm64 => write!(f, "AL2_ARM_64"),
-      AmiTypes::Al2X8664 => write!(f, "AL2_x86_64"),
-      AmiTypes::Al2X8664Gpu => write!(f, "AL2_x86_64_GPU"),
-      AmiTypes::BottlerocketArm64 => write!(f, "BOTTLEROCKET_ARM_64"),
-      AmiTypes::BottlerocketArm64Nvidia => write!(f, "BOTTLEROCKET_ARM_64_NVIDIA"),
-      AmiTypes::BottlerocketX8664 => write!(f, "BOTTLEROCKET_x86_64"),
-      AmiTypes::BottlerocketX8664Nvidia => write!(f, "BOTTLEROCKET_x86_64_NVIDIA"),
-      AmiTypes::Custom => write!(f, "CUSTOM"),
-      AmiTypes::WindowsCore2019X8664 => write!(f, "WINDOWS_CORE_2019_x86_64"),
-      AmiTypes::WindowsCore2022X8664 => write!(f, "WINDOWS_CORE_2022_x86_64"),
-      AmiTypes::WindowsFull2019X8664 => write!(f, "WINDOWS_FULL_2019_x86_64"),
-      AmiTypes::WindowsFull2022X8664 => write!(f, "WINDOWS_FULL_2022_x86_64"),
+      AmiType::Al2023Arm64Standard => write!(f, "AL2023_ARM_64_STANDARD"),
+      AmiType::Al2023X8664Standard => write!(f, "AL2023_x86_64_STANDARD"),
+      AmiType::Al2Arm64 => write!(f, "AL2_ARM_64"),
+      AmiType::Al2X8664 => write!(f, "AL2_x86_64"),
+      AmiType::Al2X8664Gpu => write!(f, "AL2_x86_64_GPU"),
+      AmiType::BottlerocketArm64 => write!(f, "BOTTLEROCKET_ARM_64"),
+      AmiType::BottlerocketArm64Nvidia => write!(f, "BOTTLEROCKET_ARM_64_NVIDIA"),
+      AmiType::BottlerocketX8664 => write!(f, "BOTTLEROCKET_x86_64"),
+      AmiType::BottlerocketX8664Nvidia => write!(f, "BOTTLEROCKET_x86_64_NVIDIA"),
+      AmiType::Custom => write!(f, "CUSTOM"),
+      AmiType::WindowsCore2019X8664 => write!(f, "WINDOWS_CORE_2019_x86_64"),
+      AmiType::WindowsCore2022X8664 => write!(f, "WINDOWS_CORE_2022_x86_64"),
+      AmiType::WindowsFull2019X8664 => write!(f, "WINDOWS_FULL_2019_x86_64"),
+      AmiType::WindowsFull2022X8664 => write!(f, "WINDOWS_FULL_2022_x86_64"),
     }
   }
 }
 
-impl std::convert::From<&str> for AmiTypes {
+impl std::convert::From<&str> for AmiType {
   fn from(s: &str) -> Self {
     match s {
-      "AL2023_ARM_64_STANDARD" => AmiTypes::Al2023Arm64Standard,
-      "AL2023_x86_64_STANDARD" => AmiTypes::Al2023X8664Standard,
-      "AL2_ARM_64" => AmiTypes::Al2Arm64,
-      "AL2_x86_64" => AmiTypes::Al2X8664,
-      "AL2_x86_64_GPU" => AmiTypes::Al2X8664Gpu,
-      "BOTTLEROCKET_ARM_64" => AmiTypes::BottlerocketArm64,
-      "BOTTLEROCKET_ARM_64_NVIDIA" => AmiTypes::BottlerocketArm64Nvidia,
-      "BOTTLEROCKET_x86_64" => AmiTypes::BottlerocketX8664,
-      "BOTTLEROCKET_x86_64_NVIDIA" => AmiTypes::BottlerocketX8664Nvidia,
-      "WINDOWS_CORE_2019_x86_64" => AmiTypes::WindowsCore2019X8664,
-      "WINDOWS_CORE_2022_x86_64" => AmiTypes::WindowsCore2022X8664,
-      "WINDOWS_FULL_2019_x86_64" => AmiTypes::WindowsFull2019X8664,
-      "WINDOWS_FULL_2022_x86_64" => AmiTypes::WindowsFull2022X8664,
-      _ => AmiTypes::Custom,
+      "AL2023_ARM_64_STANDARD" => AmiType::Al2023Arm64Standard,
+      "AL2023_x86_64_STANDARD" => AmiType::Al2023X8664Standard,
+      "AL2_ARM_64" => AmiType::Al2Arm64,
+      "AL2_x86_64" => AmiType::Al2X8664,
+      "AL2_x86_64_GPU" => AmiType::Al2X8664Gpu,
+      "BOTTLEROCKET_ARM_64" => AmiType::BottlerocketArm64,
+      "BOTTLEROCKET_ARM_64_NVIDIA" => AmiType::BottlerocketArm64Nvidia,
+      "BOTTLEROCKET_x86_64" => AmiType::BottlerocketX8664,
+      "BOTTLEROCKET_x86_64_NVIDIA" => AmiType::BottlerocketX8664Nvidia,
+      "WINDOWS_CORE_2019_x86_64" => AmiType::WindowsCore2019X8664,
+      "WINDOWS_CORE_2022_x86_64" => AmiType::WindowsCore2022X8664,
+      "WINDOWS_FULL_2019_x86_64" => AmiType::WindowsFull2019X8664,
+      "WINDOWS_FULL_2022_x86_64" => AmiType::WindowsFull2022X8664,
+      _ => AmiType::Custom,
+    }
+  }
+}
+
+#[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
+enum ClusterVersion {
+  #[serde(rename = "1.30")]
+  K130,
+  #[serde(rename = "1.29")]
+  K129,
+  #[serde(rename = "1.28")]
+  K128,
+  #[serde(rename = "1.27")]
+  K127,
+  #[serde(rename = "1.26")]
+  K126,
+  #[serde(rename = "1.25")]
+  K125,
+}
+
+impl std::fmt::Display for ClusterVersion {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      ClusterVersion::K125 => write!(f, "1.25"),
+      ClusterVersion::K126 => write!(f, "1.26"),
+      ClusterVersion::K127 => write!(f, "1.27"),
+      ClusterVersion::K128 => write!(f, "1.28"),
+      ClusterVersion::K129 => write!(f, "1.29"),
+      ClusterVersion::K130 => write!(f, "1.30"),
+    }
+  }
+}
+
+impl std::convert::From<&str> for ClusterVersion {
+  fn from(s: &str) -> Self {
+    match s {
+      "1.25" => ClusterVersion::K125,
+      "1.26" => ClusterVersion::K126,
+      "1.27" => ClusterVersion::K127,
+      "1.28" => ClusterVersion::K128,
+      "1.29" => ClusterVersion::K129,
+      _ => ClusterVersion::K130,
+    }
+  }
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+enum ComputeScalingType {
+  #[serde(rename = "cluster-autoscaler")]
+  ClusterAutoscaler,
+  #[serde(rename = "karpenter")]
+  Karpenter,
+  #[serde(rename = "None")]
+  None,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+enum CpuArch {
+  X8664,
+  Arm64,
+}
+
+impl fmt::Display for CpuArch {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      CpuArch::X8664 => write!(f, "x86-64"),
+      CpuArch::Arm64 => write!(f, "arm64"),
+    }
+  }
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub enum ReservationType {
+  #[serde(rename = "ODCR")]
+  OnDemandCapacityReservation,
+  #[serde(rename = "CBR")]
+  MlCapacityBlockReservation,
+  #[serde(rename = "None")]
+  None,
+}
+
+impl std::convert::From<&str> for ReservationType {
+  fn from(s: &str) -> Self {
+    match s {
+      "On-demand capacity reservation" => ReservationType::OnDemandCapacityReservation,
+      "ML capacity block reservation" => ReservationType::MlCapacityBlockReservation,
+      _ => ReservationType::None,
     }
   }
 }
@@ -383,20 +386,6 @@ impl Inputs {
     Ok(self)
   }
 
-  fn collect_enable_efa(mut self) -> Result<Inputs> {
-    match self.accelerator {
-      AcceleratorType::Nvidia | AcceleratorType::Neuron => {
-        self.enable_efa = Confirm::with_theme(&ColorfulTheme::default())
-          .with_prompt("Enable EFA support")
-          .default(true)
-          .interact()?
-      }
-      _ => {}
-    }
-
-    Ok(self)
-  }
-
   fn collect_accelerator_type(mut self) -> Result<Inputs> {
     let accelerator_idx = Select::with_theme(&ColorfulTheme::default())
       .with_prompt("Accelerator type")
@@ -412,6 +401,20 @@ impl Inputs {
       _ => AcceleratorType::None,
     };
     self.accelerator = accelerator;
+
+    Ok(self)
+  }
+
+  fn collect_enable_efa(mut self) -> Result<Inputs> {
+    match self.accelerator {
+      AcceleratorType::Nvidia | AcceleratorType::Neuron => {
+        self.enable_efa = Confirm::with_theme(&ColorfulTheme::default())
+          .with_prompt("Enable EFA support")
+          .default(true)
+          .interact()?
+      }
+      _ => {}
+    }
 
     Ok(self)
   }
@@ -542,7 +545,7 @@ impl Inputs {
       .default(0)
       .interact()?;
 
-    self.ami_type = AmiTypes::from(ami_types[ami_type_idx]);
+    self.ami_type = AmiType::from(ami_types[ami_type_idx]);
 
     Ok(self)
   }
