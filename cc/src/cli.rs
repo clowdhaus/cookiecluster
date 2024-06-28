@@ -1,4 +1,4 @@
-use std::{fs, path::Path};
+use std::{fs, path::Path, str::from_utf8};
 
 use anstyle::{AnsiColor, Color, Style};
 use anyhow::Result;
@@ -55,6 +55,7 @@ impl Default for Tmpl {
 impl Cli {
   pub fn write(self, inputs: crate::Inputs) -> Result<()> {
     let cluster_tpl = crate::Templates::get("cluster.tpl").unwrap();
+    let variables_tpl = crate::Templates::get("variables.tpl").unwrap();
     let neuron_node_group_tpl = crate::Templates::get("neuron.tpl").unwrap();
     let nvidia_node_group_tpl = crate::Templates::get("nvidia.tpl").unwrap();
 
@@ -64,15 +65,10 @@ impl Cli {
     let mut handlebars = Handlebars::new();
     handlebars.register_helper("eq", Box::new(eq));
     handlebars.register_helper("or", Box::new(or));
-    handlebars.register_template_string("cluster", std::str::from_utf8(cluster_tpl.data.as_ref())?)?;
-    handlebars.register_template_string(
-      "neuron_node_group",
-      std::str::from_utf8(neuron_node_group_tpl.data.as_ref())?,
-    )?;
-    handlebars.register_template_string(
-      "nvidia_node_group",
-      std::str::from_utf8(nvidia_node_group_tpl.data.as_ref())?,
-    )?;
+    handlebars.register_template_string("cluster", from_utf8(cluster_tpl.data.as_ref())?)?;
+    handlebars.register_template_string("variables", from_utf8(variables_tpl.data.as_ref())?)?;
+    handlebars.register_template_string("neuron_node_group", from_utf8(neuron_node_group_tpl.data.as_ref())?)?;
+    handlebars.register_template_string("nvidia_node_group", from_utf8(nvidia_node_group_tpl.data.as_ref())?)?;
 
     let instance_types = &inputs.instances_types;
 
@@ -93,8 +89,13 @@ impl Cli {
       handlebars::to_json(nvidia_node_group_rendered),
     );
 
-    let rendered = handlebars.render("cluster", &data)?;
-    fs::write(Path::new("eks.tf"), rendered)?;
+    if inputs.reservation != crate::inputs::ReservationType::None {
+      let variables_rendered = handlebars.render("variables", &data)?;
+      fs::write(Path::new("variables.tf"), variables_rendered)?;
+    }
+
+    let cluster_rendered = handlebars.render("cluster", &data)?;
+    fs::write(Path::new("eks.tf"), cluster_rendered)?;
 
     Ok(())
   }

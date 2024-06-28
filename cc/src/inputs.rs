@@ -17,7 +17,7 @@ pub struct Inputs {
   pub add_ons: Vec<AddOn>,
   enable_efa: bool,
   accelerator: AcceleratorType,
-  reservation: ReservationType,
+  pub reservation: ReservationType,
   compute_scaling: ComputeScalingType,
   cpu_arch: CpuArch,
   pub instances_types: Vec<String>,
@@ -171,9 +171,12 @@ impl std::fmt::Display for AcceleratorType {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-enum ReservationType {
+pub enum ReservationType {
+  #[serde(rename = "ODCR")]
   OnDemandCapacityReservation,
+  #[serde(rename = "CBR")]
   MlCapacityBlockReservation,
+  #[serde(rename = "None")]
   None,
 }
 

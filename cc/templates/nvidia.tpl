@@ -1,5 +1,5 @@
 gpu = {
-      ami_type       = "{{ inputs.ami_type }}"
+      ami_type = "{{ inputs.ami_type }}"
       instance_types = [
       {{ #each instance_types }}
         "{{ this }}",
@@ -23,9 +23,9 @@ gpu = {
         xvda = {
           device_name = "/dev/xvda"
           ebs = {
-          volume_size           = 256
-          volume_type           = "gp3"
-          delete_on_termination = true
+            volume_size           = 256
+            volume_type           = "gp3"
+            delete_on_termination = true
           }
         }
       }
@@ -49,6 +49,7 @@ gpu = {
           effect = "NO_SCHEDULE"
         }
       }
+      {{ #if (eq inputs.reservation "ODCR") }}
 
       subnet_ids = [element(module.vpc.private_subnets, 0)]
       capacity_reservation_specification = {
@@ -56,4 +57,5 @@ gpu = {
           capacity_reservation_resource_group_arn = aws_resourcegroups_group.odcr.arn
         }
       }
+      {{ /if }}
     }

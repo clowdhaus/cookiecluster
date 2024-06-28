@@ -55,7 +55,7 @@ module "eks" {
   eks_managed_node_groups = {
     # This node group is for core addons such as CoreDNS
     default = {
-      ami_type       = "{{ inputs.ami_type }}"
+      ami_type = "{{ inputs.ami_type }}"
       instance_types = [
       {{ #each instance_types }}
         "{{ this }}",
@@ -139,6 +139,7 @@ module "{{ a.under_name }}_irsa" {
 }
 {{ /if }}
 {{ /each }}
+{{ #if (eq inputs.reservation "ODCR") }}
 
 ################################################################################
 # Resource Group
@@ -163,12 +164,13 @@ resource "aws_resourcegroups_group" "odcr" {
 }
 
 resource "aws_resourcegroups_resource" "odcr" {
-  count = length(var.capacity_reservation_arns)
+  count = length(var.on_demand_capacity_reservation_arns)
 
   group_arn    = aws_resourcegroups_group.odcr.arn
-  resource_arn = element(var.capacity_reservation_arns, count.index)
+  resource_arn = element(var.on_demand_capacity_reservation_arns, count.index)
 }
 
+{{ /if }}
 ################################################################################
 # Tags - Replace with your own tags implementation
 ################################################################################
