@@ -72,10 +72,8 @@ module "eks" {
       desired_size = 2
     }
     gpu = {
-      ami_type = "AL2_x86_64_GPU"
-      instance_types = [
-        "g4dn.12xlarge",
-      ]
+      ami_type       = "AL2_x86_64_GPU"
+      instance_types = ["p5.48xlarge" ]
 
       min_size     = 2
       max_size     = 5
@@ -89,12 +87,12 @@ module "eks" {
         /bin/setup-local-disks raid0
       EOT
 
-      # Default AMI has only 8GB of storage
+      # Expand AMI root volume
       block_device_mappings = {
         xvda = {
           device_name = "/dev/xvda"
           ebs = {
-            volume_size           = 256
+            volume_size           = 24
             volume_type           = "gp3"
             delete_on_termination = true
           }
@@ -121,45 +119,10 @@ module "eks" {
 
       # Capacity reservations are restricted to a single availability zone
       subnet_ids = data.aws_subnets.data_plane_reservation.ids
-
-      capacity_reservation_specification = {
-        capacity_reservation_target = {
-          capacity_reservation_resource_group_arn = aws_resourcegroups_group.odcr.arn
-        }
-      }
     }
   }
 
   tags = module.tags.tags
-}
-
-################################################################################
-# Resource Group
-################################################################################
-
-resource "aws_resourcegroups_group" "odcr" {
-  name        = "example-odcr"
-  description = "On-demand capacity reservations"
-
-  configuration {
-    type = "AWS::EC2::CapacityReservationPool"
-  }
-
-  configuration {
-    type = "AWS::ResourceGroups::Generic"
-
-    parameters {
-      name   = "allowed-resource-types"
-      values = ["AWS::EC2::CapacityReservation"]
-    }
-  }
-}
-
-resource "aws_resourcegroups_resource" "odcr" {
-  count = length(var.on_demand_capacity_reservation_arns)
-
-  group_arn    = aws_resourcegroups_group.odcr.arn
-  resource_arn = element(var.on_demand_capacity_reservation_arns, count.index)
 }
 
 ################################################################################

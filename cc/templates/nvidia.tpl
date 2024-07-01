@@ -1,10 +1,15 @@
 gpu = {
+      {{ #if (or inputs.enable_efa (eq inputs.reservation "ODCR") (eq inputs.reservation "CBR")) }}
+      ami_type       = "{{ inputs.ami_type }}"
+      instance_types = [{{ #each inputs.instance_types }}"{{ this }}" {{ /each }}]
+      {{ else }}
       ami_type = "{{ inputs.ami_type }}"
       instance_types = [
       {{ #each inputs.instance_types }}
         "{{ this }}",
       {{ /each }}
       ]
+      {{ /if }}
 
       min_size     = 2
       max_size     = 5

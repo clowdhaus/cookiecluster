@@ -622,6 +622,13 @@ impl Inputs {
       instance_idxs.push(0);
     }
 
+    // There are two scenarios where only a single instance type should be specified:
+    // 1. EC2 capacity reservation(s)
+    // 2. When using EFA
+    if self.reservation != ReservationType::None || self.enable_efa {
+      instance_idxs = vec![instance_idxs.last().unwrap().to_owned()];
+    }
+
     let instance_types = instance_idxs
       .iter()
       .map(|&i| instance_types[i].to_string())
