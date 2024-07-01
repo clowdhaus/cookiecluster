@@ -145,11 +145,8 @@ module "eks" {
       desired_size = 2
     }
     {{ /if }}
-    {{ #if (eq inputs.accelerator "Neuron") }}
-    {{{ neuron_node_group }}}
-    {{ /if }}
-    {{ #if (eq inputs.accelerator "NVIDIA") }}
-    {{{ nvidia_node_group }}}
+    {{ #if (or (eq inputs.accelerator "Neuron") (eq inputs.accelerator "NVIDIA")) }}
+    {{{ accelerated_mng }}}
     {{ /if }}
   }
 

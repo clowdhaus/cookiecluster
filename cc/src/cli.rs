@@ -56,8 +56,7 @@ impl Cli {
   pub fn write(self, inputs: crate::Inputs) -> Result<()> {
     let cluster_tpl = crate::Templates::get("cluster.tpl").unwrap();
     let variables_tpl = crate::Templates::get("variables.tpl").unwrap();
-    let neuron_node_group_tpl = crate::Templates::get("neuron.tpl").unwrap();
-    let nvidia_node_group_tpl = crate::Templates::get("nvidia.tpl").unwrap();
+    let accelerated_mng_tpl = crate::Templates::get("accel-mng.tpl").unwrap();
 
     handlebars_helper!(eq: |v1: Value, v2: Value| v1 == v2);
     handlebars_helper!(and: |v1: bool, v2: bool| v1 && v2 );
@@ -69,23 +68,17 @@ impl Cli {
     handlebars.register_helper("or", Box::new(or));
     handlebars.register_template_string("cluster", from_utf8(cluster_tpl.data.as_ref())?)?;
     handlebars.register_template_string("variables", from_utf8(variables_tpl.data.as_ref())?)?;
-    handlebars.register_template_string("neuron_node_group", from_utf8(neuron_node_group_tpl.data.as_ref())?)?;
-    handlebars.register_template_string("nvidia_node_group", from_utf8(nvidia_node_group_tpl.data.as_ref())?)?;
+    handlebars.register_template_string("accelerated_mng", from_utf8(accelerated_mng_tpl.data.as_ref())?)?;
 
     let mut data = Map::new();
     // Handlebars prefers json/maps instead of nested rust data types
     data.insert("add_ons".to_string(), handlebars::to_json(&inputs.add_ons));
     data.insert("inputs".to_string(), handlebars::to_json(&inputs));
 
-    let neuron_node_group_rendered = handlebars.render("neuron_node_group", &data)?;
+    let accelerated_mng_rendered = handlebars.render("accelerated_mng", &data)?;
     data.insert(
-      "neuron_node_group".to_string(),
-      handlebars::to_json(neuron_node_group_rendered),
-    );
-    let nvidia_node_group_rendered = handlebars.render("nvidia_node_group", &data)?;
-    data.insert(
-      "nvidia_node_group".to_string(),
-      handlebars::to_json(nvidia_node_group_rendered),
+      "accelerated_mng".to_string(),
+      handlebars::to_json(accelerated_mng_rendered),
     );
 
     if inputs.reservation != crate::inputs::ReservationType::None {
