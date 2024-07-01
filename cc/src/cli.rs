@@ -41,7 +41,7 @@ pub struct Cli {
 }
 
 impl Cli {
-  pub fn write(self, inputs: crate::Inputs) -> Result<()> {
+  fn render(self, inputs: crate::inputs::Inputs) -> Result<String> {
     let cluster_tpl = crate::Templates::get("cluster.tpl").unwrap();
     let accelerated_mng_tpl = crate::Templates::get("accel-mng.tpl").unwrap();
 
@@ -68,8 +68,12 @@ impl Cli {
     );
 
     let cluster_rendered = handlebars.render("cluster", &data)?;
-    fs::write(Path::new("eks.tf"), cluster_rendered)?;
 
-    Ok(())
+    Ok(cluster_rendered)
+  }
+
+  pub fn write(self, inputs: crate::inputs::Inputs) -> Result<()> {
+    let cluster_rendered = self.render(inputs)?;
+    fs::write(Path::new("eks.tf"), cluster_rendered).map_err(Into::into)
   }
 }
