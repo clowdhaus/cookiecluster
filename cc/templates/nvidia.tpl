@@ -49,9 +49,13 @@ gpu = {
           effect = "NO_SCHEDULE"
         }
       }
+      {{ #if (or (eq inputs.reservation "ODCR") (eq inputs.reservation "CBR")) }}
+
+      # Capacity reservations are restricted to a single availability zone
+      subnet_ids = data.aws_subnets.data_plane_reservation.ids
+      {{ /if }}
       {{ #if (eq inputs.reservation "ODCR") }}
 
-      subnet_ids = [element(module.vpc.private_subnets, 0)]
       capacity_reservation_specification = {
         capacity_reservation_target = {
           capacity_reservation_resource_group_arn = aws_resourcegroups_group.odcr.arn

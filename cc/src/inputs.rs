@@ -16,8 +16,10 @@ pub struct Inputs {
   cluster_endpoint_public_access: bool,
   cluster_name: String,
   cluster_version: ClusterVersion,
+  control_plane_subnet_filter: String,
   pub compute_scaling: ComputeScalingType,
   cpu_arch: CpuArch,
+  data_plane_subnet_filter: String,
   /// AMI type used on default node group when secondary node group (accelerated, Windows, etc) is used
   default_ami_type: AmiType,
   /// Instance types used on default node group when secondary node group (accelerated, Windows, etc) is used
@@ -26,6 +28,8 @@ pub struct Inputs {
   enable_efa: bool,
   instance_types: Vec<String>,
   pub reservation: ReservationType,
+  reservation_availability_zone: String,
+  vpc_name: String,
 }
 
 impl Default for Inputs {
@@ -37,14 +41,18 @@ impl Default for Inputs {
       cluster_endpoint_public_access: false,
       cluster_name: String::from("example"),
       cluster_version: ClusterVersion::K130,
+      control_plane_subnet_filter: String::from("*-private-*"),
       compute_scaling: ComputeScalingType::None,
       cpu_arch: CpuArch::X8664,
+      data_plane_subnet_filter: String::from("*-private-*"),
       default_ami_type: AmiType::Al2023X8664Standard,
       default_instance_types: vec![],
       enable_cluster_creator_admin_permissions: false,
       enable_efa: false,
       instance_types: vec![],
       reservation: ReservationType::None,
+      reservation_availability_zone: String::from("us-west-2a"),
+      vpc_name: String::from("example"),
     }
   }
 }
@@ -318,6 +326,7 @@ impl Inputs {
       .collect_enable_efa()?
       .collect_reservation_type()?
       .collect_compute_scaling_type()?
+      .collect_networking_settings()?
       .collect_cpu_arch()?
       .collect_ami_type()?
       .collect_instance_types()?
@@ -469,6 +478,32 @@ impl Inputs {
       .interact()?;
 
     self.compute_scaling = ComputeScalingType::from(items[compute_scaling_idx]);
+
+    Ok(self)
+  }
+
+  fn collect_networking_settings(mut self) -> Result<Inputs> {
+    self.vpc_name = Input::with_theme(&ColorfulTheme::default())
+      .with_prompt("VPC name")
+      .with_initial_text("example".to_string())
+      .interact_text()?;
+
+    self.control_plane_subnet_filter = Input::with_theme(&ColorfulTheme::default())
+      .with_prompt("Control plane subnet filter")
+      .with_initial_text("*-private-*".to_string())
+      .interact_text()?;
+
+    self.data_plane_subnet_filter = Input::with_theme(&ColorfulTheme::default())
+      .with_prompt("Data plane subnet filter")
+      .with_initial_text("*-private-*".to_string())
+      .interact_text()?;
+
+    if self.reservation != ReservationType::None {
+      self.reservation_availability_zone = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("EC2 capacity reservation availability zone")
+        .with_initial_text("us-west-2a".to_string())
+        .interact_text()?;
+    }
 
     Ok(self)
   }

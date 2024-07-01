@@ -1,16 +1,36 @@
-# data "aws_subnets" "control_plane" {
-#   filter {
-#     name   = "vpc-id"
-#     values = [var.vpc_id]
-#   }
-# }
+data "aws_vpc" "this" {
+  filter {
+    name   = "tag:Name"
+    values = ["example"]
+  }
+}
 
-# data "aws_subnets" "data_plane" {
-#   filter {
-#     name   = "vpc-id"
-#     values = [var.vpc_id]
-#   }
-# }
+data "aws_subnets" "control_plane" {
+  filter {
+    name   = "tag:Name"
+    values = ["*-private-*"]
+  }
+}
+
+data "aws_subnets" "data_plane" {
+  filter {
+    name   = "tag:Name"
+    values = ["*-private-*"]
+  }
+}
+
+data "aws_subnets" "data_plane_reservation" {
+  filter {
+    name   = "tag:Name"
+    values = ["*-private-*"]
+  }
+
+  # Capacity reservations are restricted to a single availability zone
+  filter {
+    name = "availability-zone"
+    values = ["us-west-2a"]
+  }
+}
 
 ################################################################################
 # EKS Cluster
@@ -24,29 +44,23 @@ module "eks" {
   cluster_version = "1.30"
 
   cluster_addons = {
-    coredns = {
-      configuration_values = jsonencode({
-        tolerations = [
-          # Allow CoreDNS to run on the same nodes as the Karpenter controller
-          # for use during cluster creation when Karpenter nodes do not yet exist
-          {
-            key    = "karpenter.sh/controller"
-            value  = "true"
-            effect = "NoSchedule"
-          }
-        ]
-      })
-    }
+    coredns =  {}
     kube-proxy =  {}
     vpc-cni =  {}
     eks-pod-identity-agent =  {}
   }
 
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnets
+  # Add security group rules on the node group security group to
+  # allow EFA traffic
+  enable_efa_support = true
+
+  vpc_id                   = data.aws_vpc.this.id
+  control_plane_subnet_ids = data.aws_subnets.control_plane.ids
+  subnet_ids               = data.aws_subnets.data_plane.ids
 
   eks_managed_node_groups = {
-    karpenter = {
+    # This node group is for core addons such as CoreDNS
+    default = {
       ami_type = "AL2023_x86_64_STANDARD"
       instance_types = [
         "m7a.xlarge",
@@ -56,48 +70,96 @@ module "eks" {
       min_size     = 2
       max_size     = 3
       desired_size = 2
+    }
+    gpu = {
+      ami_type = "AL2_x86_64_GPU"
+      instance_types = [
+        "g4dn.12xlarge",
+      ]
+
+      min_size     = 2
+      max_size     = 5
+      desired_size = 2
+
+      pre_bootstrap_user_data = <<-EOT
+        #!/usr/bin/env bash
+
+        # Mount instance store volumes in RAID-0 for Kubelet and Containerd (raid0)
+        # https://github.com/awslabs/amazon-eks-ami/blob/master/doc/USER_GUIDE.md#raid-0-for-kubelet-and-containerd-raid0
+        /bin/setup-local-disks raid0
+      EOT
+
+      # Default AMI has only 8GB of storage
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+            volume_size           = 256
+            volume_type           = "gp3"
+            delete_on_termination = true
+          }
+        }
+      }
+
+      # Add security group rules on the node group security group to
+      # allow EFA traffic
+      enable_efa_support = true
 
       labels = {
-        # Used to ensure Karpenter runs on nodes that it does not manage
-        "karpenter.sh/controller" = "true"
+        "vpc.amazonaws.com/efa.present" = "true"
+        "nvidia.com/gpu.present"        = "true"
       }
 
       taints = {
-        # The pods that do not tolerate this taint should run on nodes
-        # created by Karpenter
-        karpenter = {
-          key    = "karpenter.sh/controller"
+        # Ensure only GPU workloads are scheduled on this node group
+        gpu = {
+          key    = "nvidia.com/gpu"
           value  = "true"
           effect = "NO_SCHEDULE"
+        }
+      }
+
+      # Capacity reservations are restricted to a single availability zone
+      subnet_ids = data.aws_subnets.data_plane_reservation.ids
+
+      capacity_reservation_specification = {
+        capacity_reservation_target = {
+          capacity_reservation_resource_group_arn = aws_resourcegroups_group.odcr.arn
         }
       }
     }
   }
 
-  tags = merge(module.tags.tags, {
-    # NOTE - if creating multiple security groups with this module, only tag the
-    # security group that Karpenter should utilize with the following tag
-    # (i.e. - at most, only one security group should have this tag in your account)
-    "karpenter.sh/discovery" = example
-  })
+  tags = module.tags.tags
 }
 
 ################################################################################
-# Controller & Node IAM roles, SQS Queue, Eventbridge Rules
+# Resource Group
 ################################################################################
 
-module "karpenter" {
-  source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 20.0"
+resource "aws_resourcegroups_group" "odcr" {
+  name        = "example-odcr"
+  description = "On-demand capacity reservations"
 
-  cluster_name = module.eks.cluster_name
+  configuration {
+    type = "AWS::EC2::CapacityReservationPool"
+  }
 
-  # Name needs to match role name passed to the EC2NodeClass
-  node_iam_role_use_name_prefix   = false
-  node_iam_role_name              = "example-karpenter-node"
-  create_pod_identity_association = true
+  configuration {
+    type = "AWS::ResourceGroups::Generic"
 
-  tags = module.tags.tags
+    parameters {
+      name   = "allowed-resource-types"
+      values = ["AWS::EC2::CapacityReservation"]
+    }
+  }
+}
+
+resource "aws_resourcegroups_resource" "odcr" {
+  count = length(var.on_demand_capacity_reservation_arns)
+
+  group_arn    = aws_resourcegroups_group.odcr.arn
+  resource_arn = element(var.on_demand_capacity_reservation_arns, count.index)
 }
 
 ################################################################################

@@ -1,16 +1,38 @@
-# data "aws_subnets" "control_plane" {
-#   filter {
-#     name   = "vpc-id"
-#     values = [var.vpc_id]
-#   }
-# }
+data "aws_vpc" "this" {
+  filter {
+    name   = "tag:Name"
+    values = ["{{ inputs.vpc_name }}"]
+  }
+}
 
-# data "aws_subnets" "data_plane" {
-#   filter {
-#     name   = "vpc-id"
-#     values = [var.vpc_id]
-#   }
-# }
+data "aws_subnets" "control_plane" {
+  filter {
+    name   = "tag:Name"
+    values = ["{{ inputs.control_plane_subnet_filter }}"]
+  }
+}
+
+data "aws_subnets" "data_plane" {
+  filter {
+    name   = "tag:Name"
+    values = ["{{ inputs.data_plane_subnet_filter }}"]
+  }
+}
+{{ #if (or (eq inputs.reservation "ODCR") (eq inputs.reservation "CBR")) }}
+
+data "aws_subnets" "data_plane_reservation" {
+  filter {
+    name   = "tag:Name"
+    values = ["{{ inputs.data_plane_subnet_filter }}"]
+  }
+
+  # Capacity reservations are restricted to a single availability zone
+  filter {
+    name = "availability-zone"
+    values = ["{{ inputs.reservation_availability_zone }}"]
+  }
+}
+{{ /if }}
 
 ################################################################################
 # EKS Cluster
@@ -62,8 +84,9 @@ module "eks" {
   enable_efa_support = true
   {{ /if }}
 
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnets
+  vpc_id                   = data.aws_vpc.this.id
+  control_plane_subnet_ids = data.aws_subnets.control_plane.ids
+  subnet_ids               = data.aws_subnets.data_plane.ids
 
   eks_managed_node_groups = {
     {{ #if (or (eq inputs.accelerator "Neuron") (eq inputs.accelerator "NVIDIA")) }}
