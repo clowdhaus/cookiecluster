@@ -2,7 +2,7 @@ use std::{fs, path::Path, str::from_utf8};
 
 use anstyle::{AnsiColor, Color, Style};
 use anyhow::Result;
-use clap::{builder::Styles, Parser, ValueEnum};
+use clap::{builder::Styles, Parser};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use handlebars::{handlebars_helper, Handlebars};
 use serde_json::{value::Map, Value};
@@ -26,30 +26,18 @@ fn get_styles() -> Styles {
     .placeholder(Style::new().bold().fg_color(Some(Color::Ansi(AnsiColor::Magenta))))
 }
 
+/// Cookiecluster - A CLI to generate EKS cluster definitions in Terraform.
+///
+/// Based on a few inputs, cookiecluster will guide you through the process of designing a cluster that fits your
+/// requirements using the appropriate values. It does not require any AWS credentials; it is merely a glorified
+/// templating engine for EKS clusters defined in Terraform.
 #[derive(Debug, Parser)]
 #[command(author, about, version)]
 #[command(propagate_version = true)]
 #[command(styles=get_styles())]
 pub struct Cli {
-  /// The template to use
-  #[arg(short, long, value_enum, default_value_t)]
-  tmpl: Tmpl,
-
   #[clap(flatten)]
   pub verbose: Verbosity<InfoLevel>,
-}
-
-#[derive(Debug, Clone, ValueEnum)]
-enum Tmpl {
-  Standard,
-  Hpc,
-  Ml,
-}
-
-impl Default for Tmpl {
-  fn default() -> Self {
-    Self::Standard
-  }
 }
 
 impl Cli {
