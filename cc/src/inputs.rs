@@ -26,8 +26,9 @@ pub struct Inputs {
   default_instance_types: Vec<String>,
   enable_cluster_creator_admin_permissions: bool,
   enable_efa: bool,
+  instance_storage_supported: bool,
   instance_types: Vec<String>,
-  pub reservation: ReservationType,
+  reservation: ReservationType,
   reservation_availability_zone: String,
   vpc_name: String,
 }
@@ -49,6 +50,7 @@ impl Default for Inputs {
       default_instance_types: vec![],
       enable_cluster_creator_admin_permissions: false,
       enable_efa: false,
+      instance_storage_supported: false,
       instance_types: vec![],
       reservation: ReservationType::None,
       reservation_availability_zone: String::from("us-west-2a"),
@@ -294,7 +296,7 @@ impl fmt::Display for CpuArch {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReservationType {
+enum ReservationType {
   #[serde(rename = "ODCR")]
   OnDemandCapacityReservation,
   #[serde(rename = "CBR")]
@@ -330,6 +332,7 @@ impl Inputs {
       .collect_cpu_arch()?
       .collect_ami_type()?
       .collect_instance_types()?
+      .collect_storage_settings()?
       .collect_default_node_group_settings()?;
 
     Ok(inputs)
@@ -639,6 +642,26 @@ impl Inputs {
     }
 
     self.instance_types = instance_types;
+
+    Ok(self)
+  }
+
+  fn collect_storage_settings(mut self) -> Result<Inputs> {
+    let instance_types_support = INSTANCE_TYPES
+      .iter()
+      .filter(|instance| self.instance_types.contains(&instance.instance_type.to_string()))
+      .map(|instance| instance.instance_storage_supported)
+      .all(|f| f);
+
+    let instance_storage_supported = match self.ami_type {
+      AmiType::Al2023Arm64Standard
+      | AmiType::Al2023X8664Standard
+      | AmiType::Al2Arm64
+      | AmiType::Al2X8664
+      | AmiType::Al2X8664Gpu => instance_types_support,
+      _ => false,
+    };
+    self.instance_storage_supported = instance_storage_supported;
 
     Ok(self)
   }

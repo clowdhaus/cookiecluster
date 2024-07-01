@@ -19,6 +19,7 @@ neuron = {
       min_size     = 2
       max_size     = 5
       desired_size = 2
+      {{ #if inputs.instance_storage_supported }}
 
       pre_bootstrap_user_data = <<-EOT
         #!/usr/bin/env bash
@@ -27,8 +28,9 @@ neuron = {
         # https://github.com/awslabs/amazon-eks-ami/blob/master/doc/USER_GUIDE.md#raid-0-for-kubelet-and-containerd-raid0
         /bin/setup-local-disks raid0
       EOT
+      {{ else }}
 
-      # Default AMI has only 8GB of storage
+      # Increase root EBS volume size (default is 8Gb)
       block_device_mappings = {
         xvda = {
           device_name = "/dev/xvda"
@@ -39,6 +41,7 @@ neuron = {
           }
         }
       }
+      {{ /if }}
       {{ #if inputs.enable_efa}}
 
       # Add security group rules on the node group security group to

@@ -71,9 +71,9 @@ module "eks" {
       max_size     = 3
       desired_size = 2
     }
-    neuron = {
+    gpu = {
       ami_type       = "AL2_x86_64_GPU"
-      instance_types = ["inf1.24xlarge" ]
+      instance_types = ["p5.48xlarge" ]
 
       min_size     = 2
       max_size     = 5
@@ -87,31 +87,19 @@ module "eks" {
         /bin/setup-local-disks raid0
       EOT
 
-      # Default AMI has only 8GB of storage
-      block_device_mappings = {
-        xvda = {
-          device_name = "/dev/xvda"
-          ebs = {
-            volume_size           = 256
-            volume_type           = "gp3"
-            delete_on_termination = true
-          }
-        }
-      }
-
       # Add security group rules on the node group security group to
       # allow EFA traffic
       enable_efa_support = true
 
       labels = {
         "vpc.amazonaws.com/efa.present" = "true"
-        "aws.amazon.com/neuron.present" = "true"
+        "nvidia.com/gpu.present"        = "true"
       }
 
       taints = {
-        # Ensure only Neuron workloads are scheduled on this node group
-        neuron = {
-          key    = "aws.amazon.com/neuron"
+        # Ensure only GPU workloads are scheduled on this node group
+        gpu = {
+          key    = "nvidia.com/gpu"
           value  = "true"
           effect = "NO_SCHEDULE"
         }
@@ -171,4 +159,14 @@ module "tags" {
   application = "cookiecluster"
   environment = "nonprod"
   repository  = "github.com/clowdhaus/cookiecluster"
+}
+
+################################################################################
+# Variables - Required input
+################################################################################
+
+variable "on_demand_capacity_reservation_arns" {
+  description = "List of the on-demand capacity reservations ARNs to associate with the node group"
+  type        = list(string)
+  default     = []
 }

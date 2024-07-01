@@ -143,6 +143,49 @@ module "eks" {
       min_size     = 2
       max_size     = 3
       desired_size = 2
+      {{ #if inputs.instance_storage_supported }}
+      {{ #if (or (eq inputs.ami_type "AL2_ARM_64") (eq inputs.ami_type "AL2_x86_64")) }}
+
+      pre_bootstrap_user_data = <<-EOT
+        #!/usr/bin/env bash
+
+        # Mount instance store volumes in RAID-0 for Kubelet and Containerd (raid0)
+        # https://github.com/awslabs/amazon-eks-ami/blob/master/doc/USER_GUIDE.md#raid-0-for-kubelet-and-containerd-raid0
+        /bin/setup-local-disks raid0
+      EOT
+      {{ /if }}
+      {{ #if (or (eq inputs.ami_type "AL2023_ARM_64_STANDARD") (eq inputs.ami_type "AL2023_x86_64_STANDARD")) }}
+
+      cloudinit_pre_nodeadm = [
+        {
+          content_type = "application/node.eks.aws"
+          content      = <<-EOT
+            ---
+            apiVersion: node.eks.aws/v1alpha1
+            kind: NodeConfig
+            spec:
+              instance:
+                localStorage:
+                  strategy: RAID0
+          EOT
+        }
+      ]
+      {{ /if }}
+      {{ else }}
+      {{ #if (or (eq inputs.ami_type "AL2_ARM_64") (eq inputs.ami_type "AL2_x86_64") (eq inputs.ami_type "AL2023_ARM_64_STANDARD") (eq inputs.ami_type "AL2023_x86_64_STANDARD")) }}
+      # Increase root EBS volume size
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+            volume_size           = 24
+            volume_type           = "gp3"
+            delete_on_termination = true
+          }
+        }
+      }
+      {{ /if }}
+      {{ /if }}
     }
     {{ /if }}
     {{ #if (or (eq inputs.accelerator "Neuron") (eq inputs.accelerator "NVIDIA")) }}
@@ -288,3 +331,15 @@ module "tags" {
   environment = "nonprod"
   repository  = "github.com/clowdhaus/cookiecluster"
 }
+{{ #if (eq inputs.reservation "ODCR") }}
+
+################################################################################
+# Variables - Required input
+################################################################################
+
+variable "on_demand_capacity_reservation_arns" {
+  description = "List of the on-demand capacity reservations ARNs to associate with the node group"
+  type        = list(string)
+  default     = []
+}
+{{ /if }}
