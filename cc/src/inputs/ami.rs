@@ -44,42 +44,31 @@ impl AmiType {
     cpu_arch: &'a CpuArch,
   ) -> Result<Vec<&'a str>> {
     let ami_types = match accelerator {
-      AcceleratorType::Nvidia => {
-        if enable_efa {
-          vec!["AL2_x86_64_GPU", "CUSTOM"]
-        } else {
-          match cpu_arch {
-            CpuArch::Arm64 => vec!["BOTTLEROCKET_ARM_64_NVIDIA", "CUSTOM"],
-            _ => vec!["AL2_x86_64_GPU", "BOTTLEROCKET_x86_64_NVIDIA", "CUSTOM"],
-          }
-        }
-      }
-      AcceleratorType::Neuron => {
-        vec!["AL2_x86_64_GPU", "CUSTOM"]
-      }
-      _ => match cpu_arch {
-        CpuArch::Arm64 => {
-          vec![
-            "AL2023_ARM_64_STANDARD",
-            "AL2_ARM_64",
-            "BOTTLEROCKET_ARM_64",
-            "BOTTLEROCKET_ARM_64_NVIDIA",
-            "CUSTOM",
-          ]
-        }
-        _ => {
-          vec![
-            "AL2023_x86_64_STANDARD",
-            "AL2_x86_64",
-            "BOTTLEROCKET_x86_64",
-            "BOTTLEROCKET_x86_64_NVIDIA",
-            "WINDOWS_CORE_2019_x86_64",
-            "WINDOWS_CORE_2022_x86_64",
-            "WINDOWS_FULL_2019_x86_64",
-            "WINDOWS_FULL_2022_x86_64",
-            "CUSTOM",
-          ]
-        }
+      AcceleratorType::Nvidia => match (cpu_arch, enable_efa) {
+        (CpuArch::X8664, true) => vec!["AL2_x86_64_GPU"],
+        (CpuArch::X8664, false) => vec!["AL2_x86_64_GPU", "BOTTLEROCKET_x86_64_NVIDIA"],
+        (CpuArch::Arm64, true) => vec![],
+        (CpuArch::Arm64, false) => vec!["BOTTLEROCKET_ARM_64_NVIDIA"],
+      },
+      AcceleratorType::Neuron => match (cpu_arch, enable_efa) {
+        (CpuArch::X8664, true) => vec!["AL2_x86_64_GPU"],
+        (CpuArch::X8664, false) => vec!["AL2_x86_64_GPU"],
+        (CpuArch::Arm64, true) => vec![],
+        (CpuArch::Arm64, false) => vec![],
+      },
+      _ => match (cpu_arch, enable_efa) {
+        (CpuArch::X8664, true) => vec!["AL2_x86_64_GPU"],
+        (CpuArch::X8664, false) => vec![
+          "AL2023_x86_64_STANDARD",
+          "AL2_x86_64",
+          "BOTTLEROCKET_x86_64",
+          "WINDOWS_CORE_2019_x86_64",
+          "WINDOWS_CORE_2022_x86_64",
+          "WINDOWS_FULL_2019_x86_64",
+          "WINDOWS_FULL_2022_x86_64",
+        ],
+        (CpuArch::Arm64, true) => vec![],
+        (CpuArch::Arm64, false) => vec!["AL2023_ARM_64_STANDARD", "AL2_ARM_64", "BOTTLEROCKET_ARM_64"],
       },
     };
 
@@ -129,17 +118,16 @@ impl std::convert::From<&str> for AmiType {
   }
 }
 
-/// Get the default AMI type equivalent based on the accelerator type, AMI type, and CPU architecture
-pub fn get_default_ami_type(accelerator: &AcceleratorType, ami_type: &AmiType, cpu_arch: &CpuArch) -> AmiType {
-  match accelerator {
-    AcceleratorType::Nvidia | AcceleratorType::Neuron => match ami_type {
-      AmiType::Al2X8664Gpu => AmiType::Al2023X8664Standard,
-      AmiType::BottlerocketX8664Nvidia | AmiType::BottlerocketArm64Nvidia => AmiType::BottlerocketX8664,
-      _ => AmiType::Al2023X8664Standard,
-    },
+/// Get the default AMI type equivalent based on the AMI type, and CPU architecture
+pub fn get_default_ami_type(ami_type: &AmiType, cpu_arch: &CpuArch) -> AmiType {
+  match ami_type {
+    AmiType::Al2X8664 | AmiType::Al2X8664Gpu => AmiType::Al2X8664,
+    AmiType::Al2Arm64 => AmiType::Al2Arm64,
+    AmiType::BottlerocketX8664Nvidia | AmiType::BottlerocketX8664 => AmiType::BottlerocketX8664,
+    AmiType::BottlerocketArm64Nvidia | AmiType::BottlerocketArm64 => AmiType::BottlerocketArm64,
     _ => match cpu_arch {
       CpuArch::X8664 => AmiType::Al2023X8664Standard,
-      CpuArch::Arm64 => AmiType::Al2023X8664Standard,
+      CpuArch::Arm64 => AmiType::Al2023Arm64Standard,
     },
   }
 }
@@ -147,14 +135,51 @@ pub fn get_default_ami_type(accelerator: &AcceleratorType, ami_type: &AmiType, c
 #[cfg(test)]
 mod tests {
 
+  use rstest::*;
+
   use super::*;
 
-  #[test]
-  fn test_ami_type_from_str() {
-    let ami_type = AmiType::from("AL2_x86_64");
-    assert_eq!(ami_type, AmiType::Al2X8664);
+  #[rstest]
+  #[case(AcceleratorType::Nvidia, false, CpuArch::X8664, vec!["AL2_x86_64_GPU", "BOTTLEROCKET_x86_64_NVIDIA"])]
+  #[case(AcceleratorType::Nvidia, false, CpuArch::Arm64, vec!["BOTTLEROCKET_ARM_64_NVIDIA"])]
+  #[case(AcceleratorType::Nvidia, true, CpuArch::X8664, vec!["AL2_x86_64_GPU"])]
+  #[case(AcceleratorType::Nvidia, true, CpuArch::Arm64, vec![])]
+  #[case(AcceleratorType::Neuron, false, CpuArch::X8664, vec!["AL2_x86_64_GPU"])]
+  #[case(AcceleratorType::Neuron, false, CpuArch::Arm64, vec![])]
+  #[case(AcceleratorType::Neuron, true, CpuArch::X8664, vec!["AL2_x86_64_GPU"])]
+  #[case(AcceleratorType::Neuron, true, CpuArch::Arm64, vec![])]
+  #[case(AcceleratorType::None, false, CpuArch::X8664, vec![
+    "AL2023_x86_64_STANDARD",
+    "AL2_x86_64",
+    "BOTTLEROCKET_x86_64",
+    "WINDOWS_CORE_2019_x86_64",
+    "WINDOWS_CORE_2022_x86_64",
+    "WINDOWS_FULL_2019_x86_64",
+    "WINDOWS_FULL_2022_x86_64",
+  ])]
+  #[case(AcceleratorType::None, false, CpuArch::Arm64, vec!["AL2023_ARM_64_STANDARD", "AL2_ARM_64", "BOTTLEROCKET_ARM_64"])]
+  #[case(AcceleratorType::None, true, CpuArch::X8664, vec!["AL2_x86_64_GPU"])]
+  #[case(AcceleratorType::None, true, CpuArch::Arm64, vec![])]
+  fn test_get_ami_types(
+    #[case] accelerator: AcceleratorType,
+    #[case] enable_efa: bool,
+    #[case] cpu_arch: CpuArch,
+    #[case] expected: Vec<&str>,
+  ) {
+    let ami_types = AmiType::get_ami_types(&accelerator, enable_efa, &cpu_arch).unwrap();
+    assert_eq!(ami_types, expected);
+  }
 
-    let ami_type = AmiType::from("DOES_NOT_EXIST");
-    assert_eq!(ami_type, AmiType::Custom);
+  #[rstest]
+  #[case(AmiType::Al2X8664Gpu, CpuArch::X8664, AmiType::Al2X8664)]
+  #[case(AmiType::Al2X8664, CpuArch::X8664, AmiType::Al2X8664)]
+  #[case(AmiType::Al2Arm64, CpuArch::Arm64, AmiType::Al2Arm64)]
+  #[case(AmiType::BottlerocketX8664Nvidia, CpuArch::X8664, AmiType::BottlerocketX8664)]
+  #[case(AmiType::BottlerocketArm64Nvidia, CpuArch::Arm64, AmiType::BottlerocketArm64)]
+  #[case(AmiType::WindowsCore2019X8664, CpuArch::X8664, AmiType::Al2023X8664Standard)]
+  #[case(AmiType::BottlerocketArm64, CpuArch::Arm64, AmiType::BottlerocketArm64)]
+  fn test_get_default_ami_type(#[case] ami_type: AmiType, #[case] cpu_arch: CpuArch, #[case] expected: AmiType) {
+    let default_ami_type = get_default_ami_type(&ami_type, &cpu_arch);
+    assert_eq!(default_ami_type, expected);
   }
 }

@@ -31,3 +31,8 @@ strum_macros = "0.26"
 tracing.workspace = true
 tracing-log.workspace = true
 tracing-subscriber.workspace = true
+
+
+[dev-dependencies]
+insta = "1.29"
+rstest = "0.21"

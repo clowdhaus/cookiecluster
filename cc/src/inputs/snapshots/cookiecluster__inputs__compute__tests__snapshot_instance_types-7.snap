@@ -1,0 +1,24 @@
+---
+source: cc/src/inputs/compute.rs
+expression: nvidia_cbr_reservation
+---
+{
+    "p4d.24xlarge": InstanceInfo {
+        instance_type: "p4d.24xlarge",
+        instance_storage_supported: true,
+        efa_supported: true,
+        nvidia_gpu_supported: true,
+        neuron_supported: false,
+        cbr_supported: true,
+        cpu_arch: "x86-64",
+    },
+    "p5.48xlarge": InstanceInfo {
+        instance_type: "p5.48xlarge",
+        instance_storage_supported: true,
+        efa_supported: true,
+        nvidia_gpu_supported: true,
+        neuron_supported: false,
+        cbr_supported: true,
+        cpu_arch: "x86-64",
+    },
+}

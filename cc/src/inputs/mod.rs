@@ -303,7 +303,7 @@ impl Inputs {
   }
 
   fn collect_default_node_group_settings(mut self) -> Result<Inputs> {
-    self.default_ami_type = ami::get_default_ami_type(&self.accelerator, &self.ami_type, &self.cpu_arch);
+    self.default_ami_type = ami::get_default_ami_type(&self.ami_type, &self.cpu_arch);
 
     // Based on the default AMI type selected, set the default instance type(s) for the default node group
     self.default_instance_types = match self.default_ami_type {

@@ -104,3 +104,27 @@ impl std::convert::From<&str> for AddOnType {
     }
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use rstest::*;
+
+  use super::*;
+
+  #[rstest]
+  #[case(AddOnType::CoreDns, None)]
+  #[case(AddOnType::KubeProxy, None)]
+  #[case(AddOnType::VpcCni, None)]
+  #[case(AddOnType::EksPodIdentityAgent, None)]
+  #[case(AddOnType::AwsEbsCsiDriver, Some("module.aws_ebs_csi_driver_irsa.iam_role_arn".to_string()))]
+  #[case(AddOnType::AwsEfsCsiDriver, Some("module.aws_efs_csi_driver_irsa.iam_role_arn".to_string()))]
+  #[case(AddOnType::AwsMountpointS3CsiDriver, Some("module.aws_mountpoint_s3_csi_driver_irsa.iam_role_arn".to_string()))]
+  #[case(AddOnType::SnapshotController, None)]
+  #[case(AddOnType::Adot, None)]
+  #[case(AddOnType::AwsGuarddutyAgent, None)]
+  #[case(AddOnType::AmazonCloudwatchObservability, Some("module.amazon_cloudwatch_observability_irsa.iam_role_arn".to_string()))]
+  fn test_get_add_on_configuration(#[case] aot: AddOnType, #[case] expected: Option<String>) {
+    let add_on = get_add_on_configuration(&aot.to_string()).unwrap();
+    assert_eq!(add_on.configuration.service_account_role_arn, expected);
+  }
+}
