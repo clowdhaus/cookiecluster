@@ -129,6 +129,21 @@ impl std::convert::From<&str> for AmiType {
   }
 }
 
+/// Get the default AMI type equivalent based on the accelerator type, AMI type, and CPU architecture
+pub fn get_default_ami_type(accelerator: &AcceleratorType, ami_type: &AmiType, cpu_arch: &CpuArch) -> AmiType {
+  match accelerator {
+    AcceleratorType::Nvidia | AcceleratorType::Neuron => match ami_type {
+      AmiType::Al2X8664Gpu => AmiType::Al2023X8664Standard,
+      AmiType::BottlerocketX8664Nvidia | AmiType::BottlerocketArm64Nvidia => AmiType::BottlerocketX8664,
+      _ => AmiType::Al2023X8664Standard,
+    },
+    _ => match cpu_arch {
+      CpuArch::X8664 => AmiType::Al2023X8664Standard,
+      CpuArch::Arm64 => AmiType::Al2023X8664Standard,
+    },
+  }
+}
+
 #[cfg(test)]
 mod tests {
 

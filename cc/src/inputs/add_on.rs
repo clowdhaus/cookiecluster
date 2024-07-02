@@ -1,6 +1,8 @@
 use std::fmt;
 
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
 #[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
@@ -24,6 +26,41 @@ pub struct AddOn {
   pub name: String,
   pub under_name: String,
   pub configuration: AddOnConfiguration,
+}
+
+/// Get all available add-ons
+pub fn get_add_ons() -> Result<Vec<String>> {
+  Ok(AddOnType::iter().map(|v| v.to_string()).collect::<Vec<_>>())
+}
+
+/// For a given add-on, return (required) configuration
+pub fn get_add_on_configuration(name: &str) -> Result<AddOn> {
+  let add_on_type = AddOnType::from(name);
+  let add_on = match add_on_type {
+    // Not adding vpc-cni since it still requires permissions on node IAM role to start
+    AddOnType::AwsEbsCsiDriver
+    | AddOnType::AwsEfsCsiDriver
+    | AddOnType::AwsMountpointS3CsiDriver
+    | AddOnType::AmazonCloudwatchObservability => {
+      let under_name = add_on_type.to_string().replace('-', "_");
+      AddOn {
+        name: add_on_type.to_string(),
+        under_name: under_name.to_string(),
+        configuration: AddOnConfiguration {
+          service_account_role_arn: Some(format!("module.{under_name}_irsa.iam_role_arn")),
+        },
+      }
+    }
+    _ => AddOn {
+      name: add_on_type.to_string(),
+      under_name: add_on_type.to_string().replace('-', "_"),
+      configuration: AddOnConfiguration {
+        service_account_role_arn: None,
+      },
+    },
+  };
+
+  Ok(add_on)
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]

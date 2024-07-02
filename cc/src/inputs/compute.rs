@@ -1,7 +1,70 @@
-use std::fmt;
+use std::{collections::BTreeMap, fmt};
 
 use serde::{Deserialize, Serialize};
 use strum_macros::EnumIter;
+
+use super::{
+  ami,
+  instance::{self, InstanceInfo},
+};
+
+/// Returns map of instance type name => instance type info
+fn get_instance_types<'a>(
+  cpu_arch: &CpuArch,
+  enable_efa: bool,
+  accelerator: &AcceleratorType,
+  reservation: &ReservationType,
+) -> BTreeMap<&'a str, &'a InstanceInfo<'a>> {
+  instance::INSTANCE_TYPES
+    .iter()
+    .filter(|i| {
+      i.cpu_arch == cpu_arch.to_string()
+        && if enable_efa { i.efa_supported } else { true }
+        && if accelerator == &AcceleratorType::Nvidia {
+          i.nvidia_gpu_supported
+        } else if accelerator == &AcceleratorType::Neuron {
+          i.neuron_supported
+        } else {
+          true
+        }
+        && if reservation == &ReservationType::MlCapacityBlockReservation {
+          i.cbr_supported
+        } else {
+          true
+        }
+    })
+    .map(|i| (i.instance_type, i))
+    .collect::<BTreeMap<&'a str, &InstanceInfo<'a>>>()
+}
+
+pub fn get_instance_type_names<'a>(
+  cpu_arch: &CpuArch,
+  enable_efa: bool,
+  accelerator: &AcceleratorType,
+  reservation: &ReservationType,
+) -> Vec<&'a str> {
+  get_instance_types(cpu_arch, enable_efa, accelerator, reservation)
+    .keys()
+    .copied()
+    .collect()
+}
+
+pub fn instance_storage_supported(instance_types: &[String], ami_type: &ami::AmiType) -> bool {
+  let instance_types_support = instance::INSTANCE_TYPES
+    .iter()
+    .filter(|instance| instance_types.contains(&instance.instance_type.to_string()))
+    .map(|instance| instance.instance_storage_supported)
+    .all(|f| f);
+
+  match ami_type {
+    ami::AmiType::Al2023Arm64Standard
+    | ami::AmiType::Al2023X8664Standard
+    | ami::AmiType::Al2Arm64
+    | ami::AmiType::Al2X8664
+    | ami::AmiType::Al2X8664Gpu => instance_types_support,
+    _ => false,
+  }
+}
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum AcceleratorType {
@@ -31,6 +94,13 @@ pub enum ScalingType {
   ClusterAutoscaler,
   #[serde(rename = "None")]
   None,
+}
+
+pub fn get_scaling_types<'a>(reservation: &ReservationType) -> Vec<&'a str> {
+  match reservation {
+    ReservationType::None => vec!["karpenter", "cluster-autoscaler", "None"],
+    _ => vec!["cluster-autoscaler", "None"],
+  }
 }
 
 impl std::convert::From<&str> for ScalingType {
@@ -66,6 +136,17 @@ pub enum ReservationType {
   MlCapacityBlockReservation,
   #[serde(rename = "None")]
   None,
+}
+
+pub fn get_reservation_types<'a>(accelerator: &AcceleratorType) -> Vec<&'a str> {
+  match accelerator {
+    AcceleratorType::Nvidia => vec![
+      "None",
+      "On-demand capacity reservation",
+      "ML capacity block reservation",
+    ],
+    _ => vec!["None", "On-demand capacity reservation"],
+  }
 }
 
 impl std::convert::From<&str> for ReservationType {

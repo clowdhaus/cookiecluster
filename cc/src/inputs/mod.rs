@@ -1,7 +1,7 @@
 mod add_on;
 mod ami;
 mod compute;
-mod instances;
+mod instance;
 mod version;
 
 use anyhow::{bail, Result};
@@ -116,47 +116,18 @@ impl Inputs {
   }
 
   fn collect_add_ons(mut self) -> Result<Inputs> {
-    // This is ugly
-    // TODO - find better way to get from enum variants to &[&str]
-    let all_add_ons = add_on::AddOnType::iter().map(|v| v.to_string()).collect::<Vec<_>>();
-    let all_add_ons: Vec<&str> = all_add_ons.iter().map(|s| s as &str).collect();
-
+    let all_add_ons = add_on::get_add_ons()?;
     let add_ons_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
       .with_prompt("EKS add-on(s)")
       .items(&all_add_ons[..])
+      // Select first 4 add-ons by default
       .defaults(&[true, true, true, true])
       .interact()?;
 
     let add_ons = add_ons_idxs
       .iter()
-      .map(|&i| {
-        let add_on = add_on::AddOnType::from(all_add_ons[i]);
-        match add_on {
-          // Not adding vpc-cni since it still requires permissions on node IAM role to start
-          add_on::AddOnType::AwsEbsCsiDriver
-          | add_on::AddOnType::AwsEfsCsiDriver
-          | add_on::AddOnType::AwsMountpointS3CsiDriver
-          | add_on::AddOnType::AmazonCloudwatchObservability => {
-            let under_name = add_on.to_string().replace('-', "_");
-            add_on::AddOn {
-              name: add_on.to_string(),
-              under_name: under_name.to_string(),
-              configuration: add_on::AddOnConfiguration {
-                service_account_role_arn: Some(format!("module.{under_name}_irsa.iam_role_arn")),
-              },
-            }
-          }
-          _ => add_on::AddOn {
-            name: add_on.to_string(),
-            under_name: add_on.to_string().replace('-', "_"),
-            configuration: add_on::AddOnConfiguration {
-              service_account_role_arn: None,
-            },
-          },
-        }
-      })
+      .map(|&i| add_on::get_add_on_configuration(all_add_ons[i].as_str()).unwrap())
       .collect::<Vec<add_on::AddOn>>();
-
     self.add_ons = add_ons;
 
     Ok(self)
@@ -196,38 +167,29 @@ impl Inputs {
   }
 
   fn collect_reservation_type(mut self) -> Result<Inputs> {
-    let items = match self.accelerator {
-      compute::AcceleratorType::Nvidia => vec![
-        "None",
-        "On-demand capacity reservation",
-        "ML capacity block reservation",
-      ],
-      _ => vec!["None", "On-demand capacity reservation"],
-    };
+    let reservation_types = compute::get_reservation_types(&self.accelerator);
 
     let reservation_idx = Select::with_theme(&ColorfulTheme::default())
       .with_prompt("EC2 capacity reservation")
-      .items(&items[..])
+      .items(&reservation_types[..])
       .default(0)
       .interact()?;
 
-    self.reservation = compute::ReservationType::from(items[reservation_idx]);
+    self.reservation = compute::ReservationType::from(reservation_types[reservation_idx]);
+
     Ok(self)
   }
 
   fn collect_compute_scaling_type(mut self) -> Result<Inputs> {
-    let mut items = vec!["cluster-autoscaler", "None"];
-    if self.reservation == compute::ReservationType::None {
-      items = vec!["karpenter", "cluster-autoscaler", "None"];
-    }
+    let scaling_types = compute::get_scaling_types(&self.reservation);
 
     let compute_scaling_idx = Select::with_theme(&ColorfulTheme::default())
       .with_prompt("Compute autoscaling")
-      .items(&items[..])
+      .items(&scaling_types[..])
       .default(0)
       .interact()?;
 
-    self.compute_scaling = compute::ScalingType::from(items[compute_scaling_idx]);
+    self.compute_scaling = compute::ScalingType::from(scaling_types[compute_scaling_idx]);
 
     Ok(self)
   }
@@ -303,35 +265,14 @@ impl Inputs {
   }
 
   fn collect_instance_types(mut self) -> Result<Inputs> {
-    let instance_types = instances::INSTANCE_TYPES
-      .iter()
-      .filter(|i| {
-        i.cpu_arch == self.cpu_arch.to_string()
-          && if self.enable_efa { i.efa_supported } else { true }
-          && if self.accelerator == compute::AcceleratorType::Nvidia {
-            i.nvidia_gpu_supported
-          } else if self.accelerator == compute::AcceleratorType::Neuron {
-            i.neuron_supported
-          } else {
-            true
-          }
-          && if self.reservation == compute::ReservationType::MlCapacityBlockReservation {
-            i.cbr_supported
-          } else {
-            true
-          }
-      })
-      .map(|i| i.instance_type.to_string())
-      .collect::<Vec<String>>();
+    let instance_type_names =
+      compute::get_instance_type_names(&self.cpu_arch, self.enable_efa, &self.accelerator, &self.reservation);
 
     let mut instance_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
       .with_prompt("Instance type(s)")
-      .items(&instance_types)
+      .items(&instance_type_names)
+      .defaults(&[true])
       .interact()?;
-
-    if instance_idxs.is_empty() {
-      instance_idxs.push(0);
-    }
 
     // There are two scenarios where only a single instance type should be specified:
     // 1. EC2 capacity reservation(s)
@@ -342,7 +283,7 @@ impl Inputs {
 
     let instance_types = instance_idxs
       .iter()
-      .map(|&i| instance_types[i].to_string())
+      .map(|&i| instance_type_names[i].to_string())
       .collect::<Vec<String>>();
 
     if instance_types.is_empty() {
@@ -355,40 +296,14 @@ impl Inputs {
   }
 
   fn collect_storage_settings(mut self) -> Result<Inputs> {
-    let instance_types_support = instances::INSTANCE_TYPES
-      .iter()
-      .filter(|instance| self.instance_types.contains(&instance.instance_type.to_string()))
-      .map(|instance| instance.instance_storage_supported)
-      .all(|f| f);
-
-    let instance_storage_supported = match self.ami_type {
-      ami::AmiType::Al2023Arm64Standard
-      | ami::AmiType::Al2023X8664Standard
-      | ami::AmiType::Al2Arm64
-      | ami::AmiType::Al2X8664
-      | ami::AmiType::Al2X8664Gpu => instance_types_support,
-      _ => false,
-    };
-    self.instance_storage_supported = instance_storage_supported;
+    self.instance_storage_supported =
+      compute::instance_storage_supported(self.instance_types.as_slice(), &self.ami_type);
 
     Ok(self)
   }
 
   fn collect_default_node_group_settings(mut self) -> Result<Inputs> {
-    // Based on the AMI type selected, set the default AMI type equivalent for the default node group
-    self.default_ami_type = match self.accelerator {
-      compute::AcceleratorType::Nvidia | compute::AcceleratorType::Neuron => match self.ami_type {
-        ami::AmiType::Al2X8664Gpu => ami::AmiType::Al2023X8664Standard,
-        ami::AmiType::BottlerocketX8664Nvidia | ami::AmiType::BottlerocketArm64Nvidia => {
-          ami::AmiType::BottlerocketX8664
-        }
-        _ => ami::AmiType::Al2023X8664Standard,
-      },
-      _ => match self.cpu_arch {
-        compute::CpuArch::X8664 => ami::AmiType::Al2023X8664Standard,
-        compute::CpuArch::Arm64 => ami::AmiType::Al2023X8664Standard,
-      },
-    };
+    self.default_ami_type = ami::get_default_ami_type(&self.accelerator, &self.ami_type, &self.cpu_arch);
 
     // Based on the default AMI type selected, set the default instance type(s) for the default node group
     self.default_instance_types = match self.default_ami_type {
