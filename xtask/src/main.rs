@@ -114,6 +114,19 @@ async fn get_ec2_instances(
     .await?;
 
   for inst in instances_info.iter() {
+    let itype = inst.instance_type().unwrap().as_str();
+    match itype {
+      _ if itype.starts_with("dl")
+        | itype.starts_with("f1")
+        | itype.starts_with("p2")
+        | itype.starts_with("u")
+        | itype.starts_with("vt") =>
+      {
+        continue
+      }
+      _ => {}
+    }
+
     let efa_supported = inst.network_info.as_ref().unwrap().efa_supported.unwrap_or(false);
 
     let gpu_manufacturer = match inst.gpu_info.as_ref() {
