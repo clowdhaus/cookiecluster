@@ -1,5 +1,6 @@
 use std::{collections::BTreeMap, fmt};
 
+use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 use strum_macros::EnumIter;
 
@@ -47,6 +48,31 @@ pub fn get_instance_type_names<'a>(
     .keys()
     .copied()
     .collect()
+}
+
+pub fn limit_instances_selected(
+  reservation: &ReservationType,
+  enable_efa: bool,
+  instance_type_names: Vec<&str>,
+  mut instance_idxs: Vec<usize>,
+) -> Result<Vec<String>> {
+  // There are two scenarios where only a single instance type should be specified:
+  // 1. EC2 capacity reservation(s)
+  // 2. When using EFA
+  if reservation != &ReservationType::None || enable_efa {
+    instance_idxs = vec![instance_idxs.last().unwrap().to_owned()];
+  }
+
+  let instance_types = instance_idxs
+    .iter()
+    .map(|&i| instance_type_names[i].to_string())
+    .collect::<Vec<String>>();
+
+  if instance_types.is_empty() {
+    bail!("At least one instance type needs to be selected");
+  }
+
+  Ok(instance_types)
 }
 
 pub fn instance_storage_supported(instance_types: &[String], ami_type: &ami::AmiType) -> bool {
@@ -180,6 +206,19 @@ mod tests {
   ) {
     let supported = instance_storage_supported(instance_types, ami_type);
     assert_eq!(supported, expected);
+  }
+
+  #[rstest]
+  #[case(&ReservationType::None, true, vec!["t2.micro", "t3.micro", "t3a.micro"], vec!["t3a.micro".to_string()])]
+  fn test_limit_instances_selected(
+    #[case] reservation: &ReservationType,
+    #[case] enable_efa: bool,
+    #[case] instance_type_names: Vec<&str>,
+    #[case] expected: Vec<String>,
+  ) {
+    let instance_idxs = vec![0, 1, 2];
+    let instance_types = limit_instances_selected(reservation, enable_efa, instance_type_names, instance_idxs).unwrap();
+    assert_eq!(instance_types, expected);
   }
 
   #[test]

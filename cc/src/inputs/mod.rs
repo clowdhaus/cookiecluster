@@ -1,44 +1,73 @@
-mod add_on;
-mod ami;
-mod compute;
-mod instance;
-mod version;
+pub(crate) mod add_on;
+pub(crate) mod ami;
+pub(crate) mod compute;
+pub(crate) mod instance;
+pub(crate) mod version;
 
-use anyhow::{bail, Result};
+use anyhow::Result;
 use dialoguer::{theme::ColorfulTheme, Confirm, Input, MultiSelect, Select};
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Inputs {
-  accelerator: compute::AcceleratorType,
-  pub add_ons: Vec<add_on::AddOn>,
-  ami_type: ami::AmiType,
-  cluster_endpoint_public_access: bool,
-  cluster_name: String,
-  cluster_version: version::ClusterVersion,
-  control_plane_subnet_filter: String,
-  pub compute_scaling: compute::ScalingType,
-  cpu_arch: compute::CpuArch,
-  data_plane_subnet_filter: String,
+  pub(crate) accelerator: compute::AcceleratorType,
+  pub(crate) add_ons: Vec<add_on::AddOn>,
+  pub(crate) ami_type: ami::AmiType,
+  pub(crate) cluster_endpoint_public_access: bool,
+  pub(crate) cluster_name: String,
+  pub(crate) cluster_version: version::ClusterVersion,
+  pub(crate) control_plane_subnet_filter: String,
+  pub(crate) compute_scaling: compute::ScalingType,
+  pub(crate) cpu_arch: compute::CpuArch,
+  pub(crate) data_plane_subnet_filter: String,
   /// AMI type used on default node group when secondary node group (accelerated, Windows, etc) is used
-  default_ami_type: ami::AmiType,
+  pub(crate) default_ami_type: ami::AmiType,
   /// Instance types used on default node group when secondary node group (accelerated, Windows, etc) is used
-  default_instance_types: Vec<String>,
-  enable_cluster_creator_admin_permissions: bool,
-  enable_efa: bool,
-  instance_storage_supported: bool,
-  instance_types: Vec<String>,
-  reservation: compute::ReservationType,
-  reservation_availability_zone: String,
-  vpc_name: String,
+  pub(crate) default_instance_types: Vec<String>,
+  pub(crate) enable_cluster_creator_admin_permissions: bool,
+  pub(crate) enable_efa: bool,
+  pub(crate) instance_storage_supported: bool,
+  pub(crate) instance_types: Vec<String>,
+  pub(crate) reservation: compute::ReservationType,
+  pub(crate) reservation_availability_zone: String,
+  pub(crate) vpc_name: String,
 }
 
 impl Default for Inputs {
   fn default() -> Self {
     Inputs {
       accelerator: compute::AcceleratorType::None,
-      add_ons: vec![],
+      add_ons: vec![
+        add_on::AddOn {
+          name: String::from("coredns"),
+          under_name: String::from("coredns"),
+          configuration: add_on::AddOnConfiguration {
+            service_account_role_arn: None,
+          },
+        },
+        add_on::AddOn {
+          name: String::from("eks-pod-identity-agent"),
+          under_name: String::from("eks_pod_identity_agent"),
+          configuration: add_on::AddOnConfiguration {
+            service_account_role_arn: None,
+          },
+        },
+        add_on::AddOn {
+          name: String::from("kube-proxy"),
+          under_name: String::from("kube_proxy"),
+          configuration: add_on::AddOnConfiguration {
+            service_account_role_arn: None,
+          },
+        },
+        add_on::AddOn {
+          name: String::from("vpc-cni"),
+          under_name: String::from("vpc-cni"),
+          configuration: add_on::AddOnConfiguration {
+            service_account_role_arn: None,
+          },
+        },
+      ],
       ami_type: ami::AmiType::Al2023X8664Standard,
       cluster_endpoint_public_access: false,
       cluster_name: String::from("example"),
@@ -48,11 +77,11 @@ impl Default for Inputs {
       cpu_arch: compute::CpuArch::X8664,
       data_plane_subnet_filter: String::from("*-private-*"),
       default_ami_type: ami::AmiType::Al2023X8664Standard,
-      default_instance_types: vec![],
+      default_instance_types: vec!["m7a.xlarge".to_string(), "m7i.xlarge".to_string()],
       enable_cluster_creator_admin_permissions: false,
       enable_efa: false,
       instance_storage_supported: false,
-      instance_types: vec![],
+      instance_types: vec!["m7a.xlarge".to_string(), "m7i.xlarge".to_string()],
       reservation: compute::ReservationType::None,
       reservation_availability_zone: String::from("us-west-2a"),
       vpc_name: String::from("example"),
@@ -268,29 +297,14 @@ impl Inputs {
     let instance_type_names =
       compute::get_instance_type_names(&self.cpu_arch, self.enable_efa, &self.accelerator, &self.reservation);
 
-    let mut instance_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
+    let instance_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
       .with_prompt("Instance type(s)")
       .items(&instance_type_names)
       .defaults(&[true])
       .interact()?;
 
-    // There are two scenarios where only a single instance type should be specified:
-    // 1. EC2 capacity reservation(s)
-    // 2. When using EFA
-    if self.reservation != compute::ReservationType::None || self.enable_efa {
-      instance_idxs = vec![instance_idxs.last().unwrap().to_owned()];
-    }
-
-    let instance_types = instance_idxs
-      .iter()
-      .map(|&i| instance_type_names[i].to_string())
-      .collect::<Vec<String>>();
-
-    if instance_types.is_empty() {
-      bail!("At least one instance type needs to be selected");
-    }
-
-    self.instance_types = instance_types;
+    self.instance_types =
+      compute::limit_instances_selected(&self.reservation, self.enable_efa, instance_type_names, instance_idxs)?;
 
     Ok(self)
   }

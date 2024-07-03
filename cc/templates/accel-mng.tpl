@@ -52,12 +52,16 @@ neuron = {
       labels = {
         {{ #if inputs.enable_efa}}
         "vpc.amazonaws.com/efa.present" = "true"
-        {{ /if }}
         {{ #if (eq inputs.accelerator "NVIDIA") }}
         "nvidia.com/gpu.present"        = "true"
         {{ /if }}
         {{ #if (eq inputs.accelerator "Neuron") }}
         "aws.amazon.com/neuron.present" = "true"
+        {{ /if }}
+        {{ else }}
+        {{ #if (eq inputs.accelerator "NVIDIA") }}
+        "nvidia.com/gpu.present" = "true"
+        {{ /if }}
         {{ /if }}
       }
 

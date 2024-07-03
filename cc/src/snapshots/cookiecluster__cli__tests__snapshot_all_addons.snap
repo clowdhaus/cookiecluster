@@ -1,0 +1,178 @@
+---
+source: cc/src/cli.rs
+expression: rendered
+---
+data "aws_vpc" "this" {
+  filter {
+    name   = "tag:Name"
+    values = ["example"]
+  }
+}
+
+data "aws_subnets" "control_plane" {
+  filter {
+    name   = "tag:Name"
+    values = ["*-private-*"]
+  }
+}
+
+data "aws_subnets" "data_plane" {
+  filter {
+    name   = "tag:Name"
+    values = ["*-private-*"]
+  }
+}
+
+################################################################################
+# EKS Cluster
+################################################################################
+
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 20.0"
+
+  cluster_name    = "example"
+  cluster_version = "1.30"
+
+  cluster_addons = {
+    coredns = {}
+    kube-proxy = {}
+    vpc-cni = {}
+    eks-pod-identity-agent = {}
+    aws-ebs-csi-driver = {
+      service_account_role_arn = module.aws_ebs_csi_driver_irsa.iam_role_arn
+    }
+    aws-efs-csi-driver = {
+      service_account_role_arn = module.aws_efs_csi_driver_irsa.iam_role_arn
+    }
+    aws-mountpoint-s3-csi-driver = {
+      service_account_role_arn = module.aws_mountpoint_s3_csi_driver_irsa.iam_role_arn
+    }
+    snapshot-controller = {}
+    adot = {}
+    aws-guardduty-agent = {}
+    amazon-cloudwatch-observability = {
+      service_account_role_arn = module.amazon_cloudwatch_observability_irsa.iam_role_arn
+    }
+  }
+
+  vpc_id                   = data.aws_vpc.this.id
+  control_plane_subnet_ids = data.aws_subnets.control_plane.ids
+  subnet_ids               = data.aws_subnets.data_plane.ids
+
+  eks_managed_node_groups = {
+    default = {
+      ami_type = "AL2023_x86_64_STANDARD"
+      instance_types = [
+        "m7a.xlarge",
+        "m7i.xlarge",
+      ]
+
+      min_size     = 2
+      max_size     = 3
+      desired_size = 2
+    }
+  }
+
+  tags = module.tags.tags
+}
+
+################################################################################
+# Add-On IAM Role(s) for Service Account(s)
+################################################################################
+
+module "aws_ebs_csi_driver_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.39"
+
+  role_name             = "aws-ebs-csi-driver"
+  attach_ebs_csi_policy = true
+
+  oidc_providers = {
+    this = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
+    }
+  }
+
+  tags = module.tags.tags
+}
+
+################################################################################
+# Add-On IAM Role(s) for Service Account(s)
+################################################################################
+
+module "aws_efs_csi_driver_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.39"
+
+  role_name             = "aws-efs-csi-driver"
+  attach_efs_csi_policy = true
+
+  oidc_providers = {
+    this = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:efs-csi-controller-sa"]
+    }
+  }
+
+  tags = module.tags.tags
+}
+
+################################################################################
+# Add-On IAM Role(s) for Service Account(s)
+################################################################################
+
+module "aws_mountpoint_s3_csi_driver_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.39"
+
+  role_name                       = "aws-mountpoint-s3-csi-driver"
+  attach_mountpoint_s3_csi_policy = true
+  # TODO - update with your respective S3 bucket ARN(s) and path(s)
+  mountpoint_s3_csi_bucket_arns   = ["arn:aws:s3:::mountpoint-s3-csi-bucket"]
+  mountpoint_s3_csi_path_arns     = ["arn:aws:s3:::mountpoint-s3-csi-bucket/example/*"]
+
+  oidc_providers = {
+    this = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:s3-csi-driver-sa"]
+    }
+  }
+
+  tags = module.tags.tags
+}
+
+################################################################################
+# Add-On IAM Role(s) for Service Account(s)
+################################################################################
+
+module "amazon_cloudwatch_observability_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.39"
+
+  role_name                              = "amazon-cloudwatch-observability"
+  attach_cloudwatch_observability_policy = true
+
+  oidc_providers = {
+    this = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["amazon-cloudwatch:cloudwatch-agent"]
+    }
+  }
+
+  tags = module.tags.tags
+}
+
+################################################################################
+# Tags - Replace with your own tags implementation
+################################################################################
+
+module "tags" {
+  source  = "clowdhaus/tags/aws"
+  version = "~> 1.1"
+
+  application = "cookiecluster"
+  environment = "nonprod"
+  repository  = "github.com/clowdhaus/cookiecluster"
+}
