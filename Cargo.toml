@@ -1,6 +1,6 @@
 [workspace]
 members = [
-  "cc",
+  "cookiecluster",
   "xtask",
 ]
 resolver = "2"
