@@ -1,0 +1,142 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  changelog:
+    name: create-release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      cookiecluster_version: ${{ env.COOKIECLUSTER_VERSION }}
+      release_body: ${{ steps.git-cliff.outputs.content }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get the release version from the tag
+        shell: bash
+        if: env.COOKIECLUSTER_VERSION == ''
+        run: |
+          echo "COOKIECLUSTER_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "version is: ${{ env.COOKIECLUSTER_VERSION }}"
+
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v3
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: -vv --latest --strip header
+        env:
+          OUTPUT: CHANGES.md
+          GITHUB_REPO: ${{ github.repository }}
+
+  build-release:
+    name: build-release
+    needs: ['changelog']
+    permissions:
+      contents: write
+    runs-on: ${{ matrix.os }}
+    env:
+      # For some builds, we use cross to test on 32-bit and big-endian systems
+      CARGO: cargo
+      # When CARGO is set to CROSS, this is set to `--target matrix.target`
+      TARGET_FLAGS: ""
+      # When CARGO is set to CROSS, TARGET_DIR includes matrix.target
+      TARGET_DIR: ./target
+      # Emit backtraces on panics.
+      RUST_BACKTRACE: 1
+    strategy:
+      matrix:
+        build: [linux, linux-arm, macos, win-msvc, win32-msvc] # win-gnu,
+        include:
+        - build: linux
+          os: ubuntu-22.04
+          rust: nightly
+          target: x86_64-unknown-linux-musl
+        - build: linux-arm
+          os: ubuntu-22.04
+          rust: nightly
+          target: arm-unknown-linux-gnueabihf
+        - build: macos
+          os: macos-14
+          rust: nightly
+          target: x86_64-apple-darwin
+        - build: macos-arm
+          os: macos-14
+          rust: nightly
+          target: aarch64-apple-darwin
+        - build: win-msvc
+          os: windows-2022
+          rust: nightly
+          target: x86_64-pc-windows-msvc
+        # # https://github.com/actions/runner-images/issues/1143
+        # - build: win-gnu
+        #   os: windows-2022
+        #   rust: nightly-x86_64-gnu
+        #   target: x86_64-pc-windows-gnu
+        - build: win32-msvc
+          os: windows-2022
+          rust: nightly
+          target: i686-pc-windows-msvc
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+        target: ${{ matrix.target }}
+
+    - name: Use Cross
+      shell: bash
+      run: |
+        cargo install cross
+        echo "CARGO=cross" >> $GITHUB_ENV
+        echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+        echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
+
+    - name: Show command used for Cargo
+      run: |
+        echo "cargo command is: ${{ env.CARGO }}"
+        echo "target flag is: ${{ env.TARGET_FLAGS }}"
+        echo "target dir is: ${{ env.TARGET_DIR }}"
+
+    - name: Build release binary
+      run: ${{ env.CARGO }} build --package cookiecluster --verbose --release ${{ env.TARGET_FLAGS }}
+
+    - name: Build archive
+      shell: bash
+      run: |
+        STAGING="cookiecluster-${{ needs.changelog.outputs.cookiecluster_version }}-${{ matrix.target }}"
+        mkdir -p "${STAGING}"
+
+        cp {README.md,LICENSE} "${STAGING}/"
+
+        if [ "${{ matrix.os }}" = "windows-2022" ]; then
+          cp "target/${{ matrix.target }}/release/cookiecluster.exe" "${STAGING}/"
+          7z a "${STAGING}.zip" "${STAGING}"
+          echo "ASSET=${STAGING}.zip" >> $GITHUB_ENV
+        else
+          cp "target/${{ matrix.target }}/release/cookiecluster" "${STAGING}/"
+          tar czf "${STAGING}.tar.gz" "${STAGING}"
+          echo "ASSET=${STAGING}.tar.gz" >> $GITHUB_ENV
+        fi
+
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ${{ env.ASSET }}
+        asset_name: ${{ env.ASSET }}
+        tag: ${{ github.ref }}
+        overwrite: true
+        body: ${{ needs.changelog.outputs.release_body }}
