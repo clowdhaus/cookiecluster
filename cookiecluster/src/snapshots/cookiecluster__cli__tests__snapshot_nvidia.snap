@@ -2,6 +2,30 @@
 source: cookiecluster/src/cli.rs
 expression: rendered
 ---
+/*
+## NVIDIA K8s Device Plugin
+
+The NVIDIA K8s device plugin, https://github.com/NVIDIA/k8s-device-plugin, will need to
+be installed in the cluster in order to mount and utilize the GPUs in your pods. Add the
+following affinity rule to your device plugin Helm chart values to ensure the device
+plugin runs on nodes that have GPUs present (as identified via the MNG
+labels provided below):
+
+```yaml
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: 'nvidia.com/gpu.present'
+            operator: In
+            values:
+              - 'true'
+```
+
+By default, the NVIDIA K8s device values already contian a toleration that matches the taint applied
+to the node group below.
+*/
 ################################################################################
 # EKS Cluster
 ################################################################################

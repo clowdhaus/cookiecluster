@@ -1,3 +1,80 @@
+{{ #if (or (eq inputs.accelerator "NVIDIA") (eq inputs.accelerator "Neuron")) }}
+/*
+  {{ #if (eq inputs.accelerator "NVIDIA") }}
+    {{ #if (eq inputs.ami_type "AL2_x86_64_GPU") }}
+## NVIDIA K8s Device Plugin
+
+The NVIDIA K8s device plugin, https://github.com/NVIDIA/k8s-device-plugin, will need to
+be installed in the cluster in order to mount and utilize the GPUs in your pods. Add the
+following affinity rule to your device plugin Helm chart values to ensure the device
+plugin runs on nodes that have GPUs present (as identified via the MNG
+labels provided below):
+
+```yaml
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: 'nvidia.com/gpu.present'
+            operator: In
+            values:
+              - 'true'
+```
+
+By default, the NVIDIA K8s device values already contian a toleration that matches the taint applied
+to the node group below.
+    {{ else }}
+## NVIDIA K8s Device Plugin
+
+The "{{ inputs.ami_type }}" AMI type comes with the NVIDIA K8s device plugin pre-installed on the AMI.
+    {{ /if }}
+  {{ /if }}
+  {{ #if (eq inputs.accelerator "Neuron") }}
+## Neuron K8s Device Plugin
+
+The Neuron K8s device plugin, https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/tutorials/k8s-setup.html,
+will need to  be installed in the cluster in order to mount and utilize the Neuron devcies
+in your pods. Add the following node selector and toleration to your device plugin Helm chart
+values to ensure the device plugin runs on nodes that have Neuron devices present
+(as identified via the MNG label and taint provided below):
+
+```yaml
+nodeSelector:
+  vpc.amazonaws.com/efa.present: 'true'
+tolerations:
+  - key: aws.amazon.com/neuron
+    operator: Exists
+    effect: NoSchedule
+```
+  {{ /if }}
+  {{ #if inputs.enable_efa }}
+
+## EFA K8s Device Plugin
+
+The EFA K8s device plugin, https://github.com/aws/eks-charts/tree/master/stable/aws-efa-k8s-device-plugin,
+will need to  be installed in the cluster in order to mount and utilize the EFA devcies
+in your pods. Add the following node selector and toleration to your device plugin Helm chart
+values to ensure the device plugin runs on nodes that have EFA devices present
+(as identified via the MNG label and taint provided below):
+
+```yaml
+nodeSelector:
+  vpc.amazonaws.com/efa.present: 'true'
+tolerations:
+{{ #if (eq inputs.accelerator "Neuron") }}
+  - key: aws.amazon.com/neuron
+    operator: Exists
+    effect: NoSchedule
+{{ else }}
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule
+{{ /if }}
+```
+  {{ /if }}
+*/
+{{ /if }}
 ################################################################################
 # EKS Cluster
 ################################################################################

@@ -217,7 +217,6 @@ mod tests {
     insta::assert_snapshot!(rendered);
   }
 
-
   #[test]
   fn snapshot_neuron() {
     let cli = Cli {
