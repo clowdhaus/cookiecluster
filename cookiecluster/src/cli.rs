@@ -200,6 +200,25 @@ mod tests {
   }
 
   #[test]
+  fn snapshot_nvidia_efa_cbr() {
+    let cli = Cli {
+      verbose: Verbosity::default(),
+    };
+    let inputs = Inputs {
+      accelerator: compute::AcceleratorType::Nvidia,
+      ami_type: ami::AmiType::Al2X8664Gpu,
+      enable_efa: true,
+      instance_storage_supported: true,
+      instance_types: vec!["p5.48xlarge".to_owned()],
+      reservation: compute::ReservationType::MlCapacityBlockReservation,
+      ..Inputs::default()
+    };
+    let rendered = cli.render(inputs).unwrap();
+    insta::assert_snapshot!(rendered);
+  }
+
+
+  #[test]
   fn snapshot_neuron() {
     let cli = Cli {
       verbose: Verbosity::default(),

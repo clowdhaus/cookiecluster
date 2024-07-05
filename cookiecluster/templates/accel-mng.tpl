@@ -96,4 +96,17 @@ neuron = {
         }
       }
       {{ /if }}
+      {{ #if (eq inputs.reservation "CBR") }}
+      
+      # ML capacity block reservation
+      capacity_type = "CAPACITY_BLOCK"
+      instance_market_options = {
+        market_type = "capacity-block"
+      }
+      capacity_reservation_specification = {
+        capacity_reservation_target = {
+          capacity_reservation_id = var.capacity_reservation_id
+        }
+      }
+      {{ /if }}
     }

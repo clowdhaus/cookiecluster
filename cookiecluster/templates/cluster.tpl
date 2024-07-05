@@ -40,7 +40,7 @@ data "aws_subnets" "data_plane_reservation" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.0"
+  version = "~> 20.17"
 
   cluster_name    = "{{ inputs.cluster_name }}"
   cluster_version = "{{ inputs.cluster_version }}"
@@ -213,7 +213,7 @@ module "eks" {
 
 module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 20.0"
+  version = "~> 20.17"
 
   cluster_name = module.eks.cluster_name
 
@@ -332,15 +332,23 @@ module "tags" {
   environment = "nonprod"
   repository  = "github.com/clowdhaus/cookiecluster"
 }
-{{ #if (eq inputs.reservation "ODCR") }}
+{{ #if (or (eq inputs.reservation "ODCR") (eq inputs.reservation "CBR")) }}
 
 ################################################################################
 # Variables - Required input
 ################################################################################
 
+{{ #if (eq inputs.reservation "ODCR") }}
+
 variable "on_demand_capacity_reservation_arns" {
   description = "List of the on-demand capacity reservations ARNs to associate with the node group"
   type        = list(string)
-  default     = []
 }
+{{ /if }}
+{{ #if (eq inputs.reservation "CBR") }}
+variable "capacity_reservation_id" {
+  description = "The ID of the ML capacity block reservation in which to run the instance(s)"
+  type        = string
+}
+{{ /if }}
 {{ /if }}

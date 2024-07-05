@@ -23,6 +23,19 @@ data "aws_subnets" "data_plane" {
   }
 }
 
+data "aws_subnets" "data_plane_reservation" {
+  filter {
+    name   = "tag:Name"
+    values = ["*-private-*"]
+  }
+
+  # Capacity reservations are restricted to a single availability zone
+  filter {
+    name = "availability-zone"
+    values = ["us-west-2a"]
+  }
+}
+
 ################################################################################
 # EKS Cluster
 ################################################################################
@@ -95,6 +108,20 @@ module "eks" {
           effect = "NO_SCHEDULE"
         }
       }
+
+      # Capacity reservations are restricted to a single availability zone
+      subnet_ids = data.aws_subnets.data_plane_reservation.ids
+      
+      # ML capacity block reservation
+      capacity_type = "CAPACITY_BLOCK"
+      instance_market_options = {
+        market_type = "capacity-block"
+      }
+      capacity_reservation_specification = {
+        capacity_reservation_target = {
+          capacity_reservation_id = var.capacity_reservation_id
+        }
+      }
     }
   }
 
@@ -112,4 +139,13 @@ module "tags" {
   application = "cookiecluster"
   environment = "nonprod"
   repository  = "github.com/clowdhaus/cookiecluster"
+}
+
+################################################################################
+# Variables - Required input
+################################################################################
+
+variable "capacity_reservation_id" {
+  description = "The ID of the ML capacity block reservation in which to run the instance(s)"
+  type        = string
 }

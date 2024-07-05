@@ -1,5 +1,5 @@
 ---
-source: cc/src/cli.rs
+source: cookiecluster/src/cli.rs
 expression: rendered
 ---
 data "aws_vpc" "this" {
@@ -29,7 +29,7 @@ data "aws_subnets" "data_plane" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.0"
+  version = "~> 20.17"
 
   cluster_name    = "cookiecluster"
   cluster_version = "1.28"

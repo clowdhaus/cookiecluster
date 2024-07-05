@@ -1,5 +1,5 @@
 ---
-source: cc/src/cli.rs
+source: cookiecluster/src/cli.rs
 expression: rendered
 ---
 data "aws_vpc" "this" {
@@ -42,7 +42,7 @@ data "aws_subnets" "data_plane_reservation" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.0"
+  version = "~> 20.17"
 
   cluster_name    = "example"
   cluster_version = "1.30"
@@ -169,8 +169,8 @@ module "tags" {
 # Variables - Required input
 ################################################################################
 
+
 variable "on_demand_capacity_reservation_arns" {
   description = "List of the on-demand capacity reservations ARNs to associate with the node group"
   type        = list(string)
-  default     = []
 }
