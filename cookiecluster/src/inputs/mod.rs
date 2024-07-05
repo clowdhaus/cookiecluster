@@ -300,7 +300,6 @@ impl Inputs {
     let instance_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
       .with_prompt("Instance type(s)")
       .items(&instance_type_names)
-      .defaults(&[true])
       .interact()?;
 
     self.instance_types =
