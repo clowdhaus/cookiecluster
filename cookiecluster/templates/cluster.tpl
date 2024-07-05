@@ -35,7 +35,7 @@ The "{{ inputs.ami_type }}" AMI type comes with the NVIDIA K8s device plugin pre
 
 The Neuron K8s device plugin, https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/tutorials/k8s-setup.html,
 will need to  be installed in the cluster in order to mount and utilize the Neuron devcies
-in your pods. Add the following node selector and toleration to your device plugin Helm chart
+in your pods. Add the following node selector and toleration to your device plugin Daemonset
 values to ensure the device plugin runs on nodes that have Neuron devices present
 (as identified via the MNG label and taint provided below):
 
@@ -47,6 +47,10 @@ tolerations:
     operator: Exists
     effect: NoSchedule
 ```
+
+The Neuron K8s device plugin Helm chart support can be tracked in the following two GitHub issues:
+- https://github.com/aws/eks-charts/issues/1068
+- https://github.com/aws-neuron/aws-neuron-sdk/issues/707
   {{ /if }}
   {{ #if inputs.enable_efa }}
 
