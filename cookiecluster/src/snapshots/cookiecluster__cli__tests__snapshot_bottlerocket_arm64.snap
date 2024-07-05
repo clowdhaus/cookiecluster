@@ -2,27 +2,6 @@
 source: cookiecluster/src/cli.rs
 expression: rendered
 ---
-data "aws_vpc" "this" {
-  filter {
-    name   = "tag:Name"
-    values = ["example"]
-  }
-}
-
-data "aws_subnets" "control_plane" {
-  filter {
-    name   = "tag:Name"
-    values = ["*-private-*"]
-  }
-}
-
-data "aws_subnets" "data_plane" {
-  filter {
-    name   = "tag:Name"
-    values = ["*-private-*"]
-  }
-}
-
 ################################################################################
 # EKS Cluster
 ################################################################################
@@ -73,4 +52,29 @@ module "tags" {
   application = "cookiecluster"
   environment = "nonprod"
   repository  = "github.com/clowdhaus/cookiecluster"
+}
+
+################################################################################
+# VPC & Subnet data sources
+################################################################################
+
+data "aws_vpc" "this" {
+  filter {
+    name   = "tag:Name"
+    values = ["example"]
+  }
+}
+
+data "aws_subnets" "control_plane" {
+  filter {
+    name   = "tag:Name"
+    values = ["*-private-*"]
+  }
+}
+
+data "aws_subnets" "data_plane" {
+  filter {
+    name   = "tag:Name"
+    values = ["*-private-*"]
+  }
 }
