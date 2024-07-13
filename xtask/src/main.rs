@@ -206,7 +206,7 @@ async fn update_ec2_instances() -> Result<()> {
     .create(true)
     .truncate(true)
     .write(true)
-    .open("./cc/src/inputs/instance.rs")?;
+    .open("./cookiecluster/src/inputs/instance.rs")?;
 
   file.write_all(rendered.as_bytes())?;
 
