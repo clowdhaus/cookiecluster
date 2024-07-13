@@ -54,7 +54,7 @@ jobs:
       RUST_BACKTRACE: 1
     strategy:
       matrix:
-        build: [linux, linux-arm, macos, win-msvc, win32-msvc] # win-gnu,
+        build: [linux, linux-arm, macos, macos-arm, win-msvc, win32-msvc] # win-gnu,
         include:
         - build: linux
           os: ubuntu-22.04
@@ -65,7 +65,7 @@ jobs:
           rust: nightly
           target: arm-unknown-linux-gnueabihf
         - build: macos
-          os: macos-14
+          os: macos-14-large
           rust: nightly
           target: x86_64-apple-darwin
         - build: macos-arm
