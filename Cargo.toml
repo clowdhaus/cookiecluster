@@ -25,4 +25,7 @@ tracing-subscriber = { version = "0.3", default-features = false, features = ["f
 
 [profile.release]
 strip = true
-lto = "fat"
+lto = true
+opt-level = "z"
+codegen-units = 1
+panic = "abort"
