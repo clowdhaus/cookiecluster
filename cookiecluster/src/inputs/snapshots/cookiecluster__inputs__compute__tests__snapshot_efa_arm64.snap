@@ -1,5 +1,5 @@
 ---
-source: cc/src/inputs/compute.rs
+source: cookiecluster/src/inputs/compute.rs
 expression: efa_arm64
 ---
 {
@@ -114,6 +114,24 @@ expression: efa_arm64
     "r7gd.16xlarge": InstanceInfo {
         instance_type: "r7gd.16xlarge",
         instance_storage_supported: true,
+        efa_supported: true,
+        nvidia_gpu_supported: false,
+        neuron_supported: false,
+        cbr_supported: false,
+        cpu_arch: "arm64",
+    },
+    "r8g.24xlarge": InstanceInfo {
+        instance_type: "r8g.24xlarge",
+        instance_storage_supported: false,
+        efa_supported: true,
+        nvidia_gpu_supported: false,
+        neuron_supported: false,
+        cbr_supported: false,
+        cpu_arch: "arm64",
+    },
+    "r8g.48xlarge": InstanceInfo {
+        instance_type: "r8g.48xlarge",
+        instance_storage_supported: false,
         efa_supported: true,
         nvidia_gpu_supported: false,
         neuron_supported: false,
