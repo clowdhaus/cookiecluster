@@ -1,5 +1,5 @@
 ---
-source: cc/src/inputs/compute.rs
+source: cookiecluster/src/inputs/compute.rs
 expression: nvidia_x86_64
 ---
 {
@@ -210,6 +210,78 @@ expression: nvidia_x86_64
         cbr_supported: false,
         cpu_arch: "x86-64",
     },
+    "g6e.12xlarge": InstanceInfo {
+        instance_type: "g6e.12xlarge",
+        instance_storage_supported: true,
+        efa_supported: true,
+        nvidia_gpu_supported: true,
+        neuron_supported: false,
+        cbr_supported: false,
+        cpu_arch: "x86-64",
+    },
+    "g6e.16xlarge": InstanceInfo {
+        instance_type: "g6e.16xlarge",
+        instance_storage_supported: true,
+        efa_supported: true,
+        nvidia_gpu_supported: true,
+        neuron_supported: false,
+        cbr_supported: false,
+        cpu_arch: "x86-64",
+    },
+    "g6e.24xlarge": InstanceInfo {
+        instance_type: "g6e.24xlarge",
+        instance_storage_supported: true,
+        efa_supported: true,
+        nvidia_gpu_supported: true,
+        neuron_supported: false,
+        cbr_supported: false,
+        cpu_arch: "x86-64",
+    },
+    "g6e.2xlarge": InstanceInfo {
+        instance_type: "g6e.2xlarge",
+        instance_storage_supported: true,
+        efa_supported: false,
+        nvidia_gpu_supported: true,
+        neuron_supported: false,
+        cbr_supported: false,
+        cpu_arch: "x86-64",
+    },
+    "g6e.48xlarge": InstanceInfo {
+        instance_type: "g6e.48xlarge",
+        instance_storage_supported: true,
+        efa_supported: true,
+        nvidia_gpu_supported: true,
+        neuron_supported: false,
+        cbr_supported: false,
+        cpu_arch: "x86-64",
+    },
+    "g6e.4xlarge": InstanceInfo {
+        instance_type: "g6e.4xlarge",
+        instance_storage_supported: true,
+        efa_supported: false,
+        nvidia_gpu_supported: true,
+        neuron_supported: false,
+        cbr_supported: false,
+        cpu_arch: "x86-64",
+    },
+    "g6e.8xlarge": InstanceInfo {
+        instance_type: "g6e.8xlarge",
+        instance_storage_supported: true,
+        efa_supported: true,
+        nvidia_gpu_supported: true,
+        neuron_supported: false,
+        cbr_supported: false,
+        cpu_arch: "x86-64",
+    },
+    "g6e.xlarge": InstanceInfo {
+        instance_type: "g6e.xlarge",
+        instance_storage_supported: true,
+        efa_supported: false,
+        nvidia_gpu_supported: true,
+        neuron_supported: false,
+        cbr_supported: false,
+        cpu_arch: "x86-64",
+    },
     "gr6.4xlarge": InstanceInfo {
         instance_type: "gr6.4xlarge",
         instance_storage_supported: true,
@@ -284,6 +356,15 @@ expression: nvidia_x86_64
     },
     "p5.48xlarge": InstanceInfo {
         instance_type: "p5.48xlarge",
+        instance_storage_supported: true,
+        efa_supported: true,
+        nvidia_gpu_supported: true,
+        neuron_supported: false,
+        cbr_supported: true,
+        cpu_arch: "x86-64",
+    },
+    "p5e.48xlarge": InstanceInfo {
+        instance_type: "p5e.48xlarge",
         instance_storage_supported: true,
         efa_supported: true,
         nvidia_gpu_supported: true,
