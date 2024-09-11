@@ -85,7 +85,7 @@ tolerations:
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.17"
+  version = "~> 20.24"
 
   cluster_name    = "{{ inputs.cluster_name }}"
   cluster_version = "{{ inputs.cluster_version }}"
@@ -258,9 +258,12 @@ module "eks" {
 
 module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 20.17"
+  version = "~> 20.24"
 
   cluster_name = module.eks.cluster_name
+
+  # Enable permissions for Karpenter v1.0+
+  enable_v1_permissions = true
 
   # Name needs to match role name passed to the EC2NodeClass
   node_iam_role_use_name_prefix   = false
