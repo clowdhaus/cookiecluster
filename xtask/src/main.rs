@@ -178,7 +178,7 @@ async fn get_ec2_instances(
 
 /// Collect the EC2 instance details and populate the instances.rs file
 async fn update_ec2_instances() -> Result<()> {
-  let regions = vec!["us-east-1", "us-west-2"];
+  let regions = vec!["us-east-1", "us-east-2", "us-west-2"];
   let mut instances: BTreeMap<String, InstanceInfo> = BTreeMap::new();
 
   // Not GA and requires allow listing
