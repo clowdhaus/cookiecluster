@@ -38,7 +38,7 @@ git clone https://github.com/clowdhaus/cookiecluster
 cd cookiecluster
 cargo build --release
 ./target/release/cookiecluster --version
-0.4.0
+0.5.0
 ```
 
 ## Local Development
