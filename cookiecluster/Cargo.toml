@@ -30,4 +30,4 @@ tracing-subscriber.workspace = true
 
 [dev-dependencies]
 insta = "1.29"
-rstest = "0.22"
+rstest = "0.23"
