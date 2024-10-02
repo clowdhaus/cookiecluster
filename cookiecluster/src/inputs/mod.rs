@@ -71,7 +71,7 @@ impl Default for Inputs {
       ami_type: ami::AmiType::Al2023X8664Standard,
       cluster_endpoint_public_access: false,
       cluster_name: String::from("example"),
-      cluster_version: version::ClusterVersion::K130,
+      cluster_version: version::ClusterVersion::K131,
       control_plane_subnet_filter: String::from("*-private-*"),
       compute_scaling: compute::ScalingType::None,
       cpu_arch: compute::CpuArch::X8664,

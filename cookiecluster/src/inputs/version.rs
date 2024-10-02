@@ -5,6 +5,8 @@ use strum_macros::EnumIter;
 
 #[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
 pub enum ClusterVersion {
+  #[serde(rename = "1.31")]
+  K131,
   #[serde(rename = "1.30")]
   K130,
   #[serde(rename = "1.29")]
@@ -28,6 +30,7 @@ impl std::fmt::Display for ClusterVersion {
       ClusterVersion::K128 => write!(f, "1.28"),
       ClusterVersion::K129 => write!(f, "1.29"),
       ClusterVersion::K130 => write!(f, "1.30"),
+      ClusterVersion::K131 => write!(f, "1.31"),
     }
   }
 }
@@ -40,7 +43,8 @@ impl std::convert::From<&str> for ClusterVersion {
       "1.27" => ClusterVersion::K127,
       "1.28" => ClusterVersion::K128,
       "1.29" => ClusterVersion::K129,
-      _ => ClusterVersion::K130,
+      "1.30" => ClusterVersion::K130,
+      _ => ClusterVersion::K131,
     }
   }
 }

@@ -187,7 +187,6 @@ impl std::convert::From<&str> for ReservationType {
 
 #[cfg(test)]
 mod tests {
-
   use rstest::*;
 
   use super::*;

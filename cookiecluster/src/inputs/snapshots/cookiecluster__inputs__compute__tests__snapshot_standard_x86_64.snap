@@ -4266,7 +4266,7 @@ expression: standard_x86_64
         efa_supported: true,
         nvidia_gpu_supported: false,
         neuron_supported: true,
-        cbr_supported: false,
+        cbr_supported: true,
         cpu_arch: "x86-64",
     },
     "trn1n.32xlarge": InstanceInfo {

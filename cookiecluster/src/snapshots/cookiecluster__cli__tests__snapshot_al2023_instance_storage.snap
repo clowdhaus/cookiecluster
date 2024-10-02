@@ -11,7 +11,7 @@ module "eks" {
   version = "~> 20.24"
 
   cluster_name    = "example"
-  cluster_version = "1.30"
+  cluster_version = "1.31"
 
   cluster_addons = {
     coredns = {}
