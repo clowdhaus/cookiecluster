@@ -11,6 +11,10 @@ pub enum AmiType {
   Al2023Arm64Standard,
   #[serde(rename = "AL2023_x86_64_STANDARD")]
   Al2023X8664Standard,
+  #[serde(rename = "AL2023_x86_64_Neuron")]
+  Al2023X8664Neuron,
+  #[serde(rename = "AL2023_x86_64_NVIDIA")]
+  Al2023X8664Nvidia,
   #[serde(rename = "AL2_ARM_64")]
   Al2Arm64,
   #[serde(rename = "AL2_x86_64")]
@@ -45,22 +49,21 @@ impl AmiType {
   ) -> Result<Vec<&'a str>> {
     let ami_types = match accelerator {
       AcceleratorType::Nvidia => match (cpu_arch, enable_efa) {
-        (CpuArch::X8664, true) => vec!["AL2_x86_64_GPU"],
-        (CpuArch::X8664, false) => vec!["AL2_x86_64_GPU", "BOTTLEROCKET_x86_64_NVIDIA"],
+        (CpuArch::X8664, true) => vec!["AL2023_x86_64_NVIDIA"],
+        (CpuArch::X8664, false) => vec!["AL2023_x86_64_NVIDIA", "BOTTLEROCKET_x86_64_NVIDIA"],
         (CpuArch::Arm64, true) => vec![],
         (CpuArch::Arm64, false) => vec!["BOTTLEROCKET_ARM_64_NVIDIA"],
       },
       AcceleratorType::Neuron => match (cpu_arch, enable_efa) {
-        (CpuArch::X8664, true) => vec!["AL2_x86_64_GPU"],
-        (CpuArch::X8664, false) => vec!["AL2_x86_64_GPU"],
+        (CpuArch::X8664, true) => vec!["AL2023_x86_64_Neuron"],
+        (CpuArch::X8664, false) => vec!["AL2023_x86_64_Neuron"],
         (CpuArch::Arm64, true) => vec![],
         (CpuArch::Arm64, false) => vec![],
       },
       _ => match (cpu_arch, enable_efa) {
-        (CpuArch::X8664, true) => vec!["AL2_x86_64_GPU"],
+        (CpuArch::X8664, true) => vec!["AL2023_x86_64_NVIDIA", "AL2023_x86_64_Neuron"],
         (CpuArch::X8664, false) => vec![
           "AL2023_x86_64_STANDARD",
-          "AL2_x86_64",
           "BOTTLEROCKET_x86_64",
           "WINDOWS_CORE_2019_x86_64",
           "WINDOWS_CORE_2022_x86_64",
@@ -68,7 +71,7 @@ impl AmiType {
           "WINDOWS_FULL_2022_x86_64",
         ],
         (CpuArch::Arm64, true) => vec![],
-        (CpuArch::Arm64, false) => vec!["AL2023_ARM_64_STANDARD", "AL2_ARM_64", "BOTTLEROCKET_ARM_64"],
+        (CpuArch::Arm64, false) => vec!["AL2023_ARM_64_STANDARD", "BOTTLEROCKET_ARM_64"],
       },
     };
 
@@ -81,6 +84,8 @@ impl std::fmt::Display for AmiType {
     match self {
       AmiType::Al2023Arm64Standard => write!(f, "AL2023_ARM_64_STANDARD"),
       AmiType::Al2023X8664Standard => write!(f, "AL2023_x86_64_STANDARD"),
+      AmiType::Al2023X8664Neuron => write!(f, "AL2023_x86_64_Neuron"),
+      AmiType::Al2023X8664Nvidia => write!(f, "AL2023_x86_64_NVIDIA"),
       AmiType::Al2Arm64 => write!(f, "AL2_ARM_64"),
       AmiType::Al2X8664 => write!(f, "AL2_x86_64"),
       AmiType::Al2X8664Gpu => write!(f, "AL2_x86_64_GPU"),
@@ -102,6 +107,8 @@ impl std::convert::From<&str> for AmiType {
     match s {
       "AL2023_ARM_64_STANDARD" => AmiType::Al2023Arm64Standard,
       "AL2023_x86_64_STANDARD" => AmiType::Al2023X8664Standard,
+      "AL2023_x86_64_Neuron" => AmiType::Al2023X8664Neuron,
+      "AL2023_x86_64_NVIDIA" => AmiType::Al2023X8664Nvidia,
       "AL2_ARM_64" => AmiType::Al2Arm64,
       "AL2_x86_64" => AmiType::Al2X8664,
       "AL2_x86_64_GPU" => AmiType::Al2X8664Gpu,
@@ -140,25 +147,24 @@ mod tests {
   use super::*;
 
   #[rstest]
-  #[case(AcceleratorType::Nvidia, false, CpuArch::X8664, vec!["AL2_x86_64_GPU", "BOTTLEROCKET_x86_64_NVIDIA"])]
+  #[case(AcceleratorType::Nvidia, false, CpuArch::X8664, vec!["AL2023_x86_64_NVIDIA", "BOTTLEROCKET_x86_64_NVIDIA"])]
   #[case(AcceleratorType::Nvidia, false, CpuArch::Arm64, vec!["BOTTLEROCKET_ARM_64_NVIDIA"])]
-  #[case(AcceleratorType::Nvidia, true, CpuArch::X8664, vec!["AL2_x86_64_GPU"])]
+  #[case(AcceleratorType::Nvidia, true, CpuArch::X8664, vec!["AL2023_x86_64_NVIDIA"])]
   #[case(AcceleratorType::Nvidia, true, CpuArch::Arm64, vec![])]
-  #[case(AcceleratorType::Neuron, false, CpuArch::X8664, vec!["AL2_x86_64_GPU"])]
+  #[case(AcceleratorType::Neuron, false, CpuArch::X8664, vec!["AL2023_x86_64_Neuron"])]
   #[case(AcceleratorType::Neuron, false, CpuArch::Arm64, vec![])]
-  #[case(AcceleratorType::Neuron, true, CpuArch::X8664, vec!["AL2_x86_64_GPU"])]
+  #[case(AcceleratorType::Neuron, true, CpuArch::X8664, vec!["AL2023_x86_64_Neuron"])]
   #[case(AcceleratorType::Neuron, true, CpuArch::Arm64, vec![])]
   #[case(AcceleratorType::None, false, CpuArch::X8664, vec![
     "AL2023_x86_64_STANDARD",
-    "AL2_x86_64",
     "BOTTLEROCKET_x86_64",
     "WINDOWS_CORE_2019_x86_64",
     "WINDOWS_CORE_2022_x86_64",
     "WINDOWS_FULL_2019_x86_64",
     "WINDOWS_FULL_2022_x86_64",
   ])]
-  #[case(AcceleratorType::None, false, CpuArch::Arm64, vec!["AL2023_ARM_64_STANDARD", "AL2_ARM_64", "BOTTLEROCKET_ARM_64"])]
-  #[case(AcceleratorType::None, true, CpuArch::X8664, vec!["AL2_x86_64_GPU"])]
+  #[case(AcceleratorType::None, false, CpuArch::Arm64, vec!["AL2023_ARM_64_STANDARD", "BOTTLEROCKET_ARM_64"])]
+  #[case(AcceleratorType::None, true, CpuArch::X8664, vec!["AL2023_x86_64_NVIDIA", "AL2023_x86_64_Neuron"])]
   #[case(AcceleratorType::None, true, CpuArch::Arm64, vec![])]
   fn test_get_ami_types(
     #[case] accelerator: AcceleratorType,
