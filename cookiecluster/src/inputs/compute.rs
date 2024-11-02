@@ -59,6 +59,10 @@ pub fn limit_instances_selected(
   // There are two scenarios where only a single instance type should be specified:
   // 1. EC2 capacity reservation(s)
   // 2. When using EFA
+  if instance_idxs.is_empty() {
+    bail!("At least one instance type needs to be selected");
+  }
+
   if reservation != &ReservationType::None || enable_efa {
     instance_idxs = vec![instance_idxs.last().unwrap().to_owned()];
   }
@@ -67,10 +71,6 @@ pub fn limit_instances_selected(
     .iter()
     .map(|&i| instance_type_names[i].to_string())
     .collect::<Vec<String>>();
-
-  if instance_types.is_empty() {
-    bail!("At least one instance type needs to be selected");
-  }
 
   Ok(instance_types)
 }
