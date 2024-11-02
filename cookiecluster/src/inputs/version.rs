@@ -15,17 +15,11 @@ pub enum ClusterVersion {
   K128,
   #[serde(rename = "1.27")]
   K127,
-  #[serde(rename = "1.26")]
-  K126,
-  #[serde(rename = "1.25")]
-  K125,
 }
 
 impl std::fmt::Display for ClusterVersion {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      ClusterVersion::K125 => write!(f, "1.25"),
-      ClusterVersion::K126 => write!(f, "1.26"),
       ClusterVersion::K127 => write!(f, "1.27"),
       ClusterVersion::K128 => write!(f, "1.28"),
       ClusterVersion::K129 => write!(f, "1.29"),
@@ -38,8 +32,6 @@ impl std::fmt::Display for ClusterVersion {
 impl std::convert::From<&str> for ClusterVersion {
   fn from(s: &str) -> Self {
     match s {
-      "1.25" => ClusterVersion::K125,
-      "1.26" => ClusterVersion::K126,
       "1.27" => ClusterVersion::K127,
       "1.28" => ClusterVersion::K128,
       "1.29" => ClusterVersion::K129,
