@@ -47,6 +47,8 @@ neuron = {
       # Add security group rules on the node group security group to
       # allow EFA traffic
       enable_efa_support = true
+      enable_efa_only    = true
+      efa_indices        = [0]
       {{ /if }}
 
       labels = {
@@ -97,7 +99,7 @@ neuron = {
       }
       {{ /if }}
       {{ #if (eq inputs.reservation "CBR") }}
-      
+
       # ML capacity block reservation
       capacity_type = "CAPACITY_BLOCK"
       instance_market_options = {

@@ -49,7 +49,7 @@ tolerations:
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.26"
+  version = "~> 20.28"
 
   cluster_name    = "example"
   cluster_version = "1.31"
@@ -101,6 +101,8 @@ module "eks" {
       # Add security group rules on the node group security group to
       # allow EFA traffic
       enable_efa_support = true
+      enable_efa_only    = true
+      efa_indices        = [0]
 
       labels = {
         "vpc.amazonaws.com/efa.present" = "true"
@@ -118,7 +120,7 @@ module "eks" {
 
       # Capacity reservations are restricted to a single availability zone
       subnet_ids = data.aws_subnets.data_plane_reservation.ids
-      
+
       # ML capacity block reservation
       capacity_type = "CAPACITY_BLOCK"
       instance_market_options = {

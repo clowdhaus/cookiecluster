@@ -29,5 +29,5 @@ tracing-log.workspace = true
 tracing-subscriber.workspace = true
 
 [dev-dependencies]
-insta = "1.29"
+insta = "1.41"
 rstest = "0.23"
