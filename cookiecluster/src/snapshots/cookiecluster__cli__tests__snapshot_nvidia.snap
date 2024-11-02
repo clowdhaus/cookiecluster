@@ -23,7 +23,7 @@ affinity:
               - 'true'
 ```
 
-By default, the NVIDIA K8s device values already contian a toleration that matches the taint applied
+By default, the NVIDIA K8s device values already contain a toleration that matches the taint applied
 to the node group below.
 */
 ################################################################################

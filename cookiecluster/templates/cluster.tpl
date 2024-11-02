@@ -22,7 +22,7 @@ affinity:
               - 'true'
 ```
 
-By default, the NVIDIA K8s device values already contian a toleration that matches the taint applied
+By default, the NVIDIA K8s device values already contain a toleration that matches the taint applied
 to the node group below.
     {{ else }}
 ## NVIDIA K8s Device Plugin
@@ -34,7 +34,7 @@ The "{{ inputs.ami_type }}" AMI type comes with the NVIDIA K8s device plugin pre
 ## Neuron K8s Device Plugin
 
 The Neuron K8s device plugin, https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/tutorials/k8s-setup.html,
-will need to  be installed in the cluster in order to mount and utilize the Neuron devcies
+will need to  be installed in the cluster in order to mount and utilize the Neuron devices
 in your pods. Add the following node selector and toleration to your device plugin Daemonset
 values to ensure the device plugin runs on nodes that have Neuron devices present
 (as identified via the MNG label and taint provided below):
@@ -57,7 +57,7 @@ The Neuron K8s device plugin Helm chart support can be tracked in the following 
 ## EFA K8s Device Plugin
 
 The EFA K8s device plugin, https://github.com/aws/eks-charts/tree/master/stable/aws-efa-k8s-device-plugin,
-will need to  be installed in the cluster in order to mount and utilize the EFA devcies
+will need to  be installed in the cluster in order to mount and utilize the EFA devices
 in your pods. Add the following node selector and toleration to your device plugin Helm chart
 values to ensure the device plugin runs on nodes that have EFA devices present
 (as identified via the MNG label and taint provided below):
