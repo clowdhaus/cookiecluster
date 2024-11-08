@@ -30,7 +30,7 @@ The Neuron K8s device plugin Helm chart support can be tracked in the following 
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.28"
+  version = "~> 20.29"
 
   cluster_name    = "example"
   cluster_version = "1.31"
