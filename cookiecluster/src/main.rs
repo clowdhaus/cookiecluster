@@ -13,5 +13,5 @@ fn main() -> Result<()> {
   tracing::subscriber::set_global_default(subscriber).expect("Setting default subscriber failed");
 
   let inputs = Inputs::new().collect()?;
-  cli.write(inputs)
+  cli.write(&inputs)
 }
