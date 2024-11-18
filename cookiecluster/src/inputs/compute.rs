@@ -79,8 +79,7 @@ pub fn instance_storage_supported(instance_types: &[String], ami_type: &ami::Ami
   let instance_types_support = instance::INSTANCE_TYPES
     .iter()
     .filter(|instance| instance_types.contains(&instance.instance_type.to_string()))
-    .map(|instance| instance.instance_storage_supported)
-    .all(|f| f);
+    .all(|instance| instance.instance_storage_supported);
 
   match ami_type {
     ami::AmiType::Al2023Arm64Standard

@@ -1,4 +1,7 @@
-{{ #if (eq inputs.compute_scaling "karpenter") }}
+---
+source: cookiecluster/src/cli.rs
+expression: rendered
+---
 ################################################################################
 # Controller & Node IAM roles, SQS Queue, Eventbridge Rules
 ################################################################################
@@ -15,7 +18,7 @@ module "karpenter" {
 
   # Name needs to match role name passed to the EC2NodeClass
   node_iam_role_use_name_prefix   = false
-  node_iam_role_name              = "{{ inputs.cluster_name }}-karpenter-node"
+  node_iam_role_name              = "example-karpenter-node"
   create_pod_identity_association = true
 
   tags = module.tags.tags
@@ -55,4 +58,3 @@ resource "helm_release" "karpenter" {
     EOT
   ]
 }
-{{ /if }}

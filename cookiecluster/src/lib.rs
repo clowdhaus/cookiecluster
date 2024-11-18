@@ -3,11 +3,14 @@
 pub mod cli;
 pub mod inputs;
 
+use std::{collections::HashSet, str};
+
 use anyhow::Result;
 pub use cli::Cli;
 use handlebars::{handlebars_helper, Handlebars};
 use rust_embed::RustEmbed;
 use serde_json::Value;
+use tracing::trace;
 
 /// Embeds the contents of the `templates/` directory into the binary
 #[derive(RustEmbed)]
@@ -25,9 +28,24 @@ fn register_handlebars() -> Result<Handlebars<'static>> {
   handlebars.register_helper("and", Box::new(and));
   handlebars.register_helper("or", Box::new(or));
 
-  for tpl in Templates::iter().collect::<Vec<_>>() {
-    let rtpl = Templates::get(tpl.as_str()).unwrap();
-    handlebars.register_template_string(&tpl.replace(".tpl", ""), std::str::from_utf8(rtpl.data.as_ref())?)?;
+  // Register templates
+  let templates = HashSet::from(["eks.tpl", "karpenter.tpl", "main.tpl", "variables.tpl"]);
+  for tpl in &templates {
+    trace!("Registering template: {}", tpl.as_str());
+    let embed: rust_embed::EmbeddedFile = Templates::get(tpl.as_str()).unwrap();
+    let name = tpl.replace(".tpl", "");
+    handlebars.register_template_string(&name, std::str::from_utf8(embed.data.as_ref())?)?;
+  }
+
+  // Register partials
+  for tpl in Templates::iter()
+    .filter(|t| !templates.contains(t.as_str()))
+    .collect::<Vec<_>>()
+  {
+    trace!("Registering partial: {}", tpl.as_str());
+    let embed = Templates::get(tpl.as_str()).unwrap();
+    let name = format!("tpl_{}", tpl.replace(".tpl", "").replace("-", "_"));
+    handlebars.register_template_string(&name, std::str::from_utf8(embed.data.as_ref())?)?;
   }
 
   Ok(handlebars)
