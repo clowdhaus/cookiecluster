@@ -14,3 +14,28 @@ module "tags" {
   environment = "nonprod"
   repository  = "github.com/clowdhaus/cookiecluster"
 }
+
+################################################################################
+# VPC & Subnet data sources
+################################################################################
+
+data "aws_vpc" "this" {
+  filter {
+    name   = "tag:Name"
+    values = ["cookiecluster"]
+  }
+}
+
+data "aws_subnets" "control_plane" {
+  filter {
+    name   = "tag:Name"
+    values = ["*-intra-*"]
+  }
+}
+
+data "aws_subnets" "data_plane" {
+  filter {
+    name   = "tag:Name"
+    values = ["*-data-*"]
+  }
+}

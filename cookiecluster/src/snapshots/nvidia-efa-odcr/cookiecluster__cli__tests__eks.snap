@@ -53,7 +53,12 @@ module "eks" {
 
   cluster_name    = "example"
   cluster_version = "1.31"
+
   cluster_addons = {
+    coredns = {}
+    eks-pod-identity-agent = {}
+    kube-proxy = {}
+    vpc-cni = {}
   }
 
   # Add security group rules on the node group security group to

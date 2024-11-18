@@ -3,7 +3,6 @@
 ################################################################################
 # Variables - Required input
 ################################################################################
-
 {{ #if (eq inputs.reservation "ODCR") }}
 
 variable "on_demand_capacity_reservation_arns" {
@@ -12,6 +11,7 @@ variable "on_demand_capacity_reservation_arns" {
 }
 {{ /if }}
 {{ #if (eq inputs.reservation "CBR") }}
+
 variable "capacity_reservation_id" {
   description = "The ID of the ML capacity block reservation in which to run the instance(s)"
   type        = string

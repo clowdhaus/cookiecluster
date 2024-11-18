@@ -100,8 +100,10 @@ module "eks" {
   # allow deploying resources into the cluster
   enable_cluster_creator_admin_permissions = true
   {{ /if }}
+  {{ #if inputs.add_ons}}
+
   cluster_addons = {
-  {{ #each add_ons as |a| }}
+  {{ #each inputs.add_ons as |a| }}
     {{ a.name }} = {{ #if a.configuration.service_account_role_arn }}{
       service_account_role_arn = {{ a.configuration.service_account_role_arn }}
     }{{ else if (and (eq a.name "coredns") (eq ../inputs.compute_scaling "karpenter")) }}{
@@ -120,6 +122,7 @@ module "eks" {
     {{ ~else }}{}{{ /if }}
   {{ /each}}
   }
+  {{ /if }}
   {{ #if inputs.enable_efa}}
 
   # Add security group rules on the node group security group to

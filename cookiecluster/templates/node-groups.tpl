@@ -73,7 +73,7 @@ eks_managed_node_groups = {
     {{ /if }}
     {{ else }}
     {{ #if (or (eq inputs.ami_type "AL2023_ARM_64_STANDARD") (eq inputs.ami_type "AL2023_x86_64_STANDARD")) }}
-    
+
     # Increase root EBS volume
     block_device_mappings = {
       xvda = {

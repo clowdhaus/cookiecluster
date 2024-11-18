@@ -43,20 +43,10 @@ pub struct Cli {
 }
 
 impl Cli {
-  // Files that will be generated
-  // eks.tf - from addons.tpl, cluster.tpl, node-group.tpl, node-group-accel.tpl, and pod-identity.tpl
-  // helm.tf - from device-plugins.tpl
-  // karpenter.tf - from karpenter.tpl
-  // main.tf - from main.tpl, network.tpl
-  // variables.tf - from variables.tpl
   pub fn write(self, inputs: &Inputs) -> Result<()> {
     let handlebars = crate::register_handlebars()?;
 
     fs::write(Path::new("eks.tf"), render_value("eks", inputs, &handlebars)?)?;
-    // fs::write(
-    //   Path::new("helm.tf"),
-    //   render_value("helm", inputs, &handlebars)?,
-    // )?;
     fs::write(
       Path::new("karpenter.tf"),
       render_value("karpenter", inputs, &handlebars)?,
