@@ -15,12 +15,6 @@ pub enum AmiType {
   Al2023X8664Neuron,
   #[serde(rename = "AL2023_x86_64_NVIDIA")]
   Al2023X8664Nvidia,
-  #[serde(rename = "AL2_ARM_64")]
-  Al2Arm64,
-  #[serde(rename = "AL2_x86_64")]
-  Al2X8664,
-  #[serde(rename = "AL2_x86_64_GPU")]
-  Al2X8664Gpu,
   #[serde(rename = "BOTTLEROCKET_ARM_64")]
   BottlerocketArm64,
   #[serde(rename = "BOTTLEROCKET_ARM_64_NVIDIA")]
@@ -86,9 +80,6 @@ impl std::fmt::Display for AmiType {
       AmiType::Al2023X8664Standard => write!(f, "AL2023_x86_64_STANDARD"),
       AmiType::Al2023X8664Neuron => write!(f, "AL2023_x86_64_Neuron"),
       AmiType::Al2023X8664Nvidia => write!(f, "AL2023_x86_64_NVIDIA"),
-      AmiType::Al2Arm64 => write!(f, "AL2_ARM_64"),
-      AmiType::Al2X8664 => write!(f, "AL2_x86_64"),
-      AmiType::Al2X8664Gpu => write!(f, "AL2_x86_64_GPU"),
       AmiType::BottlerocketArm64 => write!(f, "BOTTLEROCKET_ARM_64"),
       AmiType::BottlerocketArm64Nvidia => write!(f, "BOTTLEROCKET_ARM_64_NVIDIA"),
       AmiType::BottlerocketX8664 => write!(f, "BOTTLEROCKET_x86_64"),
@@ -109,9 +100,6 @@ impl std::convert::From<&str> for AmiType {
       "AL2023_x86_64_STANDARD" => AmiType::Al2023X8664Standard,
       "AL2023_x86_64_Neuron" => AmiType::Al2023X8664Neuron,
       "AL2023_x86_64_NVIDIA" => AmiType::Al2023X8664Nvidia,
-      "AL2_ARM_64" => AmiType::Al2Arm64,
-      "AL2_x86_64" => AmiType::Al2X8664,
-      "AL2_x86_64_GPU" => AmiType::Al2X8664Gpu,
       "BOTTLEROCKET_ARM_64" => AmiType::BottlerocketArm64,
       "BOTTLEROCKET_ARM_64_NVIDIA" => AmiType::BottlerocketArm64Nvidia,
       "BOTTLEROCKET_x86_64" => AmiType::BottlerocketX8664,
@@ -128,8 +116,6 @@ impl std::convert::From<&str> for AmiType {
 /// Get the default AMI type equivalent based on the AMI type, and CPU architecture
 pub fn get_default_ami_type(ami_type: &AmiType, cpu_arch: &CpuArch) -> AmiType {
   match ami_type {
-    AmiType::Al2X8664 | AmiType::Al2X8664Gpu => AmiType::Al2X8664,
-    AmiType::Al2Arm64 => AmiType::Al2Arm64,
     AmiType::BottlerocketX8664Nvidia | AmiType::BottlerocketX8664 => AmiType::BottlerocketX8664,
     AmiType::BottlerocketArm64Nvidia | AmiType::BottlerocketArm64 => AmiType::BottlerocketArm64,
     _ => match cpu_arch {
@@ -177,9 +163,8 @@ mod tests {
   }
 
   #[rstest]
-  #[case(AmiType::Al2X8664Gpu, CpuArch::X8664, AmiType::Al2X8664)]
-  #[case(AmiType::Al2X8664, CpuArch::X8664, AmiType::Al2X8664)]
-  #[case(AmiType::Al2Arm64, CpuArch::Arm64, AmiType::Al2Arm64)]
+  #[case(AmiType::Al2023X8664Neuron, CpuArch::X8664, AmiType::Al2023X8664Standard)]
+  #[case(AmiType::Al2023X8664Nvidia, CpuArch::X8664, AmiType::Al2023X8664Standard)]
   #[case(AmiType::BottlerocketX8664Nvidia, CpuArch::X8664, AmiType::BottlerocketX8664)]
   #[case(AmiType::BottlerocketArm64Nvidia, CpuArch::Arm64, AmiType::BottlerocketArm64)]
   #[case(AmiType::WindowsCore2019X8664, CpuArch::X8664, AmiType::Al2023X8664Standard)]

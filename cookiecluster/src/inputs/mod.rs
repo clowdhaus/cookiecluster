@@ -321,7 +321,7 @@ impl Inputs {
 
     // Based on the default AMI type selected, set the default instance type(s) for the default node group
     self.default_instance_types = match self.default_ami_type {
-      ami::AmiType::Al2Arm64 | ami::AmiType::Al2X8664 | ami::AmiType::BottlerocketArm64Nvidia => {
+      ami::AmiType::Al2023X8664Neuron | ami::AmiType::Al2023X8664Nvidia | ami::AmiType::BottlerocketArm64Nvidia => {
         vec!["m7g.xlarge".to_string(), "m6g.xlarge".to_string()]
       }
       _ => vec!["m7a.xlarge".to_string(), "m7i.xlarge".to_string()],

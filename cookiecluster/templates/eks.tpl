@@ -1,7 +1,7 @@
 {{ #if (or (eq inputs.accelerator "NVIDIA") (eq inputs.accelerator "Neuron")) }}
 /*
   {{ #if (eq inputs.accelerator "NVIDIA") }}
-    {{ #if (eq inputs.ami_type "AL2_x86_64_GPU") }}
+    {{ #if (eq inputs.ami_type "AL2023_x86_64_NVIDIA") }}
 ## NVIDIA K8s Device Plugin
 
 The NVIDIA K8s device plugin, https://github.com/NVIDIA/k8s-device-plugin, will need to

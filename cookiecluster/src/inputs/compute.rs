@@ -84,9 +84,8 @@ pub fn instance_storage_supported(instance_types: &[String], ami_type: &ami::Ami
   match ami_type {
     ami::AmiType::Al2023Arm64Standard
     | ami::AmiType::Al2023X8664Standard
-    | ami::AmiType::Al2Arm64
-    | ami::AmiType::Al2X8664
-    | ami::AmiType::Al2X8664Gpu => instance_types_support,
+    | ami::AmiType::Al2023X8664Nvidia
+    | ami::AmiType::Al2023X8664Neuron => instance_types_support,
     _ => false,
   }
 }
@@ -191,11 +190,11 @@ mod tests {
   use super::*;
 
   #[rstest]
-  #[case(&[String::from("t2.micro")], &ami::AmiType::Al2X8664Gpu, false)]
-  #[case(&[String::from("p4d.24xlarge")], &ami::AmiType::Al2X8664Gpu, true)]
-  #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::Al2X8664Gpu, true)]
-  #[case(&[String::from("p4d.24xlarge"), String::from("t2.micro")], &ami::AmiType::Al2X8664Gpu, false)]
-  #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::Al2X8664, true)]
+  #[case(&[String::from("t2.micro")], &ami::AmiType::Al2023X8664Standard, false)]
+  #[case(&[String::from("p4d.24xlarge")], &ami::AmiType::Al2023X8664Nvidia, true)]
+  #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::Al2023X8664Nvidia, true)]
+  #[case(&[String::from("p4d.24xlarge"), String::from("t2.micro")], &ami::AmiType::Al2023X8664Nvidia, false)]
+  #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::Al2023X8664Nvidia, true)]
   #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::BottlerocketX8664Nvidia, false)]
   fn test_instance_storage_supported(
     #[case] instance_types: &[String],

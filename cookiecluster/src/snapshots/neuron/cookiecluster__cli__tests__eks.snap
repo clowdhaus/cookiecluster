@@ -64,7 +64,7 @@ module "eks" {
       desired_size = 2
     }
     neuron = {
-      ami_type = "AL2_x86_64_GPU"
+      ami_type = "AL2023_x86_64_Neuron"
       instance_types = [
         "inf2.xlarge",
       ]
