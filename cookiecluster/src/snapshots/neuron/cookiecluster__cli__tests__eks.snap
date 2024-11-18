@@ -1,0 +1,103 @@
+---
+source: cookiecluster/src/cli.rs
+expression: rendered
+---
+/*
+## Neuron K8s Device Plugin
+
+The Neuron K8s device plugin, https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/tutorials/k8s-setup.html,
+will need to  be installed in the cluster in order to mount and utilize the Neuron devices
+in your pods. Add the following node selector and toleration to your device plugin Daemonset
+values to ensure the device plugin runs on nodes that have Neuron devices present
+(as identified via the MNG label and taint provided below):
+
+```yaml
+nodeSelector:
+  vpc.amazonaws.com/efa.present: 'true'
+tolerations:
+  - key: aws.amazon.com/neuron
+    operator: Exists
+    effect: NoSchedule
+```
+
+The Neuron K8s device plugin Helm chart support can be tracked in the following two GitHub issues:
+- https://github.com/aws/eks-charts/issues/1068
+- https://github.com/aws-neuron/aws-neuron-sdk/issues/707
+*/
+################################################################################
+# EKS Cluster
+################################################################################
+
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 20.29"
+
+  cluster_name    = "example"
+  cluster_version = "1.31"
+
+  cluster_addons = {
+    coredns = {}
+    eks-pod-identity-agent = {}
+    kube-proxy = {}
+    vpc-cni = {}
+  }
+
+  vpc_id                   = data.aws_vpc.this.id
+  control_plane_subnet_ids = data.aws_subnets.control_plane.ids
+  subnet_ids               = data.aws_subnets.data_plane.ids
+
+  cluster_zonal_shift_config = {
+    enabled = true
+  }
+
+  eks_managed_node_groups = {
+    # This node group is for core addons such as CoreDNS
+    default = {
+      ami_type = "AL2023_x86_64_STANDARD"
+      instance_types = [
+        "m7a.xlarge",
+        "m7i.xlarge",
+      ]
+  
+      min_size     = 2
+      max_size     = 3
+      desired_size = 2
+    }
+    neuron = {
+      ami_type = "AL2_x86_64_GPU"
+      instance_types = [
+        "inf2.xlarge",
+      ]
+
+      min_size     = 2
+      max_size     = 5
+      desired_size = 2
+
+      # Increase root EBS volume size (default is 8Gb)
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+            volume_size           = 256
+            volume_type           = "gp3"
+            delete_on_termination = true
+          }
+        }
+      }
+
+      labels = {
+      }
+    
+      taints = {
+        # Ensure only Neuron workloads are scheduled on this node group
+        neuron = {
+          key    = "aws.amazon.com/neuron"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        }
+      }
+    }
+  }
+
+  tags = module.tags.tags
+}

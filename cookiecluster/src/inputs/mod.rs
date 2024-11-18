@@ -4,6 +4,7 @@ pub(crate) mod compute;
 pub(crate) mod instance;
 pub(crate) mod version;
 
+pub use add_on::AddOn;
 use anyhow::Result;
 use dialoguer::{theme::ColorfulTheme, Confirm, Input, MultiSelect, Select};
 use serde::{Deserialize, Serialize};

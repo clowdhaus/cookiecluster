@@ -1,11 +1,13 @@
-use std::{fs, path::Path, str::from_utf8};
+use std::{fs, path::Path};
 
 use anstyle::{AnsiColor, Color, Style};
 use anyhow::Result;
 use clap::{builder::Styles, Parser};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
-use handlebars::{handlebars_helper, Handlebars};
-use serde_json::{value::Map, Value};
+use handlebars::Handlebars;
+use serde_json::value::Map;
+
+use crate::inputs::Inputs;
 
 /// Styles for CLI
 fn get_styles() -> Styles {
@@ -41,134 +43,114 @@ pub struct Cli {
 }
 
 impl Cli {
-  fn render(self, inputs: crate::inputs::Inputs) -> Result<String> {
-    let cluster_tpl = crate::Templates::get("cluster.tpl").unwrap();
-    let accelerated_mng_tpl = crate::Templates::get("accel-mng.tpl").unwrap();
+  pub fn write(self, inputs: &Inputs) -> Result<()> {
+    let handlebars = crate::register_handlebars()?;
 
-    handlebars_helper!(eq: |v1: Value, v2: Value| v1 == v2);
-    handlebars_helper!(and: |v1: bool, v2: bool| v1 && v2 );
-    handlebars_helper!(or: |v1: bool, v2: bool| v1 || v2 );
-
-    let mut handlebars = Handlebars::new();
-    handlebars.register_helper("eq", Box::new(eq));
-    handlebars.register_helper("and", Box::new(and));
-    handlebars.register_helper("or", Box::new(or));
-    handlebars.register_template_string("cluster", from_utf8(cluster_tpl.data.as_ref())?)?;
-    handlebars.register_template_string("accelerated_mng", from_utf8(accelerated_mng_tpl.data.as_ref())?)?;
-
-    let mut data = Map::new();
-    // Handlebars prefers json/maps instead of nested rust data types
-    data.insert("add_ons".to_string(), handlebars::to_json(&inputs.add_ons));
-    data.insert("inputs".to_string(), handlebars::to_json(&inputs));
-
-    let accelerated_mng_rendered = handlebars.render("accelerated_mng", &data)?;
-    data.insert(
-      "accelerated_mng".to_string(),
-      handlebars::to_json(accelerated_mng_rendered),
-    );
-
-    let cluster_rendered = handlebars.render("cluster", &data)?;
-
-    Ok(cluster_rendered)
+    fs::write(Path::new("eks.tf"), render_value("eks", inputs, &handlebars)?)?;
+    fs::write(
+      Path::new("karpenter.tf"),
+      render_value("karpenter", inputs, &handlebars)?,
+    )?;
+    fs::write(Path::new("main.tf"), render_value("main", inputs, &handlebars)?)?;
+    fs::write(
+      Path::new("variables.tf"),
+      render_value("variables", inputs, &handlebars)?,
+    )?;
+    Ok(())
   }
+}
 
-  pub fn write(self, inputs: crate::inputs::Inputs) -> Result<()> {
-    let cluster_rendered = self.render(inputs)?;
-    fs::write(Path::new("eks.tf"), cluster_rendered).map_err(Into::into)
-  }
+fn render_value(name: &str, inputs: &Inputs, handlebars: &Handlebars) -> Result<String> {
+  let mut data = Map::new();
+  data.insert("inputs".to_string(), handlebars::to_json(inputs));
+
+  handlebars.render(name, &data).map_err(Into::into)
 }
 
 #[cfg(test)]
 mod tests {
 
   use super::*;
-  use crate::inputs::{add_on, ami, compute, version, Inputs};
+  use crate::inputs::{add_on, ami, compute, version};
 
-  #[test]
-  fn snapshot_default() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
-    // Defaults to AL2023
-    let inputs = Inputs::default();
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+  fn render(inputs: Inputs, dir_name: &str) -> Result<()> {
+    let mut settings = insta::Settings::new();
+    settings.set_snapshot_path(format!("./snapshots/{dir_name}"));
+    let _guard = settings.bind_to_scope();
+
+    for tpl in ["eks", "main", "karpenter", "variables"] {
+      let handlebars = crate::register_handlebars()?;
+      let rendered = render_value(tpl, &inputs, &handlebars)?;
+      insta::assert_snapshot!(tpl, rendered);
+    }
+
+    Ok(())
   }
 
   #[test]
-  fn snapshot_al2_x8664() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
+  fn snapshot_default() {
+    // Defaults to AL2023
+    let inputs = Inputs::default();
+
+    render(inputs, "default").unwrap();
+  }
+
+  #[test]
+  fn snapshot_al2_x86_64() {
     let inputs = Inputs {
       ami_type: ami::AmiType::Al2X8664,
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "al2-x86-64").unwrap();
   }
 
   #[test]
   fn snapshot_al2_arm64() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
     let inputs = Inputs {
       ami_type: ami::AmiType::Al2Arm64,
       instance_types: vec!["m7g.xlarge".to_string(), "m6g.xlarge".to_string()],
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "al2-arm64").unwrap();
   }
 
   #[test]
   fn snapshot_bottlerocket_x8664() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
     let inputs = Inputs {
       ami_type: ami::AmiType::BottlerocketX8664,
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "bottlerocket-x86-64").unwrap();
   }
 
   #[test]
   fn snapshot_bottlerocket_arm64() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
     let inputs = Inputs {
       ami_type: ami::AmiType::BottlerocketArm64,
       instance_types: vec!["m7g.xlarge".to_string(), "m6g.xlarge".to_string()],
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "bottlerocket-arm64").unwrap();
   }
 
   #[test]
   fn snapshot_nvidia() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
       ami_type: ami::AmiType::Al2X8664Gpu,
       instance_types: vec!["g5.4xlarge".to_owned()],
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "nvidia").unwrap();
   }
 
   #[test]
   fn snapshot_nvidia_efa() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
       ami_type: ami::AmiType::Al2X8664Gpu,
@@ -177,15 +159,12 @@ mod tests {
       instance_types: vec!["p5.48xlarge".to_owned()],
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "nvidia_efa").unwrap();
   }
 
   #[test]
   fn snapshot_nvidia_efa_odcr() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
       ami_type: ami::AmiType::Al2X8664Gpu,
@@ -195,15 +174,12 @@ mod tests {
       reservation: compute::ReservationType::OnDemandCapacityReservation,
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "nvidia-efa-odcr").unwrap();
   }
 
   #[test]
   fn snapshot_nvidia_efa_cbr() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
       ami_type: ami::AmiType::Al2X8664Gpu,
@@ -213,30 +189,24 @@ mod tests {
       reservation: compute::ReservationType::MlCapacityBlockReservation,
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "nvidia-efa-cbr").unwrap();
   }
 
   #[test]
   fn snapshot_neuron() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Neuron,
       ami_type: ami::AmiType::Al2X8664Gpu,
       instance_types: vec!["inf2.xlarge".to_owned()],
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "neuron").unwrap();
   }
 
   #[test]
   fn snapshot_neuron_efa() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Neuron,
       ami_type: ami::AmiType::Al2X8664Gpu,
@@ -245,58 +215,46 @@ mod tests {
       instance_types: vec!["trn1n.32xlarge".to_owned()],
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "neuron-efa").unwrap();
   }
 
   #[test]
   fn snapshot_al2_instance_storage() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
     let inputs = Inputs {
       ami_type: ami::AmiType::Al2Arm64,
       instance_storage_supported: true,
       instance_types: vec!["m7gd.2xlarge".to_owned()],
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "al2-instance-storage").unwrap();
   }
 
   #[test]
   fn snapshot_al2023_instance_storage() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
     let inputs = Inputs {
       ami_type: ami::AmiType::Al2023Arm64Standard,
       instance_storage_supported: true,
       instance_types: vec!["m7gd.2xlarge".to_owned()],
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "al2023-instance-storage").unwrap();
   }
 
   #[test]
   fn snapshot_karpenter() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
     let inputs = Inputs {
       compute_scaling: compute::ScalingType::Karpenter,
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "karpenter").unwrap();
   }
 
   #[test]
   fn snapshot_enable_all() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
     let inputs = Inputs {
       cluster_name: "cookiecluster".to_string(),
       cluster_version: version::ClusterVersion::K128,
@@ -307,15 +265,12 @@ mod tests {
       vpc_name: "cookiecluster".to_string(),
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "enable-all").unwrap();
   }
 
   #[test]
-  fn snapshot_all_addons() {
-    let cli = Cli {
-      verbose: Verbosity::default(),
-    };
+  fn snapshot_all_add_ons() {
     let inputs = Inputs {
       add_ons: vec![
         add_on::AddOn {
@@ -398,7 +353,7 @@ mod tests {
       ],
       ..Inputs::default()
     };
-    let rendered = cli.render(inputs).unwrap();
-    insta::assert_snapshot!(rendered);
+
+    render(inputs, "all-add-ons").unwrap();
   }
 }
