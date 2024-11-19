@@ -1,4 +1,3 @@
-{{ #if (eq inputs.compute_scaling "karpenter") }}
 ################################################################################
 # Controller & Node IAM roles, SQS Queue, Eventbridge Rules
 ################################################################################
@@ -15,7 +14,7 @@ module "karpenter" {
 
   # Name needs to match role name passed to the EC2NodeClass
   node_iam_role_use_name_prefix   = false
-  node_iam_role_name              = "{{ inputs.cluster_name }}-karpenter-node"
+  node_iam_role_name              = "example-karpenter-node"
   create_pod_identity_association = true
 
   tags = module.tags.tags
@@ -41,12 +40,11 @@ resource "helm_release" "karpenter" {
   repository_username = data.aws_ecrpublic_authorization_token.token.user_name
   repository_password = data.aws_ecrpublic_authorization_token.token.password
   chart               = "karpenter"
-  version             = "1.0.8"
+  version             = "1.0.6"
   wait                = false
 
   values = [
     <<-EOT
-      dnsPolicy: Default
       serviceAccount:
         name: ${module.karpenter.service_account}
       settings:
@@ -56,4 +54,3 @@ resource "helm_release" "karpenter" {
     EOT
   ]
 }
-{{ /if }}

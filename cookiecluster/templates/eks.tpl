@@ -109,18 +109,6 @@ module "eks" {
         role_arn        = {{ a.configuration.pod_identity_role_arn }}
         service_account = "{{ a.configuration.pod_identity_service_account }}"
       }]
-    }{{ else if (and (eq a.name "coredns") (eq ../inputs.compute_scaling "karpenter")) }}{
-      configuration_values = jsonencode({
-        tolerations = [
-          # Allow CoreDNS to run on the same nodes as the Karpenter controller
-          # for use during cluster creation when Karpenter nodes do not yet exist
-          {
-            key    = "karpenter.sh/controller"
-            value  = "true"
-            effect = "NoSchedule"
-          }
-        ]
-      })
     }
     {{ ~else }}{}{{ /if }}
   {{ /each}}

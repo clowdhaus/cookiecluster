@@ -1,7 +1,3 @@
----
-source: cookiecluster/src/cli.rs
-expression: rendered
----
 ################################################################################
 # EKS Cluster
 ################################################################################
@@ -14,8 +10,19 @@ module "eks" {
   cluster_version = "1.31"
 
   cluster_addons = {
-    coredns = {}
-    eks-pod-identity-agent = {}
+    coredns = {
+      configuration_values = jsonencode({
+        tolerations = [
+          # Allow CoreDNS to run on the same nodes as the Karpenter controller
+          # for use during cluster creation when Karpenter nodes do not yet exist
+          {
+            key    = "karpenter.sh/controller"
+            value  = "true"
+            effect = "NoSchedule"
+          }
+        ]
+      })
+    }
     kube-proxy = {}
     vpc-cni = {
       pod_identity_role_arn = [{
@@ -23,6 +30,7 @@ module "eks" {
         service_account = "aws-node"
       }]
     }
+    eks-pod-identity-agent = {}
   }
 
   vpc_id                   = data.aws_vpc.this.id
@@ -85,3 +93,4 @@ module "vpc_cni_pod_identity" {
 
   tags = module.tags.tags
 }
+
