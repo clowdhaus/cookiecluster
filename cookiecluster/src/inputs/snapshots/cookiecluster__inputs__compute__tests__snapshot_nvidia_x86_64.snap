@@ -3,15 +3,6 @@ source: cookiecluster/src/inputs/compute.rs
 expression: nvidia_x86_64
 ---
 {
-    "g3s.xlarge": InstanceInfo {
-        instance_type: "g3s.xlarge",
-        instance_storage_supported: false,
-        efa_supported: false,
-        nvidia_gpu_supported: true,
-        neuron_supported: false,
-        cbr_supported: false,
-        cpu_arch: "x86-64",
-    },
     "g4dn.12xlarge": InstanceInfo {
         instance_type: "g4dn.12xlarge",
         instance_storage_supported: true,

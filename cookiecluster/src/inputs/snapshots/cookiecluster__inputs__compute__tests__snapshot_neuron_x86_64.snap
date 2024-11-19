@@ -3,42 +3,6 @@ source: cookiecluster/src/inputs/compute.rs
 expression: neuron_x86_64
 ---
 {
-    "inf1.24xlarge": InstanceInfo {
-        instance_type: "inf1.24xlarge",
-        instance_storage_supported: false,
-        efa_supported: true,
-        nvidia_gpu_supported: false,
-        neuron_supported: true,
-        cbr_supported: false,
-        cpu_arch: "x86-64",
-    },
-    "inf1.2xlarge": InstanceInfo {
-        instance_type: "inf1.2xlarge",
-        instance_storage_supported: false,
-        efa_supported: false,
-        nvidia_gpu_supported: false,
-        neuron_supported: true,
-        cbr_supported: false,
-        cpu_arch: "x86-64",
-    },
-    "inf1.6xlarge": InstanceInfo {
-        instance_type: "inf1.6xlarge",
-        instance_storage_supported: false,
-        efa_supported: false,
-        nvidia_gpu_supported: false,
-        neuron_supported: true,
-        cbr_supported: false,
-        cpu_arch: "x86-64",
-    },
-    "inf1.xlarge": InstanceInfo {
-        instance_type: "inf1.xlarge",
-        instance_storage_supported: false,
-        efa_supported: false,
-        nvidia_gpu_supported: false,
-        neuron_supported: true,
-        cbr_supported: false,
-        cpu_arch: "x86-64",
-    },
     "inf2.24xlarge": InstanceInfo {
         instance_type: "inf2.24xlarge",
         instance_storage_supported: false,

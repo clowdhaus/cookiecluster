@@ -190,10 +190,10 @@ mod tests {
   use super::*;
 
   #[rstest]
-  #[case(&[String::from("t2.micro")], &ami::AmiType::Al2023X8664Standard, false)]
+  #[case(&[String::from("t3.micro")], &ami::AmiType::Al2023X8664Standard, false)]
   #[case(&[String::from("p4d.24xlarge")], &ami::AmiType::Al2023X8664Nvidia, true)]
   #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::Al2023X8664Nvidia, true)]
-  #[case(&[String::from("p4d.24xlarge"), String::from("t2.micro")], &ami::AmiType::Al2023X8664Nvidia, false)]
+  #[case(&[String::from("p4d.24xlarge"), String::from("t3.micro")], &ami::AmiType::Al2023X8664Nvidia, false)]
   #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::Al2023X8664Nvidia, true)]
   #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::BottlerocketX8664Nvidia, false)]
   fn test_instance_storage_supported(

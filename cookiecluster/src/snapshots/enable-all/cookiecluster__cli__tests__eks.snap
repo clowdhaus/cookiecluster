@@ -66,3 +66,19 @@ module "eks" {
 
   tags = module.tags.tags
 }
+
+################################################################################
+# EKS Pod Identity IAM Roles
+################################################################################
+
+module "vpc_cni_pod_identity" {
+  source = "terraform-aws-modules/eks-pod-identity/aws"
+  version = "~> 1.7"
+
+  name = "vpc-cni"
+
+  attach_aws_vpc_cni_policy = true
+  aws_vpc_cni_enable_ipv4   = true
+
+  tags = module.tags.tags
+}

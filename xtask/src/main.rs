@@ -120,7 +120,17 @@ async fn get_ec2_instances(
         | itype.starts_with("f1")
         | itype.starts_with("p2")
         | itype.starts_with('u')
-        | itype.starts_with("vt") =>
+        | itype.starts_with("vt")
+        | itype.starts_with("i3")
+        | itype.starts_with("i4")
+        | itype.starts_with("im")
+        | itype.starts_with("is")
+        | itype.starts_with("d3")
+        | itype.starts_with("h1")
+        | itype.starts_with("inf1")
+        | itype.starts_with("t2")
+        | itype.starts_with("x")
+        | itype.starts_with("z") =>
       {
         continue
       }
