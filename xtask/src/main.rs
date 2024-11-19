@@ -119,6 +119,7 @@ async fn get_ec2_instances(
       _ if itype.starts_with("dl")
         | itype.starts_with("f1")
         | itype.starts_with("p2")
+        | itype.starts_with("gr")
         | itype.starts_with('u')
         | itype.starts_with("vt")
         | itype.starts_with("i3")

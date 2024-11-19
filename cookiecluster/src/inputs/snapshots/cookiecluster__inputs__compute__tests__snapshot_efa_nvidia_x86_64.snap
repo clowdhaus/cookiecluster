@@ -165,15 +165,6 @@ expression: efa_nvidia_x86_64
         cbr_supported: false,
         cpu_arch: "x86-64",
     },
-    "gr6.8xlarge": InstanceInfo {
-        instance_type: "gr6.8xlarge",
-        instance_storage_supported: true,
-        efa_supported: true,
-        nvidia_gpu_supported: true,
-        neuron_supported: false,
-        cbr_supported: false,
-        cpu_arch: "x86-64",
-    },
     "p3dn.24xlarge": InstanceInfo {
         instance_type: "p3dn.24xlarge",
         instance_storage_supported: true,
