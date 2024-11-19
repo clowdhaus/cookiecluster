@@ -1,6 +1,8 @@
 ---
 source: cookiecluster/src/cli.rs
+assertion_line: 84
 expression: rendered
+snapshot_kind: text
 ---
 ################################################################################
 # EKS Cluster
@@ -78,6 +80,57 @@ module "eks" {
       }
     }
   }
+
+  tags = module.tags.tags
+}
+
+################################################################################
+# EKS Pod Identity IAM Roles
+################################################################################
+
+module "aws_ebs_csi_driver_pod_identity" {
+  source = "terraform-aws-modules/eks-pod-identity/aws"
+  version = "~> 1.7"
+
+  name = "aws-ebs-csi"
+
+  attach_aws_ebs_csi_policy = true
+
+  tags = module.tags.tags
+}
+
+module "aws_efs_csi_driver_pod_identity" {
+  source = "terraform-aws-modules/eks-pod-identity/aws"
+  version = "~> 1.7"
+
+  name = "aws-efs-csi"
+
+  attach_aws_efs_csi_policy = true
+
+  tags = module.tags.tags
+}
+
+module "aws_mountpoint_s3_csi_driver_pod_identity" {
+  source = "terraform-aws-modules/eks-pod-identity/aws"
+  version = "~> 1.7"
+
+  name = "mountpoint-s3-csi"
+
+  attach_mountpoint_s3_csi_policy = true
+  # TODO - update with your respective S3 bucket ARN(s) and path(s)
+  mountpoint_s3_csi_bucket_arns      = ["arn:aws:s3:::mountpoint-s3"]
+  mountpoint_s3_csi_bucket_path_arns = ["arn:aws:s3:::mountpoint-s3/example/*"]
+
+  tags = module.tags.tags
+}
+
+module "amazon_cloudwatch_observability_pod_identity" {
+  source = "terraform-aws-modules/eks-pod-identity/aws"
+  version = "~> 1.7"
+
+  name = "aws-cloudwatch-observability"
+
+  attach_aws_cloudwatch_observability_policy = true
 
   tags = module.tags.tags
 }

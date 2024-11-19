@@ -1,6 +1,8 @@
 ---
 source: cookiecluster/src/cli.rs
+assertion_line: 84
 expression: rendered
+snapshot_kind: text
 ---
 ################################################################################
 # EKS Cluster
@@ -80,4 +82,20 @@ module "eks" {
     # (i.e. - at most, only one security group should have this tag in your account)
     "karpenter.sh/discovery" = example
   })
+}
+
+################################################################################
+# EKS Pod Identity IAM Roles
+################################################################################
+
+module "vpc_cni_pod_identity" {
+  source = "terraform-aws-modules/eks-pod-identity/aws"
+  version = "~> 1.7"
+
+  name = "vpc-cni"
+
+  attach_aws_vpc_cni_policy = true
+  aws_vpc_cni_enable_ipv4   = true
+
+  tags = module.tags.tags
 }

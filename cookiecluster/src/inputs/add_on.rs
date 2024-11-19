@@ -37,17 +37,26 @@ pub fn get_add_ons() -> Result<Vec<String>> {
 pub fn get_add_on_configuration(name: &str) -> Result<AddOn> {
   let add_on_type = AddOnType::from(name);
   let add_on = match add_on_type {
-    // Not adding vpc-cni since it still requires permissions on node IAM role to start
     AddOnType::AwsEbsCsiDriver
     | AddOnType::AwsEfsCsiDriver
     | AddOnType::AwsMountpointS3CsiDriver
-    | AddOnType::AmazonCloudwatchObservability => {
+    | AddOnType::AmazonCloudwatchObservability
+    | AddOnType::VpcCni => {
       let under_name = add_on_type.to_string().replace('-', "_");
+      let service_account_name = match add_on_type {
+        AddOnType::AwsEbsCsiDriver => Some("ebs-csi-controller-sa".to_string()),
+        AddOnType::AwsEfsCsiDriver => Some("efs-csi-controller-sa".to_string()),
+        AddOnType::AwsMountpointS3CsiDriver => Some("s3-csi-driver-sa".to_string()),
+        AddOnType::AmazonCloudwatchObservability => Some("cloudwatch-agent".to_string()),
+        AddOnType::VpcCni => Some("aws-node".to_string()),
+        _ => None,
+      };
       AddOn {
         name: add_on_type.to_string(),
         under_name: under_name.to_string(),
         configuration: AddOnConfiguration {
-          service_account_role_arn: Some(format!("module.{under_name}_irsa.iam_role_arn")),
+          pod_identity_role_arn: Some(format!("module.{under_name}_pod_identity.iam_role_arn")),
+          pod_identity_service_account: service_account_name,
         },
       }
     }
@@ -55,7 +64,8 @@ pub fn get_add_on_configuration(name: &str) -> Result<AddOn> {
       name: add_on_type.to_string(),
       under_name: add_on_type.to_string().replace('-', "_"),
       configuration: AddOnConfiguration {
-        service_account_role_arn: None,
+        pod_identity_role_arn: None,
+        pod_identity_service_account: None,
       },
     },
   };
@@ -65,7 +75,8 @@ pub fn get_add_on_configuration(name: &str) -> Result<AddOn> {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddOnConfiguration {
-  pub service_account_role_arn: Option<String>,
+  pub pod_identity_role_arn: Option<String>,
+  pub pod_identity_service_account: Option<String>,
 }
 
 impl std::fmt::Display for AddOnType {
@@ -114,17 +125,17 @@ mod tests {
   #[rstest]
   #[case(AddOnType::CoreDns, None)]
   #[case(AddOnType::KubeProxy, None)]
-  #[case(AddOnType::VpcCni, None)]
+  #[case(AddOnType::VpcCni, Some("module.vpc_cni_pod_identity.iam_role_arn".to_string()))]
   #[case(AddOnType::EksPodIdentityAgent, None)]
-  #[case(AddOnType::AwsEbsCsiDriver, Some("module.aws_ebs_csi_driver_irsa.iam_role_arn".to_string()))]
-  #[case(AddOnType::AwsEfsCsiDriver, Some("module.aws_efs_csi_driver_irsa.iam_role_arn".to_string()))]
-  #[case(AddOnType::AwsMountpointS3CsiDriver, Some("module.aws_mountpoint_s3_csi_driver_irsa.iam_role_arn".to_string()))]
+  #[case(AddOnType::AwsEbsCsiDriver, Some("module.aws_ebs_csi_driver_pod_identity.iam_role_arn".to_string()))]
+  #[case(AddOnType::AwsEfsCsiDriver, Some("module.aws_efs_csi_driver_pod_identity.iam_role_arn".to_string()))]
+  #[case(AddOnType::AwsMountpointS3CsiDriver, Some("module.aws_mountpoint_s3_csi_driver_pod_identity.iam_role_arn".to_string()))]
   #[case(AddOnType::SnapshotController, None)]
   #[case(AddOnType::Adot, None)]
   #[case(AddOnType::AwsGuarddutyAgent, None)]
-  #[case(AddOnType::AmazonCloudwatchObservability, Some("module.amazon_cloudwatch_observability_irsa.iam_role_arn".to_string()))]
+  #[case(AddOnType::AmazonCloudwatchObservability, Some("module.amazon_cloudwatch_observability_pod_identity.iam_role_arn".to_string()))]
   fn test_get_add_on_configuration(#[case] aot: AddOnType, #[case] expected: Option<String>) {
     let add_on = get_add_on_configuration(&aot.to_string()).unwrap();
-    assert_eq!(add_on.configuration.service_account_role_arn, expected);
+    assert_eq!(add_on.configuration.pod_identity_role_arn, expected);
   }
 }

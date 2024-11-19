@@ -1,28 +1,32 @@
 ---
 source: cookiecluster/src/cli.rs
+assertion_line: 84
 expression: rendered
+snapshot_kind: text
 ---
 /*
-## Neuron K8s Device Plugin
+## NVIDIA K8s Device Plugin
 
-The Neuron K8s device plugin, https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/tutorials/k8s-setup.html,
-will need to  be installed in the cluster in order to mount and utilize the Neuron devices
-in your pods. Add the following node selector and toleration to your device plugin Daemonset
-values to ensure the device plugin runs on nodes that have Neuron devices present
-(as identified via the MNG label and taint provided below):
+The NVIDIA K8s device plugin, https://github.com/NVIDIA/k8s-device-plugin, will need to
+be installed in the cluster in order to mount and utilize the GPUs in your pods. Add the
+following affinity rule to your device plugin Helm chart values to ensure the device
+plugin runs on nodes that have GPUs present (as identified via the MNG
+labels provided below):
 
 ```yaml
-nodeSelector:
-  vpc.amazonaws.com/efa.present: 'true'
-tolerations:
-  - key: aws.amazon.com/neuron
-    operator: Exists
-    effect: NoSchedule
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: 'nvidia.com/gpu.present'
+            operator: In
+            values:
+              - 'true'
 ```
 
-The Neuron K8s device plugin Helm chart support can be tracked in the following two GitHub issues:
-- https://github.com/aws/eks-charts/issues/1068
-- https://github.com/aws-neuron/aws-neuron-sdk/issues/707
+By default, the NVIDIA K8s device values already contain a toleration that matches the taint applied
+to the node group below.
 
 ## EFA K8s Device Plugin
 
@@ -36,7 +40,7 @@ values to ensure the device plugin runs on nodes that have EFA devices present
 nodeSelector:
   vpc.amazonaws.com/efa.present: 'true'
 tolerations:
-  - key: aws.amazon.com/neuron
+  - key: nvidia.com/gpu
     operator: Exists
     effect: NoSchedule
 ```
@@ -85,9 +89,9 @@ module "eks" {
       max_size     = 3
       desired_size = 2
     }
-    neuron = {
-      ami_type       = "AL2023_x86_64_Neuron"
-      instance_types = ["trn1n.32xlarge" ]
+    gpu = {
+      ami_type       = "AL2023_x86_64_NVIDIA"
+      instance_types = ["p5.48xlarge" ]
 
       min_size     = 2
       max_size     = 5
@@ -109,19 +113,49 @@ module "eks" {
 
       labels = {
         "vpc.amazonaws.com/efa.present" = "true"
-        "aws.amazon.com/neuron.present" = "true"
+        "nvidia.com/gpu.present"        = "true"
       }
     
       taints = {
-        # Ensure only Neuron workloads are scheduled on this node group
-        neuron = {
-          key    = "aws.amazon.com/neuron"
+        # Ensure only GPU workloads are scheduled on this node group
+        gpu = {
+          key    = "nvidia.com/gpu"
           value  = "true"
           effect = "NO_SCHEDULE"
         }
       }
+
+      # Capacity reservations are restricted to a single availability zone
+      subnet_ids = data.aws_subnets.data_plane_reservation.ids
+
+      # ML capacity block reservation
+      capacity_type = "CAPACITY_BLOCK"
+      instance_market_options = {
+        market_type = "capacity-block"
+      }
+      capacity_reservation_specification = {
+        capacity_reservation_target = {
+          capacity_reservation_id = var.capacity_reservation_id
+        }
+      }
     }
   }
+
+  tags = module.tags.tags
+}
+
+################################################################################
+# EKS Pod Identity IAM Roles
+################################################################################
+
+module "vpc_cni_pod_identity" {
+  source = "terraform-aws-modules/eks-pod-identity/aws"
+  version = "~> 1.7"
+
+  name = "vpc-cni"
+
+  attach_aws_vpc_cni_policy = true
+  aws_vpc_cni_enable_ipv4   = true
 
   tags = module.tags.tags
 }

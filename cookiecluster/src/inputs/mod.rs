@@ -44,28 +44,32 @@ impl Default for Inputs {
           name: String::from("coredns"),
           under_name: String::from("coredns"),
           configuration: add_on::AddOnConfiguration {
-            service_account_role_arn: None,
+            pod_identity_role_arn: None,
+            pod_identity_service_account: None,
           },
         },
         add_on::AddOn {
           name: String::from("eks-pod-identity-agent"),
           under_name: String::from("eks_pod_identity_agent"),
           configuration: add_on::AddOnConfiguration {
-            service_account_role_arn: None,
+            pod_identity_role_arn: None,
+            pod_identity_service_account: None,
           },
         },
         add_on::AddOn {
           name: String::from("kube-proxy"),
           under_name: String::from("kube_proxy"),
           configuration: add_on::AddOnConfiguration {
-            service_account_role_arn: None,
+            pod_identity_role_arn: None,
+            pod_identity_service_account: None,
           },
         },
         add_on::AddOn {
           name: String::from("vpc-cni"),
-          under_name: String::from("vpc-cni"),
+          under_name: String::from("vpc_cni"),
           configuration: add_on::AddOnConfiguration {
-            service_account_role_arn: None,
+            pod_identity_role_arn: Some("module.vpc_cni_pod_identity.iam_role_arn".to_string()),
+            pod_identity_service_account: Some("aws-node".to_string()),
           },
         },
       ],

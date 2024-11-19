@@ -1,63 +1,45 @@
-{{ #each add_ons as |a| }}
-{{ #if a.configuration.service_account_role_arn }}
-
 ################################################################################
-# Add-On IAM Role(s) for Service Account(s)
+# EKS Pod Identity IAM Roles
 ################################################################################
 
-module "{{ a.under_name }}_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.39"
+{{ #each inputs.add_ons as |a| }}
+{{ #if a.configuration.pod_identity_role_arn }}
+module "{{ a.under_name }}_pod_identity" {
+  source = "terraform-aws-modules/eks-pod-identity/aws"
+  version = "~> 1.7"
 
+  {{ #if (eq a.name "vpc-cni") }}
+  name = "vpc-cni"
+
+  attach_aws_vpc_cni_policy = true
+  aws_vpc_cni_enable_ipv4   = true
+  {{ /if }}
   {{ #if (eq a.name "aws-ebs-csi-driver") }}
-  role_name             = "aws-ebs-csi-driver"
-  attach_ebs_csi_policy = true
+  name = "aws-ebs-csi"
 
-  oidc_providers = {
-    this = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
-    }
-  }
+  attach_aws_ebs_csi_policy = true
   {{ /if }}
   {{ #if (eq a.name "aws-efs-csi-driver") }}
-  role_name             = "aws-efs-csi-driver"
-  attach_efs_csi_policy = true
+  name = "aws-efs-csi"
 
-  oidc_providers = {
-    this = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:efs-csi-controller-sa"]
-    }
-  }
+  attach_aws_efs_csi_policy = true
   {{ /if }}
   {{ #if (eq a.name "aws-mountpoint-s3-csi-driver") }}
-  role_name                       = "aws-mountpoint-s3-csi-driver"
+  name = "mountpoint-s3-csi"
+
   attach_mountpoint_s3_csi_policy = true
   # TODO - update with your respective S3 bucket ARN(s) and path(s)
-  mountpoint_s3_csi_bucket_arns   = ["arn:aws:s3:::mountpoint-s3-csi-bucket"]
-  mountpoint_s3_csi_path_arns     = ["arn:aws:s3:::mountpoint-s3-csi-bucket/example/*"]
-
-  oidc_providers = {
-    this = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:s3-csi-driver-sa"]
-    }
-  }
+  mountpoint_s3_csi_bucket_arns      = ["arn:aws:s3:::mountpoint-s3"]
+  mountpoint_s3_csi_bucket_path_arns = ["arn:aws:s3:::mountpoint-s3/example/*"]
   {{ /if }}
   {{ #if (eq a.name "amazon-cloudwatch-observability") }}
-  role_name                              = "amazon-cloudwatch-observability"
-  attach_cloudwatch_observability_policy = true
+  name = "aws-cloudwatch-observability"
 
-  oidc_providers = {
-    this = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["amazon-cloudwatch:cloudwatch-agent"]
-    }
-  }
+  attach_aws_cloudwatch_observability_policy = true
   {{ /if }}
 
   tags = module.tags.tags
 }
+
 {{ /if }}
 {{ /each }}

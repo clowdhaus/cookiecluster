@@ -104,8 +104,11 @@ module "eks" {
 
   cluster_addons = {
   {{ #each inputs.add_ons as |a| }}
-    {{ a.name }} = {{ #if a.configuration.service_account_role_arn }}{
-      service_account_role_arn = {{ a.configuration.service_account_role_arn }}
+    {{ a.name }} = {{ #if a.configuration.pod_identity_role_arn }}{
+      pod_identity_role_arn = [{
+        role_arn        = {{ a.configuration.pod_identity_role_arn }}
+        service_account = "{{ a.configuration.pod_identity_service_account }}"
+      }]
     }{{ else if (and (eq a.name "coredns") (eq ../inputs.compute_scaling "karpenter")) }}{
       configuration_values = jsonencode({
         tolerations = [
@@ -184,6 +187,7 @@ resource "aws_resourcegroups_resource" "odcr" {
   resource_arn = element(var.on_demand_capacity_reservation_arns, count.index)
 }
 {{ /if }}
+{{ #if inputs.add_ons}}
 
-
-{{ tpl_pod_identity }}
+{{> tpl_pod_identity }}
+{{ /if }}

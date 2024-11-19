@@ -58,7 +58,12 @@ module "eks" {
     coredns = {}
     eks-pod-identity-agent = {}
     kube-proxy = {}
-    vpc-cni = {}
+    vpc-cni = {
+      pod_identity_role_arn = [{
+        role_arn        = module.vpc_cni_pod_identity.iam_role_arn
+        service_account = "aws-node"
+      }]
+    }
   }
 
   # Add security group rules on the node group security group to
