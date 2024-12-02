@@ -116,20 +116,21 @@ async fn get_ec2_instances(
   for inst in instances_info.iter() {
     let itype = inst.instance_type().unwrap().as_str();
     match itype {
-      _ if itype.starts_with("dl")
-        | itype.starts_with("f1")
-        | itype.starts_with("p2")
+      _ if itype.starts_with("d")
+        | itype.starts_with("f")
         | itype.starts_with("gr")
-        | itype.starts_with('u')
-        | itype.starts_with("vt")
+        | itype.starts_with("h1")
         | itype.starts_with("i3")
         | itype.starts_with("i4")
+        | itype.starts_with("i7")
+        | itype.starts_with("i8")
         | itype.starts_with("im")
-        | itype.starts_with("is")
-        | itype.starts_with("d3")
-        | itype.starts_with("h1")
         | itype.starts_with("inf1")
+        | itype.starts_with("is")
+        | itype.starts_with("p2")
         | itype.starts_with("t2")
+        | itype.starts_with('u')
+        | itype.starts_with("v")
         | itype.starts_with("x")
         | itype.starts_with("z") =>
       {
