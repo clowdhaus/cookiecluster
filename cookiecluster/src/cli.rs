@@ -99,6 +99,7 @@ mod tests {
   fn snapshot_al2023_x86_64() {
     let inputs = Inputs {
       ami_type: ami::AmiType::Al2023X8664Standard,
+      compute_scaling: compute::ScalingType::None,
       ..Inputs::default()
     };
 
@@ -109,6 +110,7 @@ mod tests {
   fn snapshot_al2023_arm64() {
     let inputs = Inputs {
       ami_type: ami::AmiType::Al2023Arm64Standard,
+      compute_scaling: compute::ScalingType::None,
       instance_types: vec!["m7g.xlarge".to_string(), "m6g.xlarge".to_string()],
       ..Inputs::default()
     };
@@ -120,6 +122,7 @@ mod tests {
   fn snapshot_bottlerocket_x8664() {
     let inputs = Inputs {
       ami_type: ami::AmiType::BottlerocketX8664,
+      compute_scaling: compute::ScalingType::None,
       ..Inputs::default()
     };
 
@@ -130,6 +133,7 @@ mod tests {
   fn snapshot_bottlerocket_arm64() {
     let inputs = Inputs {
       ami_type: ami::AmiType::BottlerocketArm64,
+      compute_scaling: compute::ScalingType::None,
       instance_types: vec!["m7g.xlarge".to_string(), "m6g.xlarge".to_string()],
       ..Inputs::default()
     };
@@ -142,6 +146,7 @@ mod tests {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
       ami_type: ami::AmiType::Al2023X8664Nvidia,
+      compute_scaling: compute::ScalingType::None,
       instance_types: vec!["g5.4xlarge".to_owned()],
       ..Inputs::default()
     };
@@ -154,6 +159,7 @@ mod tests {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
       ami_type: ami::AmiType::Al2023X8664Nvidia,
+      compute_scaling: compute::ScalingType::None,
       enable_efa: true,
       instance_storage_supported: true,
       instance_types: vec!["p5.48xlarge".to_owned()],
@@ -168,6 +174,7 @@ mod tests {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
       ami_type: ami::AmiType::Al2023X8664Nvidia,
+      compute_scaling: compute::ScalingType::None,
       enable_efa: true,
       instance_storage_supported: true,
       instance_types: vec!["p5.48xlarge".to_owned()],
@@ -183,6 +190,7 @@ mod tests {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
       ami_type: ami::AmiType::Al2023X8664Nvidia,
+      compute_scaling: compute::ScalingType::None,
       enable_efa: true,
       instance_storage_supported: true,
       instance_types: vec!["p5.48xlarge".to_owned()],
@@ -198,6 +206,7 @@ mod tests {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Neuron,
       ami_type: ami::AmiType::Al2023X8664Neuron,
+      compute_scaling: compute::ScalingType::None,
       instance_types: vec!["inf2.xlarge".to_owned()],
       ..Inputs::default()
     };
@@ -210,6 +219,7 @@ mod tests {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Neuron,
       ami_type: ami::AmiType::Al2023X8664Neuron,
+      compute_scaling: compute::ScalingType::None,
       enable_efa: true,
       instance_storage_supported: true,
       instance_types: vec!["trn1n.32xlarge".to_owned()],
@@ -223,6 +233,7 @@ mod tests {
   fn snapshot_al2023_instance_storage() {
     let inputs = Inputs {
       ami_type: ami::AmiType::Al2023Arm64Standard,
+      compute_scaling: compute::ScalingType::None,
       instance_storage_supported: true,
       instance_types: vec!["m7gd.2xlarge".to_owned()],
       ..Inputs::default()
@@ -242,11 +253,22 @@ mod tests {
   }
 
   #[test]
+  fn snapshot_auto_mode() {
+    let inputs = Inputs {
+      compute_scaling: compute::ScalingType::AutoMode,
+      ..Inputs::default()
+    };
+
+    render(inputs, "auto-mode").unwrap();
+  }
+
+  #[test]
   fn snapshot_enable_all() {
     let inputs = Inputs {
       cluster_name: "cookiecluster".to_string(),
       cluster_version: version::ClusterVersion::K128,
       cluster_endpoint_public_access: true,
+      compute_scaling: compute::ScalingType::None,
       control_plane_subnet_filter: "*-intra-*".to_string(),
       data_plane_subnet_filter: "*-data-*".to_string(),
       enable_cluster_creator_admin_permissions: true,
@@ -350,6 +372,7 @@ mod tests {
           },
         },
       ],
+      compute_scaling: compute::ScalingType::None,
       ..Inputs::default()
     };
 

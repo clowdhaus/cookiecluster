@@ -120,6 +120,8 @@ impl std::fmt::Display for AcceleratorType {
 
 #[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
 pub enum ScalingType {
+  #[serde(rename = "auto-mode")]
+  AutoMode,
   #[serde(rename = "karpenter")]
   Karpenter,
   #[serde(rename = "cluster-autoscaler")]
@@ -130,7 +132,7 @@ pub enum ScalingType {
 
 pub fn get_scaling_types<'a>(reservation: &ReservationType) -> Vec<&'a str> {
   match reservation {
-    ReservationType::None => vec!["karpenter", "cluster-autoscaler", "None"],
+    ReservationType::None => vec!["auto-mode", "karpenter", "cluster-autoscaler", "None"],
     _ => vec!["cluster-autoscaler", "None"],
   }
 }
@@ -138,6 +140,7 @@ pub fn get_scaling_types<'a>(reservation: &ReservationType) -> Vec<&'a str> {
 impl std::convert::From<&str> for ScalingType {
   fn from(s: &str) -> Self {
     match s {
+      "auto-mode" => ScalingType::AutoMode,
       "karpenter" => ScalingType::Karpenter,
       "cluster-autoscaler" => ScalingType::ClusterAutoscaler,
       _ => ScalingType::None,

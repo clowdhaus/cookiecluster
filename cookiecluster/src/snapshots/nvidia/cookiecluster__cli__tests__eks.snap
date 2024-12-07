@@ -32,7 +32,7 @@ to the node group below.
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.29"
+  version = "~> 20.31"
 
   cluster_name    = "example"
   cluster_version = "1.31"

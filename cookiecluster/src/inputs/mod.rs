@@ -6,6 +6,7 @@ pub(crate) mod version;
 
 pub use add_on::AddOn;
 use anyhow::Result;
+use compute::AcceleratorType;
 use dialoguer::{theme::ColorfulTheme, Confirm, Input, MultiSelect, Select};
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
@@ -78,7 +79,7 @@ impl Default for Inputs {
       cluster_name: String::from("example"),
       cluster_version: version::ClusterVersion::K131,
       control_plane_subnet_filter: String::from("*-private-*"),
-      compute_scaling: compute::ScalingType::None,
+      compute_scaling: compute::ScalingType::AutoMode,
       cpu_arch: compute::CpuArch::X8664,
       data_plane_subnet_filter: String::from("*-private-*"),
       default_ami_type: ami::AmiType::Al2023X8664Standard,
@@ -102,11 +103,11 @@ impl Inputs {
   pub fn collect(self) -> Result<Self> {
     let inputs = self
       .collect_cluster_settings()?
-      .collect_add_ons()?
       .collect_accelerator_type()?
       .collect_enable_efa()?
       .collect_reservation_type()?
       .collect_compute_scaling_type()?
+      .collect_add_ons()?
       .collect_networking_settings()?
       .collect_cpu_arch()?
       .collect_ami_type()?
@@ -150,6 +151,11 @@ impl Inputs {
   }
 
   fn collect_add_ons(mut self) -> Result<Inputs> {
+    if self.compute_scaling == compute::ScalingType::AutoMode {
+      self.add_ons = vec![];
+      return Ok(self);
+    }
+
     let all_add_ons = add_on::get_add_ons()?;
     let add_ons_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
       .with_prompt("EKS add-on(s)")
@@ -201,6 +207,10 @@ impl Inputs {
   }
 
   fn collect_reservation_type(mut self) -> Result<Inputs> {
+    if self.accelerator == AcceleratorType::None {
+      return Ok(self);
+    }
+
     let reservation_types = compute::get_reservation_types(&self.accelerator);
 
     let reservation_idx = Select::with_theme(&ColorfulTheme::default())
@@ -255,8 +265,9 @@ impl Inputs {
   }
 
   fn collect_cpu_arch(mut self) -> Result<Inputs> {
-    // Set on Karpenter NodeClass
-    if self.compute_scaling == compute::ScalingType::Karpenter {
+    // Set on Auto Mode/Karpenter NodeClass
+    if self.compute_scaling == compute::ScalingType::Karpenter || self.compute_scaling == compute::ScalingType::AutoMode
+    {
       return Ok(self);
     }
 
@@ -286,6 +297,10 @@ impl Inputs {
   }
 
   fn collect_ami_type(mut self) -> Result<Inputs> {
+    if self.compute_scaling == compute::ScalingType::AutoMode {
+      return Ok(self);
+    }
+
     let ami_types = ami::AmiType::get_ami_types(&self.accelerator, self.enable_efa, &self.cpu_arch)?;
     let ami_type_idx = Select::with_theme(&ColorfulTheme::default())
       .with_prompt("AMI type")
@@ -299,6 +314,10 @@ impl Inputs {
   }
 
   fn collect_instance_types(mut self) -> Result<Inputs> {
+    if self.compute_scaling == compute::ScalingType::AutoMode {
+      return Ok(self);
+    }
+
     let instance_type_names =
       compute::get_instance_type_names(&self.cpu_arch, self.enable_efa, &self.accelerator, &self.reservation);
 

@@ -85,7 +85,7 @@ tolerations:
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.29"
+  version = "~> 20.31"
 
   cluster_name    = "{{ inputs.cluster_name }}"
   cluster_version = "{{ inputs.cluster_version }}"
@@ -100,6 +100,13 @@ module "eks" {
   # allow deploying resources into the cluster
   enable_cluster_creator_admin_permissions = true
   {{ /if }}
+  {{ #if (eq inputs.compute_scaling "auto-mode") }}
+
+  cluster_compute_config = {
+    enabled    = true
+    node_pools = ["general-purpose", "system"]
+  }
+  {{ else }}
   {{ #if inputs.add_ons}}
 
   cluster_addons = {
@@ -113,6 +120,7 @@ module "eks" {
     {{ ~else }}{}{{ /if }}
   {{ /each}}
   }
+  {{ /if }}
   {{ /if }}
   {{ #if inputs.enable_efa}}
 
@@ -130,8 +138,10 @@ module "eks" {
     enabled = true
   }
   {{ /unless }}
+  {{ #unless (eq inputs.compute_scaling "auto-mode") }}
 
   {{> tpl_node_groups }}
+  {{ /unless }}
 
   {{ #if (eq inputs.compute_scaling "karpenter") }}
   tags = merge(module.tags.tags, {
@@ -175,7 +185,9 @@ resource "aws_resourcegroups_resource" "odcr" {
   resource_arn = element(var.on_demand_capacity_reservation_arns, count.index)
 }
 {{ /if }}
+{{ #unless (eq inputs.compute_scaling "auto-mode") }}
 {{ #if inputs.add_ons}}
 
 {{> tpl_pod_identity }}
 {{ /if }}
+{{ /unless }}
