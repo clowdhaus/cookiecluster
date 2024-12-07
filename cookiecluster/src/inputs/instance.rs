@@ -5266,4 +5266,13 @@ pub const INSTANCE_TYPES: &[InstanceInfo] = &[
     cbr_supported: false,
     cpu_arch: "x86-64",
   },
+  InstanceInfo {
+    instance_type: "trn2.48xlarge",
+    instance_storage_supported: false,
+    efa_supported: true,
+    nvidia_gpu_supported: false,
+    neuron_supported: true,
+    cbr_supported: true,
+    cpu_arch: "x86-64",
+  },
 ];
