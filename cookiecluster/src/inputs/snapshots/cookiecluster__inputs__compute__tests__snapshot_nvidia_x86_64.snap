@@ -345,4 +345,13 @@ expression: nvidia_x86_64
         cbr_supported: true,
         cpu_arch: "x86-64",
     },
+    "p5en.48xlarge": InstanceInfo {
+        instance_type: "p5en.48xlarge",
+        instance_storage_supported: true,
+        efa_supported: true,
+        nvidia_gpu_supported: true,
+        neuron_supported: false,
+        cbr_supported: true,
+        cpu_arch: "x86-64",
+    },
 }
