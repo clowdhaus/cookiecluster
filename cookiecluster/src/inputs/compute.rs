@@ -251,12 +251,7 @@ mod tests {
 
   #[test]
   fn snapshot_efa_nvidia_x86_64() {
-    let efa_nvidia_x86_64 = get_instance_types(
-      &CpuArch::X8664,
-      true,
-      &AcceleratorType::Nvidia,
-      &ReservationType::None,
-    );
+    let efa_nvidia_x86_64 = get_instance_types(&CpuArch::X8664, true, &AcceleratorType::Nvidia, &ReservationType::None);
     insta::assert_debug_snapshot!(efa_nvidia_x86_64);
   }
 
@@ -279,12 +274,7 @@ mod tests {
 
   #[test]
   fn snapshot_efa_neuron_x86_64() {
-    let efa_neuron_x86_64 = get_instance_types(
-      &CpuArch::X8664,
-      true,
-      &AcceleratorType::Neuron,
-      &ReservationType::None,
-    );
+    let efa_neuron_x86_64 = get_instance_types(&CpuArch::X8664, true, &AcceleratorType::Neuron, &ReservationType::None);
     insta::assert_debug_snapshot!(efa_neuron_x86_64);
   }
 
@@ -299,7 +289,6 @@ mod tests {
     insta::assert_debug_snapshot!(efa_neuron_x86_64);
   }
 
-
   #[test]
   fn snapshot_nvidia_cbr_reservation() {
     let nvidia_cbr_reservation = get_instance_types(
@@ -313,23 +302,13 @@ mod tests {
 
   #[test]
   fn snapshot_efa_x86_64() {
-    let efa_x86_64 = get_instance_types(
-      &CpuArch::X8664,
-      true,
-      &AcceleratorType::None,
-      &ReservationType::None,
-    );
+    let efa_x86_64 = get_instance_types(&CpuArch::X8664, true, &AcceleratorType::None, &ReservationType::None);
     insta::assert_debug_snapshot!(efa_x86_64);
   }
 
   #[test]
   fn snapshot_efa_arm64() {
-    let efa_arm64 = get_instance_types(
-      &CpuArch::Arm64,
-      true,
-      &AcceleratorType::None,
-      &ReservationType::None,
-    );
+    let efa_arm64 = get_instance_types(&CpuArch::Arm64, true, &AcceleratorType::None, &ReservationType::None);
     insta::assert_debug_snapshot!(efa_arm64);
   }
 }

@@ -47,15 +47,18 @@ impl Cli {
     let handlebars = crate::register_handlebars()?;
 
     fs::write(Path::new("eks.tf"), render_value("eks", inputs, &handlebars)?)?;
-    fs::write(
-      Path::new("karpenter.tf"),
-      render_value("karpenter", inputs, &handlebars)?,
-    )?;
     fs::write(Path::new("main.tf"), render_value("main", inputs, &handlebars)?)?;
-    fs::write(
-      Path::new("variables.tf"),
-      render_value("variables", inputs, &handlebars)?,
-    )?;
+
+    let karp = render_value("karpenter", inputs, &handlebars)?;
+    if !karp.is_empty() {
+      fs::write(Path::new("karpenter.tf"), karp)?;
+    }
+
+    let vars = render_value("variables", inputs, &handlebars)?;
+    if !vars.is_empty() {
+      fs::write(Path::new("variables.tf"), vars)?;
+    }
+
     Ok(())
   }
 }
