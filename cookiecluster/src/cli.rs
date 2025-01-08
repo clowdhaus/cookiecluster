@@ -202,6 +202,22 @@ mod tests {
   }
 
   #[test]
+  fn snapshot_nvidia_cbr() {
+    let inputs = Inputs {
+      accelerator: compute::AcceleratorType::Nvidia,
+      ami_type: ami::AmiType::Al2023X8664Nvidia,
+      compute_scaling: compute::ScalingType::None,
+      enable_efa: false,
+      instance_storage_supported: true,
+      instance_types: vec!["p5.48xlarge".to_owned()],
+      reservation: compute::ReservationType::MlCapacityBlockReservation,
+      ..Inputs::default()
+    };
+
+    render(inputs, "nvidia-cbr").unwrap();
+  }
+
+  #[test]
   fn snapshot_neuron() {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Neuron,
@@ -227,6 +243,22 @@ mod tests {
     };
 
     render(inputs, "neuron-efa").unwrap();
+  }
+
+  #[test]
+  fn snapshot_neuron_cbr() {
+    let inputs = Inputs {
+      accelerator: compute::AcceleratorType::Neuron,
+      ami_type: ami::AmiType::Al2023X8664Neuron,
+      compute_scaling: compute::ScalingType::None,
+      enable_efa: false,
+      instance_storage_supported: true,
+      instance_types: vec!["trn1.32xlarge".to_owned()],
+      reservation: compute::ReservationType::MlCapacityBlockReservation,
+      ..Inputs::default()
+    };
+
+    render(inputs, "neuron-cbr").unwrap();
   }
 
   #[test]
