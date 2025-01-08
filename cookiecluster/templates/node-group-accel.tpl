@@ -20,14 +20,23 @@ neuron = {
   max_size     = 5
   desired_size = 2
   {{ #if inputs.instance_storage_supported }}
+  {{ #if (or (eq inputs.ami_type "AL2023_x86_64_NVIDIA") (eq inputs.ami_type "AL2023_x86_64_NEURON")) }}
 
-  pre_bootstrap_user_data = <<-EOT
-    #!/usr/bin/env bash
-
-    # Mount instance store volumes in RAID-0 for Kubelet and Containerd (raid0)
-    # https://github.com/awslabs/amazon-eks-ami/blob/master/doc/USER_GUIDE.md#raid-0-for-kubelet-and-containerd-raid0
-    /bin/setup-local-disks raid0
-  EOT
+    cloudinit_pre_nodeadm = [
+      {
+        content_type = "application/node.eks.aws"
+        content      = <<-EOT
+          ---
+          apiVersion: node.eks.aws/v1alpha1
+          kind: NodeConfig
+          spec:
+            instance:
+              localStorage:
+                strategy: RAID0
+        EOT
+      }
+    ]
+  {{ /if }}
   {{ else }}
 
   # Increase root EBS volume size (default is 8Gb)
