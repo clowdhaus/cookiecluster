@@ -15,7 +15,7 @@ default-run = "cookiecluster"
 anstyle = "1.0"
 anyhow.workspace = true
 clap = { version = "4.2", features = ["derive", "color"] }
-clap-verbosity-flag = "2.0"
+clap-verbosity-flag = "3.0"
 console = { version = "0.15", default-features = false }
 dialoguer = { version = "0.11", default-features = false }
 handlebars =  "6.1"
@@ -30,4 +30,4 @@ tracing-subscriber.workspace = true
 
 [dev-dependencies]
 insta = "1.41"
-rstest = "0.23"
+rstest = "0.24"
