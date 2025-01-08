@@ -110,7 +110,6 @@ module "eks" {
   {{ #if inputs.add_ons}}
 
   # These will become the default in the next major version of the module
-
   bootstrap_self_managed_addons   = false
   enable_irsa                     = false
   enable_security_groups_for_pods = false

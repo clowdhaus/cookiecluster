@@ -22,20 +22,20 @@ neuron = {
   {{ #if inputs.instance_storage_supported }}
   {{ #if (or (eq inputs.ami_type "AL2023_x86_64_NVIDIA") (eq inputs.ami_type "AL2023_x86_64_NEURON")) }}
 
-    cloudinit_pre_nodeadm = [
-      {
-        content_type = "application/node.eks.aws"
-        content      = <<-EOT
-          ---
-          apiVersion: node.eks.aws/v1alpha1
-          kind: NodeConfig
-          spec:
-            instance:
-              localStorage:
-                strategy: RAID0
-        EOT
-      }
-    ]
+  cloudinit_pre_nodeadm = [
+    {
+      content_type = "application/node.eks.aws"
+      content      = <<-EOT
+        ---
+        apiVersion: node.eks.aws/v1alpha1
+        kind: NodeConfig
+        spec:
+          instance:
+            localStorage:
+              strategy: RAID0
+      EOT
+    }
+  ]
   {{ /if }}
   {{ else }}
 

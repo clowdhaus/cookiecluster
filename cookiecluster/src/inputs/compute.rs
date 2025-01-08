@@ -12,7 +12,7 @@ use super::{
 /// Returns map of instance type name => instance type info
 fn get_instance_types<'a>(
   cpu_arch: &CpuArch,
-  enable_efa: Option<bool>,
+  enable_efa: bool,
   accelerator: &AcceleratorType,
   reservation: &ReservationType,
 ) -> BTreeMap<&'a str, &'a InstanceInfo<'a>> {
@@ -36,8 +36,10 @@ fn get_instance_types<'a>(
       }
     })
     .filter(|i| {
-      if let Some(efa) = enable_efa {
-        i.efa_supported == efa
+      // If `enable_efa` is true, only return instances that support EFA
+      // otherwise, do not filter out any instances based on EFA support
+      if enable_efa {
+        i.efa_supported
       } else {
         true
       }
@@ -52,7 +54,7 @@ pub fn get_instance_type_names<'a>(
   accelerator: &AcceleratorType,
   reservation: &ReservationType,
 ) -> Vec<&'a str> {
-  get_instance_types(cpu_arch, Some(enable_efa), accelerator, reservation)
+  get_instance_types(cpu_arch, enable_efa, accelerator, reservation)
     .keys()
     .copied()
     .collect()
@@ -231,19 +233,19 @@ mod tests {
 
   #[test]
   fn snapshot_standard_x86_64() {
-    let standard_x86_64 = get_instance_types(&CpuArch::X8664, None, &AcceleratorType::None, &ReservationType::None);
+    let standard_x86_64 = get_instance_types(&CpuArch::X8664, false, &AcceleratorType::None, &ReservationType::None);
     insta::assert_debug_snapshot!(standard_x86_64);
   }
 
   #[test]
   fn snapshot_standard_arm64() {
-    let standard_arm64 = get_instance_types(&CpuArch::Arm64, None, &AcceleratorType::None, &ReservationType::None);
+    let standard_arm64 = get_instance_types(&CpuArch::Arm64, false, &AcceleratorType::None, &ReservationType::None);
     insta::assert_debug_snapshot!(standard_arm64);
   }
 
   #[test]
   fn snapshot_nvidia_x86_64() {
-    let nvidia_x86_64 = get_instance_types(&CpuArch::X8664, None, &AcceleratorType::Nvidia, &ReservationType::None);
+    let nvidia_x86_64 = get_instance_types(&CpuArch::X8664, false, &AcceleratorType::Nvidia, &ReservationType::None);
     insta::assert_debug_snapshot!(nvidia_x86_64);
   }
 
@@ -251,7 +253,7 @@ mod tests {
   fn snapshot_efa_nvidia_x86_64() {
     let efa_nvidia_x86_64 = get_instance_types(
       &CpuArch::X8664,
-      Some(true),
+      true,
       &AcceleratorType::Nvidia,
       &ReservationType::None,
     );
@@ -259,8 +261,19 @@ mod tests {
   }
 
   #[test]
+  fn snapshot_nvidia_ml_cbr_x86_64() {
+    let efa_nvidia_x86_64 = get_instance_types(
+      &CpuArch::X8664,
+      false,
+      &AcceleratorType::Nvidia,
+      &ReservationType::MlCapacityBlockReservation,
+    );
+    insta::assert_debug_snapshot!(efa_nvidia_x86_64);
+  }
+
+  #[test]
   fn snapshot_neuron_x86_64() {
-    let neuron_x86_64 = get_instance_types(&CpuArch::X8664, None, &AcceleratorType::Neuron, &ReservationType::None);
+    let neuron_x86_64 = get_instance_types(&CpuArch::X8664, false, &AcceleratorType::Neuron, &ReservationType::None);
     insta::assert_debug_snapshot!(neuron_x86_64);
   }
 
@@ -268,7 +281,7 @@ mod tests {
   fn snapshot_efa_neuron_x86_64() {
     let efa_neuron_x86_64 = get_instance_types(
       &CpuArch::X8664,
-      Some(true),
+      true,
       &AcceleratorType::Neuron,
       &ReservationType::None,
     );
@@ -276,10 +289,22 @@ mod tests {
   }
 
   #[test]
+  fn snapshot_neuron_ml_cbr_x86_64() {
+    let efa_neuron_x86_64 = get_instance_types(
+      &CpuArch::X8664,
+      true,
+      &AcceleratorType::Neuron,
+      &ReservationType::MlCapacityBlockReservation,
+    );
+    insta::assert_debug_snapshot!(efa_neuron_x86_64);
+  }
+
+
+  #[test]
   fn snapshot_nvidia_cbr_reservation() {
     let nvidia_cbr_reservation = get_instance_types(
       &CpuArch::X8664,
-      None,
+      false,
       &AcceleratorType::Nvidia,
       &ReservationType::MlCapacityBlockReservation,
     );
@@ -290,7 +315,7 @@ mod tests {
   fn snapshot_efa_x86_64() {
     let efa_x86_64 = get_instance_types(
       &CpuArch::X8664,
-      Some(true),
+      true,
       &AcceleratorType::None,
       &ReservationType::None,
     );
@@ -301,7 +326,7 @@ mod tests {
   fn snapshot_efa_arm64() {
     let efa_arm64 = get_instance_types(
       &CpuArch::Arm64,
-      Some(true),
+      true,
       &AcceleratorType::None,
       &ReservationType::None,
     );

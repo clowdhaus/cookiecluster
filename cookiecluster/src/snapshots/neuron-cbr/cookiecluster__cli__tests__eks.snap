@@ -36,7 +36,6 @@ module "eks" {
   cluster_version = "1.31"
 
   # These will become the default in the next major version of the module
-
   bootstrap_self_managed_addons   = false
   enable_irsa                     = false
   enable_security_groups_for_pods = false
@@ -84,20 +83,20 @@ module "eks" {
       max_size     = 5
       desired_size = 2
 
-        cloudinit_pre_nodeadm = [
-          {
-            content_type = "application/node.eks.aws"
-            content      = <<-EOT
-              ---
-              apiVersion: node.eks.aws/v1alpha1
-              kind: NodeConfig
-              spec:
-                instance:
-                  localStorage:
-                    strategy: RAID0
-            EOT
-          }
-        ]
+      cloudinit_pre_nodeadm = [
+        {
+          content_type = "application/node.eks.aws"
+          content      = <<-EOT
+            ---
+            apiVersion: node.eks.aws/v1alpha1
+            kind: NodeConfig
+            spec:
+              instance:
+                localStorage:
+                  strategy: RAID0
+          EOT
+        }
+      ]
 
       labels = {
       }

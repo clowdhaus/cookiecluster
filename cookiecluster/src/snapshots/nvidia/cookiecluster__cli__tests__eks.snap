@@ -38,7 +38,6 @@ module "eks" {
   cluster_version = "1.31"
 
   # These will become the default in the next major version of the module
-
   bootstrap_self_managed_addons   = false
   enable_irsa                     = false
   enable_security_groups_for_pods = false
