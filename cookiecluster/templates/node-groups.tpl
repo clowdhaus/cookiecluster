@@ -12,6 +12,10 @@ eks_managed_node_groups = {
     min_size     = 2
     max_size     = 3
     desired_size = 2
+
+    node_repair_config = {
+      enabled = true
+    }
   }
   {{ else if (eq inputs.compute_scaling "karpenter") }}
   karpenter = {
@@ -25,6 +29,10 @@ eks_managed_node_groups = {
     min_size     = 2
     max_size     = 3
     desired_size = 2
+
+    node_repair_config = {
+      enabled = true
+    }
 
     labels = {
       # Used to ensure Karpenter runs on nodes that it does not manage
@@ -53,6 +61,10 @@ eks_managed_node_groups = {
     min_size     = 2
     max_size     = 3
     desired_size = 2
+
+    node_repair_config = {
+      enabled = true
+    }
     {{ #if inputs.instance_storage_supported }}
     {{ #if (or (eq inputs.ami_type "AL2023_ARM_64_STANDARD") (eq inputs.ami_type "AL2023_x86_64_STANDARD") (eq inputs.ami_type "AL2023_x86_64_NVIDIA") (eq inputs.ami_type "AL2023_x86_64_NEURON")) }}
 

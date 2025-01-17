@@ -58,6 +58,14 @@ impl Default for Inputs {
           },
         },
         add_on::AddOn {
+          name: String::from("eks-node-monitoring-agent"),
+          under_name: String::from("eks_node_monitoring_agent"),
+          configuration: add_on::AddOnConfiguration {
+            pod_identity_role_arn: None,
+            pod_identity_service_account: None,
+          },
+        },
+        add_on::AddOn {
           name: String::from("kube-proxy"),
           under_name: String::from("kube_proxy"),
           configuration: add_on::AddOnConfiguration {
@@ -161,7 +169,7 @@ impl Inputs {
       .with_prompt("EKS add-on(s)")
       .items(&all_add_ons[..])
       // Select first 4 add-ons by default
-      .defaults(&[true, true, true, true])
+      .defaults(&[true, true, true, true, true])
       .interact()?;
 
     let add_ons = add_ons_idxs

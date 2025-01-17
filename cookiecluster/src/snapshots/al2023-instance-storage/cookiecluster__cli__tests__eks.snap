@@ -8,7 +8,7 @@ expression: rendered
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.31"
+  version = "~> 20.33"
 
   cluster_name    = "example"
   cluster_version = "1.31"
@@ -21,6 +21,7 @@ module "eks" {
   cluster_addons = {
     coredns = {}
     eks-pod-identity-agent = {}
+    eks-node-monitoring-agent = {}
     kube-proxy = {}
     vpc-cni = {
       pod_identity_role_arn = [{
@@ -48,6 +49,10 @@ module "eks" {
       min_size     = 2
       max_size     = 3
       desired_size = 2
+  
+      node_repair_config = {
+        enabled = true
+      }
 
       cloudinit_pre_nodeadm = [
         {

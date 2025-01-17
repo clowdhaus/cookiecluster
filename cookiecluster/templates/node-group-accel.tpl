@@ -19,6 +19,10 @@ neuron = {
   min_size     = 2
   max_size     = 5
   desired_size = 2
+
+  node_repair_config = {
+    enabled = true
+  }
   {{ #if inputs.instance_storage_supported }}
   {{ #if (or (eq inputs.ami_type "AL2023_x86_64_NVIDIA") (eq inputs.ami_type "AL2023_x86_64_NEURON")) }}
 

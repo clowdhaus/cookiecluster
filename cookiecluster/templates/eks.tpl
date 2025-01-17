@@ -85,7 +85,7 @@ tolerations:
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.31"
+  version = "~> 20.33"
 
   cluster_name    = "{{ inputs.cluster_name }}"
   cluster_version = "{{ inputs.cluster_version }}"

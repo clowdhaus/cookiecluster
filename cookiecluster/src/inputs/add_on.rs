@@ -11,6 +11,7 @@ pub enum AddOnType {
   CoreDns,
   KubeProxy,
   VpcCni,
+  EksNodeMonitoringAgent,
   EksPodIdentityAgent,
   AwsEbsCsiDriver,
   AwsEfsCsiDriver,
@@ -85,6 +86,7 @@ impl std::fmt::Display for AddOnType {
       AddOnType::CoreDns => write!(f, "coredns"),
       AddOnType::KubeProxy => write!(f, "kube-proxy"),
       AddOnType::VpcCni => write!(f, "vpc-cni"),
+      AddOnType::EksNodeMonitoringAgent => write!(f, "eks-node-monitoring-agent"),
       AddOnType::EksPodIdentityAgent => write!(f, "eks-pod-identity-agent"),
       AddOnType::AwsEbsCsiDriver => write!(f, "aws-ebs-csi-driver"),
       AddOnType::AwsEfsCsiDriver => write!(f, "aws-efs-csi-driver"),
@@ -103,6 +105,7 @@ impl std::convert::From<&str> for AddOnType {
       "coredns" => AddOnType::CoreDns,
       "kube-proxy" => AddOnType::KubeProxy,
       "vpc-cni" => AddOnType::VpcCni,
+      "eks-node-monitoring-agent" => AddOnType::EksNodeMonitoringAgent,
       "eks-pod-identity-agent" => AddOnType::EksPodIdentityAgent,
       "aws-ebs-csi-driver" => AddOnType::AwsEbsCsiDriver,
       "aws-efs-csi-driver" => AddOnType::AwsEfsCsiDriver,
@@ -126,6 +129,7 @@ mod tests {
   #[case(AddOnType::CoreDns, None)]
   #[case(AddOnType::KubeProxy, None)]
   #[case(AddOnType::VpcCni, Some("module.vpc_cni_pod_identity.iam_role_arn".to_string()))]
+  #[case(AddOnType::EksNodeMonitoringAgent, None)]
   #[case(AddOnType::EksPodIdentityAgent, None)]
   #[case(AddOnType::AwsEbsCsiDriver, Some("module.aws_ebs_csi_driver_pod_identity.iam_role_arn".to_string()))]
   #[case(AddOnType::AwsEfsCsiDriver, Some("module.aws_efs_csi_driver_pod_identity.iam_role_arn".to_string()))]
