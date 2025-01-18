@@ -59,9 +59,9 @@ module "eks" {
 
   cluster_addons = {
     coredns = {}
-    eks-pod-identity-agent = {}
-    eks-node-monitoring-agent = {}
     kube-proxy = {}
+    eks-node-monitoring-agent = {}
+    eks-pod-identity-agent = {}
     vpc-cni = {}
   }
 

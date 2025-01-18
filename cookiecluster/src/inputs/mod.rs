@@ -40,48 +40,7 @@ impl Default for Inputs {
   fn default() -> Self {
     Inputs {
       accelerator: compute::AcceleratorType::None,
-      add_ons: vec![
-        add_on::AddOn {
-          name: String::from("coredns"),
-          under_name: String::from("coredns"),
-          configuration: add_on::AddOnConfiguration {
-            pod_identity_role_arn: None,
-            pod_identity_service_account: None,
-          },
-        },
-        add_on::AddOn {
-          name: String::from("eks-pod-identity-agent"),
-          under_name: String::from("eks_pod_identity_agent"),
-          configuration: add_on::AddOnConfiguration {
-            pod_identity_role_arn: None,
-            pod_identity_service_account: None,
-          },
-        },
-        add_on::AddOn {
-          name: String::from("eks-node-monitoring-agent"),
-          under_name: String::from("eks_node_monitoring_agent"),
-          configuration: add_on::AddOnConfiguration {
-            pod_identity_role_arn: None,
-            pod_identity_service_account: None,
-          },
-        },
-        add_on::AddOn {
-          name: String::from("kube-proxy"),
-          under_name: String::from("kube_proxy"),
-          configuration: add_on::AddOnConfiguration {
-            pod_identity_role_arn: None,
-            pod_identity_service_account: None,
-          },
-        },
-        add_on::AddOn {
-          name: String::from("vpc-cni"),
-          under_name: String::from("vpc_cni"),
-          configuration: add_on::AddOnConfiguration {
-            pod_identity_role_arn: None,
-            pod_identity_service_account: None,
-          },
-        },
-      ],
+      add_ons: add_on::get_default_add_ons(),
       ami_type: ami::AmiType::Al2023X8664Standard,
       cluster_endpoint_public_access: false,
       cluster_name: String::from("example"),
@@ -164,17 +123,17 @@ impl Inputs {
       return Ok(self);
     }
 
-    let all_add_ons = add_on::get_add_ons()?;
+    let all_add_ons = add_on::get_add_on_names(); // .iter().map(|v| v.as_str()).collect::<Vec<_>>();
     let add_ons_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
       .with_prompt("EKS add-on(s)")
       .items(&all_add_ons[..])
       // Select first 4 add-ons by default
-      .defaults(&[true, true, true, true, true])
+      .defaults(&add_on::get_default_add_on_flags())
       .interact()?;
 
     let add_ons = add_ons_idxs
       .iter()
-      .map(|&i| add_on::get_add_on_configuration(all_add_ons[i].as_str()).unwrap())
+      .map(|&i| add_on::get_add_on(add_on::AddOnType::from(all_add_ons[i].as_str())).unwrap())
       .collect::<Vec<add_on::AddOn>>();
     self.add_ons = add_ons;
 
