@@ -24,9 +24,10 @@ pub enum AddOnType {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddOn {
+  pub default: bool,
   pub name: String,
   pub under_name: String,
-  pub configuration: AddOnConfiguration,
+  pub configuration: Option<AddOnConfiguration>,
 }
 
 /// Get all available add-ons
@@ -37,7 +38,7 @@ pub fn get_add_ons() -> Result<Vec<String>> {
 /// For a given add-on, return (required) configuration
 pub fn get_add_on_configuration(name: &str) -> Result<AddOn> {
   let add_on_type = AddOnType::from(name);
-  let add_on = match add_on_type {
+  let mut add_on = match add_on_type {
     AddOnType::AwsEbsCsiDriver
     | AddOnType::AwsEfsCsiDriver
     | AddOnType::AwsMountpointS3CsiDriver
@@ -53,22 +54,32 @@ pub fn get_add_on_configuration(name: &str) -> Result<AddOn> {
         _ => None,
       };
       AddOn {
+        default: false,
         name: add_on_type.to_string(),
         under_name: under_name.to_string(),
-        configuration: AddOnConfiguration {
+        configuration: Some(AddOnConfiguration {
           pod_identity_role_arn: Some(format!("module.{under_name}_pod_identity.iam_role_arn")),
           pod_identity_service_account: service_account_name,
-        },
+        }),
       }
     }
     _ => AddOn {
+      default: false,
       name: add_on_type.to_string(),
       under_name: add_on_type.to_string().replace('-', "_"),
-      configuration: AddOnConfiguration {
-        pod_identity_role_arn: None,
-        pod_identity_service_account: None,
-      },
+      configuration: None,
     },
+  };
+
+  match add_on_type {
+    AddOnType::CoreDns
+    | AddOnType::KubeProxy
+    | AddOnType::VpcCni
+    | AddOnType::EksNodeMonitoringAgent
+    | AddOnType::EksPodIdentityAgent => {
+      add_on.default = true;
+    }
+    _ => {}
   };
 
   Ok(add_on)
@@ -140,6 +151,10 @@ mod tests {
   #[case(AddOnType::AmazonCloudwatchObservability, Some("module.amazon_cloudwatch_observability_pod_identity.iam_role_arn".to_string()))]
   fn test_get_add_on_configuration(#[case] aot: AddOnType, #[case] expected: Option<String>) {
     let add_on = get_add_on_configuration(&aot.to_string()).unwrap();
-    assert_eq!(add_on.configuration.pod_identity_role_arn, expected);
+    let result = match add_on.configuration {
+      Some(c) => c.pod_identity_role_arn,
+      None => None,
+    };
+    assert_eq!(result, expected);
   }
 }
