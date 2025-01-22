@@ -77,8 +77,8 @@ impl Default for Inputs {
           name: String::from("vpc-cni"),
           under_name: String::from("vpc_cni"),
           configuration: add_on::AddOnConfiguration {
-            pod_identity_role_arn: Some("module.vpc_cni_pod_identity.iam_role_arn".to_string()),
-            pod_identity_service_account: Some("aws-node".to_string()),
+            pod_identity_role_arn: None,
+            pod_identity_service_account: None,
           },
         },
       ],

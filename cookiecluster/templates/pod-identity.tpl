@@ -8,12 +8,6 @@ module "{{ a.under_name }}_pod_identity" {
   source = "terraform-aws-modules/eks-pod-identity/aws"
   version = "~> 1.7"
 
-  {{ #if (eq a.name "vpc-cni") }}
-  name = "vpc-cni"
-
-  attach_aws_vpc_cni_policy = true
-  aws_vpc_cni_enable_ipv4   = true
-  {{ /if }}
   {{ #if (eq a.name "aws-ebs-csi-driver") }}
   name = "aws-ebs-csi"
 

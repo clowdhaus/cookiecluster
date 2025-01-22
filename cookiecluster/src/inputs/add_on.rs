@@ -41,15 +41,13 @@ pub fn get_add_on_configuration(name: &str) -> Result<AddOn> {
     AddOnType::AwsEbsCsiDriver
     | AddOnType::AwsEfsCsiDriver
     | AddOnType::AwsMountpointS3CsiDriver
-    | AddOnType::AmazonCloudwatchObservability
-    | AddOnType::VpcCni => {
+    | AddOnType::AmazonCloudwatchObservability => {
       let under_name = add_on_type.to_string().replace('-', "_");
       let service_account_name = match add_on_type {
         AddOnType::AwsEbsCsiDriver => Some("ebs-csi-controller-sa".to_string()),
         AddOnType::AwsEfsCsiDriver => Some("efs-csi-controller-sa".to_string()),
         AddOnType::AwsMountpointS3CsiDriver => Some("s3-csi-driver-sa".to_string()),
         AddOnType::AmazonCloudwatchObservability => Some("cloudwatch-agent".to_string()),
-        AddOnType::VpcCni => Some("aws-node".to_string()),
         _ => None,
       };
       AddOn {
@@ -128,7 +126,7 @@ mod tests {
   #[rstest]
   #[case(AddOnType::CoreDns, None)]
   #[case(AddOnType::KubeProxy, None)]
-  #[case(AddOnType::VpcCni, Some("module.vpc_cni_pod_identity.iam_role_arn".to_string()))]
+  #[case(AddOnType::VpcCni, None)]
   #[case(AddOnType::EksNodeMonitoringAgent, None)]
   #[case(AddOnType::EksPodIdentityAgent, None)]
   #[case(AddOnType::AwsEbsCsiDriver, Some("module.aws_ebs_csi_driver_pod_identity.iam_role_arn".to_string()))]

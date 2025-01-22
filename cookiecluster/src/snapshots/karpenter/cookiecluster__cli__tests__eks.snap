@@ -23,12 +23,7 @@ module "eks" {
     eks-pod-identity-agent = {}
     eks-node-monitoring-agent = {}
     kube-proxy = {}
-    vpc-cni = {
-      pod_identity_role_arn = [{
-        role_arn        = module.vpc_cni_pod_identity.iam_role_arn
-        service_account = "aws-node"
-      }]
-    }
+    vpc-cni = {}
   }
 
   vpc_id                   = data.aws_vpc.this.id
@@ -83,15 +78,3 @@ module "eks" {
 ################################################################################
 # EKS Pod Identity IAM Roles
 ################################################################################
-
-module "vpc_cni_pod_identity" {
-  source = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "~> 1.7"
-
-  name = "vpc-cni"
-
-  attach_aws_vpc_cni_policy = true
-  aws_vpc_cni_enable_ipv4   = true
-
-  tags = module.tags.tags
-}
