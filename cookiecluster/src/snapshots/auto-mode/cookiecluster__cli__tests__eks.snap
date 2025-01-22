@@ -22,9 +22,5 @@ module "eks" {
   control_plane_subnet_ids = data.aws_subnets.control_plane.ids
   subnet_ids               = data.aws_subnets.data_plane.ids
 
-  cluster_zonal_shift_config = {
-    enabled = true
-  }
-
   tags = module.tags.tags
 }

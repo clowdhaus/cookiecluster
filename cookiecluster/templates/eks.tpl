@@ -137,12 +137,6 @@ module "eks" {
   vpc_id                   = data.aws_vpc.this.id
   control_plane_subnet_ids = data.aws_subnets.control_plane.ids
   subnet_ids               = data.aws_subnets.data_plane.ids
-  {{ #unless inputs.enable_efa}}
-
-  cluster_zonal_shift_config = {
-    enabled = true
-  }
-  {{ /unless }}
   {{ #unless (eq inputs.compute_scaling "auto-mode") }}
 
   {{> tpl_node_groups }}

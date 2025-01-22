@@ -37,10 +37,6 @@ module "eks" {
   control_plane_subnet_ids = data.aws_subnets.control_plane.ids
   subnet_ids               = data.aws_subnets.data_plane.ids
 
-  cluster_zonal_shift_config = {
-    enabled = true
-  }
-
   eks_managed_node_groups = {
     default = {
       ami_type = "AL2023_x86_64_STANDARD"
