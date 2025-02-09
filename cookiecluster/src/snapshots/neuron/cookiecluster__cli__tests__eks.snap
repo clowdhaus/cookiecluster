@@ -33,7 +33,7 @@ module "eks" {
   version = "~> 20.33"
 
   cluster_name    = "example"
-  cluster_version = "1.31"
+  cluster_version = "1.32"
 
   # These will become the default in the next major version of the module
   bootstrap_self_managed_addons   = false
