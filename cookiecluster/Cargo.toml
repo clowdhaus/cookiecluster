@@ -19,7 +19,7 @@ clap-verbosity-flag = "3.0"
 console = { version = "0.15", default-features = false }
 dialoguer = { version = "0.11", default-features = false }
 handlebars =  "6.3"
-rust-embed = { version = "8.0", features = ["compression"] }
+rust-embed = { version = "8.6", features = ["compression"] }
 serde.workspace = true
 serde_json = "1.0"
 strum = "0.27"
@@ -29,5 +29,5 @@ tracing-log.workspace = true
 tracing-subscriber.workspace = true
 
 [dev-dependencies]
-insta = "1.41"
-rstest = "0.24"
+insta = "1.42"
+rstest = "0.25"
