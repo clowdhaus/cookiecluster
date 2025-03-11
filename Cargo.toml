@@ -12,7 +12,7 @@ documentation = "https://github.com/clowdhaus/cookiecluster"
 homepage = "https://github.com/clowdhaus/cookiecluster"
 repository = "https://github.com/clowdhaus/cookiecluster"
 license = "Apache-2.0"
-edition = "2021"
+edition = "2024"
 categories = [
   "command-line-utilities",
 ]
