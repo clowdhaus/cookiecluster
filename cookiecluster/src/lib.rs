@@ -7,7 +7,7 @@ use std::{collections::HashSet, str};
 
 use anyhow::Result;
 pub use cli::Cli;
-use handlebars::{handlebars_helper, Handlebars};
+use handlebars::{Handlebars, handlebars_helper};
 use rust_embed::RustEmbed;
 use serde_json::Value;
 use tracing::trace;
@@ -19,11 +19,13 @@ struct Templates;
 
 fn register_handlebars() -> Result<Handlebars<'static>> {
   // Custom helpers
+  handlebars_helper!(neq: |v1: Value, v2: Value| v1 != v2);
   handlebars_helper!(eq: |v1: Value, v2: Value| v1 == v2);
   handlebars_helper!(and: |v1: bool, v2: bool| v1 && v2 );
   handlebars_helper!(or: |v1: bool, v2: bool| v1 || v2 );
 
   let mut handlebars = Handlebars::new();
+  handlebars.register_helper("neq", Box::new(neq));
   handlebars.register_helper("eq", Box::new(eq));
   handlebars.register_helper("and", Box::new(and));
   handlebars.register_helper("or", Box::new(or));

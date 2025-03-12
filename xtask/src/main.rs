@@ -6,7 +6,7 @@ use aws_types::region::Region;
 use handlebars::Handlebars;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing_subscriber::{filter::LevelFilter, FmtSubscriber};
+use tracing_subscriber::{FmtSubscriber, filter::LevelFilter};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -134,7 +134,7 @@ async fn get_ec2_instances(
         | itype.starts_with("x")
         | itype.starts_with("z") =>
       {
-        continue
+        continue;
       }
       _ => {}
     }

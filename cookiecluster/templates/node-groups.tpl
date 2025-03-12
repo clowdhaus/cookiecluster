@@ -1,23 +1,5 @@
 eks_managed_node_groups = {
-  {{ #if (or (eq inputs.accelerator "Neuron") (eq inputs.accelerator "NVIDIA")) }}
-  # This node group is for core addons such as CoreDNS
-  default = {
-    ami_type = "{{ inputs.default_ami_type }}"
-    instance_types = [
-    {{ #each inputs.default_instance_types }}
-      "{{ this }}",
-    {{ /each }}
-    ]
-
-    min_size     = 2
-    max_size     = 3
-    desired_size = 2
-
-    node_repair_config = {
-      enabled = true
-    }
-  }
-  {{ else if (eq inputs.compute_scaling "karpenter") }}
+  {{ #if (eq inputs.compute_scaling "karpenter") }}
   karpenter = {
     ami_type = "{{ inputs.default_ami_type }}"
     instance_types = [
@@ -47,6 +29,24 @@ eks_managed_node_groups = {
         value  = "true"
         effect = "NO_SCHEDULE"
       }
+    }
+  }
+  {{ else if (or (eq inputs.accelerator "Neuron") (eq inputs.accelerator "NVIDIA")) }}
+  # This node group is for core addons such as CoreDNS
+  default = {
+    ami_type = "{{ inputs.default_ami_type }}"
+    instance_types = [
+    {{ #each inputs.default_instance_types }}
+      "{{ this }}",
+    {{ /each }}
+    ]
+
+    min_size     = 2
+    max_size     = 3
+    desired_size = 2
+
+    node_repair_config = {
+      enabled = true
     }
   }
   {{ else }}
@@ -99,7 +99,7 @@ eks_managed_node_groups = {
     {{ /if }}
   }
   {{ /if }}
-  {{ #if (or (eq inputs.accelerator "Neuron") (eq inputs.accelerator "NVIDIA")) }}
+  {{ #if (and (or (eq inputs.accelerator "Neuron") (eq inputs.accelerator "NVIDIA")) (neq inputs.compute_scaling "karpenter")) }}
   {{> tpl_node_group_accel }}
   {{ /if }}
 }

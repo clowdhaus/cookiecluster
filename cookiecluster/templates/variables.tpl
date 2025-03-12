@@ -1,4 +1,4 @@
-{{ #if (or (eq inputs.reservation "ODCR") (eq inputs.reservation "CBR")) }}
+{{ #if (and (or (eq inputs.reservation "ODCR") (eq inputs.reservation "CBR")) (neq inputs.compute_scaling "karpenter")) }}
 
 ################################################################################
 # Variables - Required input

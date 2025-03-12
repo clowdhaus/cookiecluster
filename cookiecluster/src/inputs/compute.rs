@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, fmt};
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use strum_macros::EnumIter;
 
@@ -38,11 +38,7 @@ fn get_instance_types<'a>(
     .filter(|i| {
       // If `enable_efa` is true, only return instances that support EFA
       // otherwise, do not filter out any instances based on EFA support
-      if enable_efa {
-        i.efa_supported
-      } else {
-        true
-      }
+      if enable_efa { i.efa_supported } else { true }
     })
     .map(|i| (i.instance_type, i))
     .collect::<BTreeMap<&'a str, &InstanceInfo<'a>>>()
@@ -66,13 +62,13 @@ pub fn limit_instances_selected(
   instance_type_names: Vec<&str>,
   mut instance_idxs: Vec<usize>,
 ) -> Result<Vec<String>> {
-  // There are two scenarios where only a single instance type should be specified:
-  // 1. EC2 capacity reservation(s)
-  // 2. When using EFA
   if instance_idxs.is_empty() {
     bail!("At least one instance type needs to be selected");
   }
 
+  // There are two scenarios where only a single instance type should be specified:
+  // 1. EC2 capacity reservation(s)
+  // 2. When using EFA
   if reservation != &ReservationType::None || enable_efa {
     instance_idxs = vec![instance_idxs.last().unwrap().to_owned()];
   }
@@ -135,6 +131,7 @@ pub enum ScalingType {
 pub fn get_scaling_types<'a>(reservation: &ReservationType) -> Vec<&'a str> {
   match reservation {
     ReservationType::None => vec!["auto-mode", "karpenter", "cluster-autoscaler", "None"],
+    ReservationType::OnDemandCapacityReservation => vec!["karpenter", "cluster-autoscaler", "None"],
     _ => vec!["cluster-autoscaler", "None"],
   }
 }

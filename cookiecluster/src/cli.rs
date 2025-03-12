@@ -2,7 +2,7 @@ use std::{fs, path::Path};
 
 use anstyle::{AnsiColor, Color, Style};
 use anyhow::Result;
-use clap::{builder::Styles, Parser};
+use clap::{Parser, builder::Styles};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use handlebars::Handlebars;
 use serde_json::value::Map;
@@ -285,6 +285,21 @@ mod tests {
     };
 
     render(inputs, "karpenter").unwrap();
+  }
+
+  #[test]
+  fn snapshot_karpenter_odcr() {
+    let inputs = Inputs {
+      accelerator: compute::AcceleratorType::Nvidia,
+      ami_type: ami::AmiType::Al2023X8664Nvidia,
+      compute_scaling: compute::ScalingType::Karpenter,
+      instance_storage_supported: true,
+      instance_types: vec!["p5e.48xlarge".to_owned()],
+      reservation: compute::ReservationType::OnDemandCapacityReservation,
+      ..Inputs::default()
+    };
+
+    render(inputs, "karpenter-odcr").unwrap();
   }
 
   #[test]

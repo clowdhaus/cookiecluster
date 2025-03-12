@@ -7,7 +7,7 @@ pub(crate) mod version;
 pub use add_on::AddOn;
 use anyhow::Result;
 use compute::AcceleratorType;
-use dialoguer::{theme::ColorfulTheme, Confirm, Input, MultiSelect, Select};
+use dialoguer::{Confirm, Input, MultiSelect, Select, theme::ColorfulTheme};
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 
@@ -215,7 +215,7 @@ impl Inputs {
   }
 
   fn collect_reservation_type(mut self) -> Result<Inputs> {
-    if self.accelerator == AcceleratorType::None {
+    if self.accelerator == AcceleratorType::None || self.compute_scaling == compute::ScalingType::Karpenter {
       return Ok(self);
     }
 
@@ -262,7 +262,7 @@ impl Inputs {
       .with_initial_text("*-private-*".to_string())
       .interact_text()?;
 
-    if self.reservation != compute::ReservationType::None {
+    if self.reservation != compute::ReservationType::None && self.compute_scaling != compute::ScalingType::Karpenter {
       self.reservation_availability_zone = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("EC2 capacity reservation availability zone")
         .with_initial_text("us-west-2a".to_string())

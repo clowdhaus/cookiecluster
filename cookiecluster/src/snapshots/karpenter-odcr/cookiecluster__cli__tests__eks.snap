@@ -1,0 +1,100 @@
+---
+source: cookiecluster/src/cli.rs
+expression: rendered
+---
+/*
+## NVIDIA K8s Device Plugin
+
+The NVIDIA K8s device plugin, https://github.com/NVIDIA/k8s-device-plugin, will need to
+be installed in the cluster in order to mount and utilize the GPUs in your pods. Add the
+following affinity rule to your device plugin Helm chart values to ensure the device
+plugin runs on nodes that have GPUs present (as identified via the MNG
+labels provided below):
+
+```yaml
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: 'nvidia.com/gpu.present'
+            operator: In
+            values:
+              - 'true'
+```
+
+By default, the NVIDIA K8s device values already contain a toleration that matches the taint applied
+to the node group below.
+*/
+################################################################################
+# EKS Cluster
+################################################################################
+
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 20.33"
+
+  cluster_name    = "example"
+  cluster_version = "1.32"
+
+  # These will become the default in the next major version of the module
+  bootstrap_self_managed_addons   = false
+  enable_irsa                     = false
+  enable_security_groups_for_pods = false
+
+  cluster_addons = {
+    coredns = {}
+    eks-pod-identity-agent = {}
+    eks-node-monitoring-agent = {}
+    kube-proxy = {}
+    vpc-cni = {}
+  }
+
+  vpc_id                   = data.aws_vpc.this.id
+  control_plane_subnet_ids = data.aws_subnets.control_plane.ids
+  subnet_ids               = data.aws_subnets.data_plane.ids
+
+  eks_managed_node_groups = {
+    karpenter = {
+      ami_type = "AL2023_x86_64_STANDARD"
+      instance_types = [
+        "m7a.xlarge",
+        "m7i.xlarge",
+      ]
+  
+      min_size     = 2
+      max_size     = 3
+      desired_size = 2
+  
+      node_repair_config = {
+        enabled = true
+      }
+  
+      labels = {
+        # Used to ensure Karpenter runs on nodes that it does not manage
+        "karpenter.sh/controller" = "true"
+      }
+  
+      taints = {
+        # The pods that do not tolerate this taint should run on nodes
+        # created by Karpenter
+        karpenter = {
+          key    = "karpenter.sh/controller"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        }
+      }
+    }
+  }
+
+  tags = merge(module.tags.tags, {
+    # NOTE - if creating multiple security groups with this module, only tag the
+    # security group that Karpenter should utilize with the following tag
+    # (i.e. - at most, only one security group should have this tag in your account)
+    "karpenter.sh/discovery" = example
+  })
+}
+
+################################################################################
+# EKS Pod Identity IAM Roles
+################################################################################

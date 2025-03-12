@@ -153,7 +153,7 @@ module "eks" {
   tags = module.tags.tags
   {{ /if }}
 }
-{{ #if (eq inputs.reservation "ODCR") }}
+{{ #if (and (eq inputs.reservation "ODCR") (neq inputs.compute_scaling "karpenter")) }}
 
 ################################################################################
 # Resource Group

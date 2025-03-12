@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use cookiecluster::{inputs::Inputs, Cli};
+use cookiecluster::{Cli, inputs::Inputs};
 use tracing_log::AsTrace;
 use tracing_subscriber::FmtSubscriber;
 
