@@ -5,25 +5,11 @@
 ## NVIDIA K8s Device Plugin
 
 The NVIDIA K8s device plugin, https://github.com/NVIDIA/k8s-device-plugin, will need to
-be installed in the cluster in order to mount and utilize the GPUs in your pods. Add the
-following affinity rule to your device plugin Helm chart values to ensure the device
-plugin runs on nodes that have GPUs present (as identified via the MNG
-labels provided below):
-
-```yaml
-affinity:
-  nodeAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      nodeSelectorTerms:
-        - matchExpressions:
-          - key: 'nvidia.com/gpu.present'
-            operator: In
-            values:
-              - 'true'
-```
+be installed in the cluster in order to mount and utilize the GPUs in your pods.
 
 By default, the NVIDIA K8s device values already contain a toleration that matches the taint applied
-to the node group below.
+to the node group below, as well as a nodeAffinity selector for `nvidia.com/gpu.present` that matches the label
+applied to the node group.
     {{ else }}
 ## NVIDIA K8s Device Plugin
 
@@ -85,7 +71,7 @@ tolerations:
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.33"
+  version = "~> 20.34"
 
   cluster_name    = "{{ inputs.cluster_name }}"
   cluster_version = "{{ inputs.cluster_version }}"
