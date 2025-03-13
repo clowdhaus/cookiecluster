@@ -1,81 +1,183 @@
-use std::fmt;
+use std::{collections::BTreeMap, fmt, sync::LazyLock};
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
-#[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, EnumIter, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum AddOnType {
-  CoreDns,
-  KubeProxy,
-  VpcCni,
-  EksNodeMonitoringAgent,
-  EksPodIdentityAgent,
+  Adot,
+  AmazonCloudwatchObservability,
   AwsEbsCsiDriver,
   AwsEfsCsiDriver,
-  AwsMountpointS3CsiDriver,
-  SnapshotController,
-  Adot,
   AwsGuarddutyAgent,
-  AmazonCloudwatchObservability,
+  AwsMountpointS3CsiDriver,
+  CoreDns,
+  KubeProxy,
+  EksNodeMonitoringAgent,
+  EksPodIdentityAgent,
+  SnapshotController,
+  VpcCni,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddOn {
+  pub default: bool,
   pub name: String,
-  pub under_name: String,
-  pub configuration: AddOnConfiguration,
+  pub configuration: Option<AddOnConfiguration>,
 }
 
-/// Get all available add-ons
-pub fn get_add_ons() -> Result<Vec<String>> {
-  Ok(AddOnType::iter().map(|v| v.to_string()).collect::<Vec<_>>())
-}
-
-/// For a given add-on, return (required) configuration
-pub fn get_add_on_configuration(name: &str) -> Result<AddOn> {
-  let add_on_type = AddOnType::from(name);
-  let add_on = match add_on_type {
-    AddOnType::AwsEbsCsiDriver
-    | AddOnType::AwsEfsCsiDriver
-    | AddOnType::AwsMountpointS3CsiDriver
-    | AddOnType::AmazonCloudwatchObservability => {
-      let under_name = add_on_type.to_string().replace('-', "_");
-      let service_account_name = match add_on_type {
-        AddOnType::AwsEbsCsiDriver => Some("ebs-csi-controller-sa".to_string()),
-        AddOnType::AwsEfsCsiDriver => Some("efs-csi-controller-sa".to_string()),
-        AddOnType::AwsMountpointS3CsiDriver => Some("s3-csi-driver-sa".to_string()),
-        AddOnType::AmazonCloudwatchObservability => Some("cloudwatch-agent".to_string()),
-        _ => None,
-      };
-      AddOn {
-        name: add_on_type.to_string(),
-        under_name: under_name.to_string(),
-        configuration: AddOnConfiguration {
-          pod_identity_role_arn: Some(format!("module.{under_name}_pod_identity.iam_role_arn")),
-          pod_identity_service_account: service_account_name,
-        },
-      }
-    }
-    _ => AddOn {
-      name: add_on_type.to_string(),
-      under_name: add_on_type.to_string().replace('-', "_"),
-      configuration: AddOnConfiguration {
-        pod_identity_role_arn: None,
-        pod_identity_service_account: None,
-      },
-    },
-  };
-
-  Ok(add_on)
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddOnConfiguration {
   pub pod_identity_role_arn: Option<String>,
   pub pod_identity_service_account: Option<String>,
+}
+
+static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
+  BTreeMap::from([
+    (
+      AddOnType::Adot,
+      AddOn {
+        default: false,
+        name: "adot".to_string(),
+        configuration: None,
+      },
+    ),
+    (
+      AddOnType::AmazonCloudwatchObservability,
+      AddOn {
+        default: false,
+        name: "amazon-cloudwatch-observability".to_string(),
+        configuration: Some(AddOnConfiguration {
+          pod_identity_role_arn: Some("module.amazon_cloudwatch_observability_pod_identity.iam_role_arn".to_string()),
+          pod_identity_service_account: Some("cloudwatch-agent".to_string()),
+        }),
+      },
+    ),
+    (
+      AddOnType::AwsEbsCsiDriver,
+      AddOn {
+        default: false,
+        name: "aws-ebs-csi-driver".to_string(),
+        configuration: Some(AddOnConfiguration {
+          pod_identity_role_arn: Some("module.aws_ebs_csi_driver_pod_identity.iam_role_arn".to_string()),
+          pod_identity_service_account: Some("ebs-csi-controller-sa".to_string()),
+        }),
+      },
+    ),
+    (
+      AddOnType::AwsEfsCsiDriver,
+      AddOn {
+        default: false,
+        name: "aws-efs-csi-driver".to_string(),
+        configuration: Some(AddOnConfiguration {
+          pod_identity_role_arn: Some("module.aws_efs_csi_driver_pod_identity.iam_role_arn".to_string()),
+          pod_identity_service_account: Some("efs-csi-controller-sa".to_string()),
+        }),
+      },
+    ),
+    (
+      AddOnType::AwsGuarddutyAgent,
+      AddOn {
+        default: false,
+        name: "aws-guardduty-agent".to_string(),
+        configuration: None,
+      },
+    ),
+    (
+      AddOnType::AwsMountpointS3CsiDriver,
+      AddOn {
+        default: false,
+        name: "aws-mountpoint-s3-csi-driver".to_string(),
+        configuration: Some(AddOnConfiguration {
+          pod_identity_role_arn: Some("module.aws_mountpoint_s3_csi_driver_pod_identity.iam_role_arn".to_string()),
+          pod_identity_service_account: Some("s3-csi-driver-sa".to_string()),
+        }),
+      },
+    ),
+    (
+      AddOnType::CoreDns,
+      AddOn {
+        default: true,
+        name: "coredns".to_string(),
+        configuration: None,
+      },
+    ),
+    (
+      AddOnType::KubeProxy,
+      AddOn {
+        default: true,
+        name: "kube-proxy".to_string(),
+        configuration: None,
+      },
+    ),
+    (
+      AddOnType::EksNodeMonitoringAgent,
+      AddOn {
+        default: true,
+        name: "eks-node-monitoring-agent".to_string(),
+        configuration: None,
+      },
+    ),
+    (
+      AddOnType::EksPodIdentityAgent,
+      AddOn {
+        default: true,
+        name: "eks-pod-identity-agent".to_string(),
+        configuration: None,
+      },
+    ),
+    (
+      AddOnType::SnapshotController,
+      AddOn {
+        default: false,
+        name: "snapshot-controller".to_string(),
+        configuration: None,
+      },
+    ),
+    (
+      AddOnType::VpcCni,
+      AddOn {
+        default: true,
+        name: "vpc-cni".to_string(),
+        configuration: None,
+      },
+    ),
+  ])
+});
+
+/// Get all available add-ons
+#[inline]
+pub fn _get_all_add_ons() -> Vec<AddOn> {
+  ADD_ONS.iter().map(|(_, v)| v.clone()).collect::<Vec<_>>()
+}
+
+#[inline]
+pub fn get_add_on_names() -> Vec<String> {
+  AddOnType::iter().map(|v| v.to_string()).collect::<Vec<_>>()
+}
+
+#[inline]
+pub fn get_default_add_ons() -> Vec<AddOn> {
+  ADD_ONS
+    .iter()
+    .filter(|(_, v)| v.default)
+    .map(|(_, v)| v.clone())
+    .collect::<Vec<_>>()
+}
+
+#[inline]
+pub fn get_default_add_on_flags() -> Vec<bool> {
+  ADD_ONS.iter().map(|(_, v)| v.default).collect::<Vec<_>>()
+}
+
+pub fn get_add_on(add_on_type: AddOnType) -> Result<AddOn> {
+  let config = ADD_ONS
+    .get(&add_on_type)
+    .ok_or_else(|| anyhow::anyhow!("Add-on not found"))?;
+  Ok(config.clone())
 }
 
 impl std::fmt::Display for AddOnType {
@@ -137,7 +239,11 @@ mod tests {
   #[case(AddOnType::AwsGuarddutyAgent, None)]
   #[case(AddOnType::AmazonCloudwatchObservability, Some("module.amazon_cloudwatch_observability_pod_identity.iam_role_arn".to_string()))]
   fn test_get_add_on_configuration(#[case] aot: AddOnType, #[case] expected: Option<String>) {
-    let add_on = get_add_on_configuration(&aot.to_string()).unwrap();
-    assert_eq!(add_on.configuration.pod_identity_role_arn, expected);
+    let add_on = get_add_on(aot).unwrap();
+    let result = match add_on.configuration {
+      Some(c) => c.pod_identity_role_arn,
+      None => None,
+    };
+    assert_eq!(result, expected);
   }
 }

@@ -4,7 +4,7 @@
 
 {{ #each inputs.add_ons as |a| }}
 {{ #if a.configuration.pod_identity_role_arn }}
-module "{{ a.under_name }}_pod_identity" {
+module "{{ camel_case a.name }}_pod_identity" {
   source = "terraform-aws-modules/eks-pod-identity/aws"
   version = "~> 1.7"
 

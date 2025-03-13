@@ -23,12 +23,14 @@ fn register_handlebars() -> Result<Handlebars<'static>> {
   handlebars_helper!(eq: |v1: Value, v2: Value| v1 == v2);
   handlebars_helper!(and: |v1: bool, v2: bool| v1 && v2 );
   handlebars_helper!(or: |v1: bool, v2: bool| v1 || v2 );
+  handlebars_helper!(camel_case: |v: str| v.replace("-", "_"));
 
   let mut handlebars = Handlebars::new();
   handlebars.register_helper("neq", Box::new(neq));
   handlebars.register_helper("eq", Box::new(eq));
   handlebars.register_helper("and", Box::new(and));
   handlebars.register_helper("or", Box::new(or));
+  handlebars.register_helper("camel_case", Box::new(camel_case));
 
   // Register templates
   let templates = HashSet::from(["eks.tpl", "karpenter.tpl", "main.tpl", "variables.tpl"]);
