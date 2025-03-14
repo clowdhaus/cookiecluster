@@ -1,12 +1,14 @@
-use std::{collections::BTreeMap, fmt, sync::LazyLock};
+use std::{collections::BTreeMap, sync::LazyLock};
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
+use strum_macros::{Display, EnumIter, EnumString, IntoStaticStr};
 
-#[derive(Debug, EnumIter, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[derive(
+  Debug, EnumIter, Display, EnumString, IntoStaticStr, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize,
+)]
+#[strum(serialize_all = "kebab-case")]
 pub enum AddOnType {
   Adot,
   AmazonCloudwatchObservability,
@@ -14,12 +16,20 @@ pub enum AddOnType {
   AwsEfsCsiDriver,
   AwsGuarddutyAgent,
   AwsMountpointS3CsiDriver,
+  #[strum(serialize = "coredns")]
   CoreDns,
   KubeProxy,
   EksNodeMonitoringAgent,
   EksPodIdentityAgent,
   SnapshotController,
   VpcCni,
+}
+
+impl AddOnType {
+  #[cfg(not(tarpaulin_include))]
+  pub fn from_idx(idx: usize) -> AddOnType {
+    AddOnType::iter().nth(idx).unwrap()
+  }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -41,7 +51,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
       AddOnType::Adot,
       AddOn {
         default: false,
-        name: "adot".to_string(),
+        name: AddOnType::Adot.to_string(),
         configuration: None,
       },
     ),
@@ -49,7 +59,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
       AddOnType::AmazonCloudwatchObservability,
       AddOn {
         default: false,
-        name: "amazon-cloudwatch-observability".to_string(),
+        name: AddOnType::AmazonCloudwatchObservability.to_string(),
         configuration: Some(AddOnConfiguration {
           pod_identity_role_arn: Some("module.amazon_cloudwatch_observability_pod_identity.iam_role_arn".to_string()),
           pod_identity_service_account: Some("cloudwatch-agent".to_string()),
@@ -60,7 +70,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
       AddOnType::AwsEbsCsiDriver,
       AddOn {
         default: false,
-        name: "aws-ebs-csi-driver".to_string(),
+        name: AddOnType::AwsEbsCsiDriver.to_string(),
         configuration: Some(AddOnConfiguration {
           pod_identity_role_arn: Some("module.aws_ebs_csi_driver_pod_identity.iam_role_arn".to_string()),
           pod_identity_service_account: Some("ebs-csi-controller-sa".to_string()),
@@ -71,7 +81,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
       AddOnType::AwsEfsCsiDriver,
       AddOn {
         default: false,
-        name: "aws-efs-csi-driver".to_string(),
+        name: AddOnType::AwsEfsCsiDriver.to_string(),
         configuration: Some(AddOnConfiguration {
           pod_identity_role_arn: Some("module.aws_efs_csi_driver_pod_identity.iam_role_arn".to_string()),
           pod_identity_service_account: Some("efs-csi-controller-sa".to_string()),
@@ -82,7 +92,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
       AddOnType::AwsGuarddutyAgent,
       AddOn {
         default: false,
-        name: "aws-guardduty-agent".to_string(),
+        name: AddOnType::AwsGuarddutyAgent.to_string(),
         configuration: None,
       },
     ),
@@ -90,7 +100,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
       AddOnType::AwsMountpointS3CsiDriver,
       AddOn {
         default: false,
-        name: "aws-mountpoint-s3-csi-driver".to_string(),
+        name: AddOnType::AwsMountpointS3CsiDriver.to_string(),
         configuration: Some(AddOnConfiguration {
           pod_identity_role_arn: Some("module.aws_mountpoint_s3_csi_driver_pod_identity.iam_role_arn".to_string()),
           pod_identity_service_account: Some("s3-csi-driver-sa".to_string()),
@@ -101,7 +111,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
       AddOnType::CoreDns,
       AddOn {
         default: true,
-        name: "coredns".to_string(),
+        name: AddOnType::CoreDns.to_string(),
         configuration: None,
       },
     ),
@@ -109,7 +119,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
       AddOnType::KubeProxy,
       AddOn {
         default: true,
-        name: "kube-proxy".to_string(),
+        name: AddOnType::KubeProxy.to_string(),
         configuration: None,
       },
     ),
@@ -117,7 +127,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
       AddOnType::EksNodeMonitoringAgent,
       AddOn {
         default: true,
-        name: "eks-node-monitoring-agent".to_string(),
+        name: AddOnType::EksNodeMonitoringAgent.to_string(),
         configuration: None,
       },
     ),
@@ -125,7 +135,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
       AddOnType::EksPodIdentityAgent,
       AddOn {
         default: true,
-        name: "eks-pod-identity-agent".to_string(),
+        name: AddOnType::EksPodIdentityAgent.to_string(),
         configuration: None,
       },
     ),
@@ -133,7 +143,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
       AddOnType::SnapshotController,
       AddOn {
         default: false,
-        name: "snapshot-controller".to_string(),
+        name: AddOnType::SnapshotController.to_string(),
         configuration: None,
       },
     ),
@@ -141,7 +151,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
       AddOnType::VpcCni,
       AddOn {
         default: true,
-        name: "vpc-cni".to_string(),
+        name: AddOnType::VpcCni.to_string(),
         configuration: None,
       },
     ),
@@ -150,16 +160,19 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
 
 /// Get all available add-ons
 #[inline]
+#[cfg(not(tarpaulin_include))]
 pub fn _get_all_add_ons() -> Vec<AddOn> {
   ADD_ONS.iter().map(|(_, v)| v.clone()).collect::<Vec<_>>()
 }
 
 #[inline]
-pub fn get_add_on_names() -> Vec<String> {
-  AddOnType::iter().map(|v| v.to_string()).collect::<Vec<_>>()
+#[cfg(not(tarpaulin_include))]
+pub fn get_add_on_names() -> Vec<&'static str> {
+  AddOnType::iter().map(|aot| aot.into()).collect()
 }
 
 #[inline]
+#[cfg(not(tarpaulin_include))]
 pub fn get_default_add_ons() -> Vec<AddOn> {
   ADD_ONS
     .iter()
@@ -169,54 +182,17 @@ pub fn get_default_add_ons() -> Vec<AddOn> {
 }
 
 #[inline]
+#[cfg(not(tarpaulin_include))]
 pub fn get_default_add_on_flags() -> Vec<bool> {
   ADD_ONS.iter().map(|(_, v)| v.default).collect::<Vec<_>>()
 }
 
+#[cfg(not(tarpaulin_include))]
 pub fn get_add_on(add_on_type: AddOnType) -> Result<AddOn> {
   let config = ADD_ONS
     .get(&add_on_type)
     .ok_or_else(|| anyhow::anyhow!("Add-on not found"))?;
   Ok(config.clone())
-}
-
-impl std::fmt::Display for AddOnType {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      AddOnType::CoreDns => write!(f, "coredns"),
-      AddOnType::KubeProxy => write!(f, "kube-proxy"),
-      AddOnType::VpcCni => write!(f, "vpc-cni"),
-      AddOnType::EksNodeMonitoringAgent => write!(f, "eks-node-monitoring-agent"),
-      AddOnType::EksPodIdentityAgent => write!(f, "eks-pod-identity-agent"),
-      AddOnType::AwsEbsCsiDriver => write!(f, "aws-ebs-csi-driver"),
-      AddOnType::AwsEfsCsiDriver => write!(f, "aws-efs-csi-driver"),
-      AddOnType::AwsMountpointS3CsiDriver => write!(f, "aws-mountpoint-s3-csi-driver"),
-      AddOnType::SnapshotController => write!(f, "snapshot-controller"),
-      AddOnType::Adot => write!(f, "adot"),
-      AddOnType::AwsGuarddutyAgent => write!(f, "aws-guardduty-agent"),
-      AddOnType::AmazonCloudwatchObservability => write!(f, "amazon-cloudwatch-observability"),
-    }
-  }
-}
-
-impl std::convert::From<&str> for AddOnType {
-  fn from(s: &str) -> Self {
-    match s {
-      "coredns" => AddOnType::CoreDns,
-      "kube-proxy" => AddOnType::KubeProxy,
-      "vpc-cni" => AddOnType::VpcCni,
-      "eks-node-monitoring-agent" => AddOnType::EksNodeMonitoringAgent,
-      "eks-pod-identity-agent" => AddOnType::EksPodIdentityAgent,
-      "aws-ebs-csi-driver" => AddOnType::AwsEbsCsiDriver,
-      "aws-efs-csi-driver" => AddOnType::AwsEfsCsiDriver,
-      "aws-mountpoint-s3-csi-driver" => AddOnType::AwsMountpointS3CsiDriver,
-      "snapshot-controller" => AddOnType::SnapshotController,
-      "adot" => AddOnType::Adot,
-      "aws-guardduty-agent" => AddOnType::AwsGuarddutyAgent,
-      "amazon-cloudwatch-observability" => AddOnType::AmazonCloudwatchObservability,
-      _ => AddOnType::CoreDns,
-    }
-  }
 }
 
 #[cfg(test)]

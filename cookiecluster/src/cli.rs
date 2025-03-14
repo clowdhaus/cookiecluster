@@ -101,7 +101,7 @@ mod tests {
   #[test]
   fn snapshot_al2023_x86_64() {
     let inputs = Inputs {
-      ami_type: ami::AmiType::Al2023X8664Standard,
+      ami_type: ami::AmiType::AL2023_x86_64_STANDARD,
       compute_scaling: compute::ScalingType::None,
       ..Inputs::default()
     };
@@ -112,7 +112,7 @@ mod tests {
   #[test]
   fn snapshot_al2023_arm64() {
     let inputs = Inputs {
-      ami_type: ami::AmiType::Al2023Arm64Standard,
+      ami_type: ami::AmiType::AL2023_ARM_64_STANDARD,
       compute_scaling: compute::ScalingType::None,
       instance_types: vec!["m7g.xlarge".to_string(), "m6g.xlarge".to_string()],
       ..Inputs::default()
@@ -124,7 +124,7 @@ mod tests {
   #[test]
   fn snapshot_bottlerocket_x8664() {
     let inputs = Inputs {
-      ami_type: ami::AmiType::BottlerocketX8664,
+      ami_type: ami::AmiType::BOTTLEROCKET_x86_64,
       compute_scaling: compute::ScalingType::None,
       ..Inputs::default()
     };
@@ -135,7 +135,7 @@ mod tests {
   #[test]
   fn snapshot_bottlerocket_arm64() {
     let inputs = Inputs {
-      ami_type: ami::AmiType::BottlerocketArm64,
+      ami_type: ami::AmiType::BOTTLEROCKET_ARM_64,
       compute_scaling: compute::ScalingType::None,
       instance_types: vec!["m7g.xlarge".to_string(), "m6g.xlarge".to_string()],
       ..Inputs::default()
@@ -148,7 +148,7 @@ mod tests {
   fn snapshot_nvidia() {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
-      ami_type: ami::AmiType::Al2023X8664Nvidia,
+      ami_type: ami::AmiType::AL2023_x86_64_NVIDIA,
       compute_scaling: compute::ScalingType::None,
       instance_types: vec!["g5.4xlarge".to_owned()],
       ..Inputs::default()
@@ -161,9 +161,9 @@ mod tests {
   fn snapshot_nvidia_efa() {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
-      ami_type: ami::AmiType::Al2023X8664Nvidia,
+      ami_type: ami::AmiType::AL2023_x86_64_NVIDIA,
       compute_scaling: compute::ScalingType::None,
-      enable_efa: true,
+      require_efa: true,
       instance_storage_supported: true,
       instance_types: vec!["p5.48xlarge".to_owned()],
       ..Inputs::default()
@@ -176,9 +176,9 @@ mod tests {
   fn snapshot_nvidia_efa_odcr() {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
-      ami_type: ami::AmiType::Al2023X8664Nvidia,
+      ami_type: ami::AmiType::AL2023_x86_64_NVIDIA,
       compute_scaling: compute::ScalingType::None,
-      enable_efa: true,
+      require_efa: true,
       instance_storage_supported: true,
       instance_types: vec!["p5.48xlarge".to_owned()],
       reservation: compute::ReservationType::OnDemandCapacityReservation,
@@ -192,9 +192,9 @@ mod tests {
   fn snapshot_nvidia_efa_cbr() {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
-      ami_type: ami::AmiType::Al2023X8664Nvidia,
+      ami_type: ami::AmiType::AL2023_x86_64_NVIDIA,
       compute_scaling: compute::ScalingType::None,
-      enable_efa: true,
+      require_efa: true,
       instance_storage_supported: true,
       instance_types: vec!["p5.48xlarge".to_owned()],
       reservation: compute::ReservationType::MlCapacityBlockReservation,
@@ -208,9 +208,9 @@ mod tests {
   fn snapshot_nvidia_cbr() {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
-      ami_type: ami::AmiType::Al2023X8664Nvidia,
+      ami_type: ami::AmiType::AL2023_x86_64_NVIDIA,
       compute_scaling: compute::ScalingType::None,
-      enable_efa: false,
+      require_efa: false,
       instance_storage_supported: true,
       instance_types: vec!["p5.48xlarge".to_owned()],
       reservation: compute::ReservationType::MlCapacityBlockReservation,
@@ -224,7 +224,7 @@ mod tests {
   fn snapshot_neuron() {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Neuron,
-      ami_type: ami::AmiType::Al2023X8664Neuron,
+      ami_type: ami::AmiType::AL2023_x86_64_NEURON,
       compute_scaling: compute::ScalingType::None,
       instance_types: vec!["inf2.xlarge".to_owned()],
       ..Inputs::default()
@@ -237,9 +237,9 @@ mod tests {
   fn snapshot_neuron_efa() {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Neuron,
-      ami_type: ami::AmiType::Al2023X8664Neuron,
+      ami_type: ami::AmiType::AL2023_x86_64_NEURON,
       compute_scaling: compute::ScalingType::None,
-      enable_efa: true,
+      require_efa: true,
       instance_storage_supported: true,
       instance_types: vec!["trn1n.32xlarge".to_owned()],
       ..Inputs::default()
@@ -252,9 +252,9 @@ mod tests {
   fn snapshot_neuron_cbr() {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Neuron,
-      ami_type: ami::AmiType::Al2023X8664Neuron,
+      ami_type: ami::AmiType::AL2023_x86_64_NEURON,
       compute_scaling: compute::ScalingType::None,
-      enable_efa: false,
+      require_efa: false,
       instance_storage_supported: true,
       instance_types: vec!["trn1.32xlarge".to_owned()],
       reservation: compute::ReservationType::MlCapacityBlockReservation,
@@ -267,7 +267,7 @@ mod tests {
   #[test]
   fn snapshot_al2023_instance_storage() {
     let inputs = Inputs {
-      ami_type: ami::AmiType::Al2023Arm64Standard,
+      ami_type: ami::AmiType::AL2023_ARM_64_STANDARD,
       compute_scaling: compute::ScalingType::None,
       instance_storage_supported: true,
       instance_types: vec!["m7gd.2xlarge".to_owned()],
@@ -291,7 +291,7 @@ mod tests {
   fn snapshot_karpenter_odcr() {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
-      ami_type: ami::AmiType::Al2023X8664Nvidia,
+      ami_type: ami::AmiType::AL2023_x86_64_NVIDIA,
       compute_scaling: compute::ScalingType::Karpenter,
       instance_storage_supported: true,
       instance_types: vec!["p5e.48xlarge".to_owned()],

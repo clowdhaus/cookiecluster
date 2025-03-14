@@ -31,3 +31,6 @@ tracing-subscriber.workspace = true
 [dev-dependencies]
 insta = "1.42"
 rstest = "0.25"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(tarpaulin_include)"] }

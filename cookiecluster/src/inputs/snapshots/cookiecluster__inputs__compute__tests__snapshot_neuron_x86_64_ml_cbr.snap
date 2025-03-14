@@ -1,0 +1,8 @@
+---
+source: cookiecluster/src/inputs/compute.rs
+expression: neuron_x86_64_ml_cbr
+---
+[
+    "trn1.32xlarge",
+    "trn2.48xlarge",
+]

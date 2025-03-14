@@ -4,6 +4,7 @@ use cookiecluster::{Cli, inputs::Inputs};
 use tracing_log::AsTrace;
 use tracing_subscriber::FmtSubscriber;
 
+#[cfg(not(tarpaulin_include))]
 fn main() -> Result<()> {
   let cli = Cli::parse();
   let subscriber = FmtSubscriber::builder()

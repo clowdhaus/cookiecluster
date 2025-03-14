@@ -1,0 +1,10 @@
+[coverage]
+workspace = true
+all-features = true
+exclude-files = [
+  "cookiecluster/src/cli.rs",
+  "cookiecluster/src/lib.rs",
+  "cookiecluster/src/main.rs",
+  "cookiecluster/src/inputs/mod.rs",
+  "xtask/*"
+]

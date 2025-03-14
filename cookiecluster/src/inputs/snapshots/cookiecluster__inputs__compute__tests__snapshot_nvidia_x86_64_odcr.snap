@@ -1,6 +1,6 @@
 ---
 source: cookiecluster/src/inputs/compute.rs
-expression: nvidia_x86_64
+expression: nvidia_x86_64_odcr
 ---
 [
     "g4dn.12xlarge",
