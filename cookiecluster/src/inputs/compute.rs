@@ -125,8 +125,12 @@ impl ScalingType {
 pub fn get_compute_scaling_types(reservation: &ReservationType) -> Vec<ScalingType> {
   match reservation {
     ReservationType::None => ScalingType::iter().collect(),
-    ReservationType::OnDemandCapacityReservation => ScalingType::iter().filter(|s| s != &ScalingType::AutoMode).collect(),
-    _ => ScalingType::iter().filter(|s| s != &ScalingType::AutoMode && s != &ScalingType::Karpenter).collect(),
+    ReservationType::OnDemandCapacityReservation => {
+      ScalingType::iter().filter(|s| s != &ScalingType::AutoMode).collect()
+    }
+    _ => ScalingType::iter()
+      .filter(|s| s != &ScalingType::AutoMode && s != &ScalingType::Karpenter)
+      .collect(),
   }
 }
 
@@ -145,7 +149,9 @@ impl CpuArch {
   }
 }
 
-#[derive(Debug, Display, EnumIter, EnumString, IntoStaticStr, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(
+  Debug, Display, EnumIter, EnumString, IntoStaticStr, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize,
+)]
 pub enum ReservationType {
   // TODO - remove rename when template is updated
   #[serde(rename = "ODCR")]
@@ -168,7 +174,9 @@ impl ReservationType {
 pub fn get_reservation_types(accelerator: &AcceleratorType) -> Vec<ReservationType> {
   match accelerator {
     AcceleratorType::Nvidia | AcceleratorType::Neuron => ReservationType::iter().collect(),
-    _ => ReservationType::iter().filter(|r| r != &ReservationType::MlCapacityBlockReservation).collect(),
+    _ => ReservationType::iter()
+      .filter(|r| r != &ReservationType::MlCapacityBlockReservation)
+      .collect(),
   }
 }
 
@@ -231,7 +239,9 @@ mod tests {
   #[case(&AcceleratorType::Neuron, vec![ReservationType::None, ReservationType::OnDemandCapacityReservation, ReservationType::MlCapacityBlockReservation])]
   fn test_get_reservation_types(#[case] accelerator: &AcceleratorType, #[case] mut expected: Vec<ReservationType>) {
     let mut reservation_types = get_reservation_types(accelerator);
-    assert_eq!(reservation_types.sort(), expected.sort());
+    reservation_types.sort();
+    expected.sort();
+    assert_eq!(reservation_types, expected);
   }
 
   #[rstest]

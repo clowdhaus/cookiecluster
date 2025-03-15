@@ -59,6 +59,11 @@ impl Cli {
       fs::write(Path::new("variables.tf"), vars)?;
     }
 
+    match std::process::Command::new("terraform").arg("fmt").arg(".").output() {
+      Ok(_) => tracing::trace!("Terraform files have been formatted"),
+      _ => tracing::trace!("Terraform executable not found. Skipping formatting."),
+    };
+
     Ok(())
   }
 }
