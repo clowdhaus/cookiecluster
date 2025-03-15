@@ -6,10 +6,8 @@ pub(crate) mod version;
 
 pub use add_on::AddOn;
 use anyhow::Result;
-use compute::AcceleratorType;
 use dialoguer::{Confirm, Input, MultiSelect, Select, theme::ColorfulTheme};
 use serde::{Deserialize, Serialize};
-use strum::IntoEnumIterator;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Inputs {
@@ -28,7 +26,7 @@ pub struct Inputs {
   /// Instance types used on default node group when secondary node group (accelerated, Windows, etc) is used
   pub(crate) default_instance_types: Vec<String>,
   pub(crate) enable_cluster_creator_admin_permissions: bool,
-  pub(crate) enable_efa: bool,
+  pub(crate) require_efa: bool,
   pub(crate) instance_storage_supported: bool,
   pub(crate) instance_types: Vec<String>,
   pub(crate) reservation: compute::ReservationType,
@@ -41,7 +39,7 @@ impl Default for Inputs {
     Inputs {
       accelerator: compute::AcceleratorType::None,
       add_ons: add_on::get_default_add_ons(),
-      ami_type: ami::AmiType::Al2023X8664Standard,
+      ami_type: ami::AmiType::AL2023_x86_64_STANDARD,
       cluster_endpoint_public_access: false,
       cluster_name: String::from("example"),
       cluster_version: version::ClusterVersion::K132,
@@ -49,10 +47,10 @@ impl Default for Inputs {
       compute_scaling: compute::ScalingType::AutoMode,
       cpu_arch: compute::CpuArch::X8664,
       data_plane_subnet_filter: String::from("*-private-*"),
-      default_ami_type: ami::AmiType::Al2023X8664Standard,
+      default_ami_type: ami::AmiType::AL2023_x86_64_STANDARD,
       default_instance_types: vec!["m7a.xlarge".to_string(), "m7i.xlarge".to_string()],
       enable_cluster_creator_admin_permissions: false,
-      enable_efa: false,
+      require_efa: false,
       instance_storage_supported: false,
       instance_types: vec!["m7a.xlarge".to_string(), "m7i.xlarge".to_string()],
       reservation: compute::ReservationType::None,
@@ -71,7 +69,7 @@ impl Inputs {
     let inputs = self
       .collect_cluster_settings()?
       .collect_accelerator_type()?
-      .collect_enable_efa()?
+      .collect_require_efa()?
       .collect_reservation_type()?
       .collect_compute_scaling_type()?
       .collect_add_ons()?
@@ -90,19 +88,13 @@ impl Inputs {
       .with_prompt("Cluster name")
       .interact_text()?;
 
-    // This is ugly
-    // TODO - find better way to get from enum variants to &[&str]
-    let cluster_versions = version::ClusterVersion::iter()
-      .map(|v| v.to_string())
-      .collect::<Vec<_>>();
-    let cluster_versions: Vec<&str> = cluster_versions.iter().map(|s| s as &str).collect();
-
-    let cluster_version_idx = Select::with_theme(&ColorfulTheme::default())
+    let cluster_versions = version::ClusterVersion::versions();
+    let idx = Select::with_theme(&ColorfulTheme::default())
       .with_prompt("Cluster version")
       .items(&cluster_versions[..])
       .default(0)
       .interact()?;
-    self.cluster_version = version::ClusterVersion::from(cluster_versions[cluster_version_idx]);
+    self.cluster_version = version::ClusterVersion::from_idx(idx);
 
     self.cluster_endpoint_public_access = Confirm::with_theme(&ColorfulTheme::default())
       .with_prompt("Enable public access to cluster endpoint")
@@ -118,12 +110,13 @@ impl Inputs {
   }
 
   fn collect_add_ons(mut self) -> Result<Inputs> {
+    // TODO - fix this. Some add ons are handled by Auto Mode, others are fair game to deploy
     if self.compute_scaling == compute::ScalingType::AutoMode {
       self.add_ons = vec![];
       return Ok(self);
     }
 
-    let all_add_ons = add_on::get_add_on_names(); // .iter().map(|v| v.as_str()).collect::<Vec<_>>();
+    let all_add_ons = add_on::get_add_on_names();
     let add_ons_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
       .with_prompt("EKS add-on(s)")
       .items(&all_add_ons[..])
@@ -133,7 +126,7 @@ impl Inputs {
 
     let add_ons = add_ons_idxs
       .iter()
-      .map(|&i| add_on::get_add_on(add_on::AddOnType::from(all_add_ons[i].as_str())).unwrap())
+      .map(|&i| add_on::get_add_on(add_on::AddOnType::from_idx(i)).unwrap())
       .collect::<Vec<add_on::AddOn>>();
     self.add_ons = add_ons;
 
@@ -141,28 +134,21 @@ impl Inputs {
   }
 
   fn collect_accelerator_type(mut self) -> Result<Inputs> {
-    let accelerator_idx = Select::with_theme(&ColorfulTheme::default())
+    let all_accelerators = compute::get_accelerator_types();
+    let idx = Select::with_theme(&ColorfulTheme::default())
       .with_prompt("Accelerator type")
-      .item("None")
-      .item("NVIDIA GPU")
-      .item("AWS Neuron")
+      .items(&all_accelerators[..])
       .default(0)
       .interact()?;
-
-    let accelerator = match accelerator_idx {
-      1 => compute::AcceleratorType::Nvidia,
-      2 => compute::AcceleratorType::Neuron,
-      _ => compute::AcceleratorType::None,
-    };
-    self.accelerator = accelerator;
+    self.accelerator = compute::AcceleratorType::from_idx(idx);
 
     Ok(self)
   }
 
-  fn collect_enable_efa(mut self) -> Result<Inputs> {
+  fn collect_require_efa(mut self) -> Result<Inputs> {
     match self.accelerator {
       compute::AcceleratorType::Nvidia | compute::AcceleratorType::Neuron => {
-        self.enable_efa = Confirm::with_theme(&ColorfulTheme::default())
+        self.require_efa = Confirm::with_theme(&ColorfulTheme::default())
           .with_prompt("Enable EFA support")
           .default(true)
           .interact()?
@@ -174,33 +160,25 @@ impl Inputs {
   }
 
   fn collect_reservation_type(mut self) -> Result<Inputs> {
-    if self.accelerator == AcceleratorType::None || self.compute_scaling == compute::ScalingType::Karpenter {
-      return Ok(self);
-    }
-
     let reservation_types = compute::get_reservation_types(&self.accelerator);
-
-    let reservation_idx = Select::with_theme(&ColorfulTheme::default())
+    let idx = Select::with_theme(&ColorfulTheme::default())
       .with_prompt("EC2 capacity reservation")
       .items(&reservation_types[..])
       .default(0)
       .interact()?;
-
-    self.reservation = compute::ReservationType::from(reservation_types[reservation_idx]);
+    self.reservation = compute::ReservationType::from_idx(idx);
 
     Ok(self)
   }
 
   fn collect_compute_scaling_type(mut self) -> Result<Inputs> {
-    let scaling_types = compute::get_scaling_types(&self.reservation);
-
-    let compute_scaling_idx = Select::with_theme(&ColorfulTheme::default())
+    let scaling_types = compute::get_compute_scaling_types(&self.reservation);
+    let idx = Select::with_theme(&ColorfulTheme::default())
       .with_prompt("Compute autoscaling")
       .items(&scaling_types[..])
       .default(0)
       .interact()?;
-
-    self.compute_scaling = compute::ScalingType::from(scaling_types[compute_scaling_idx]);
+    self.compute_scaling = compute::ScalingType::from_idx(idx);
 
     Ok(self)
   }
@@ -232,33 +210,17 @@ impl Inputs {
   }
 
   fn collect_cpu_arch(mut self) -> Result<Inputs> {
-    // Set on Auto Mode/Karpenter NodeClass
-    if self.compute_scaling == compute::ScalingType::Karpenter || self.compute_scaling == compute::ScalingType::AutoMode
-    {
+    if !should_collect_arch(&self.compute_scaling, &self.accelerator, self.require_efa) {
       return Ok(self);
     }
 
-    // Inf/Trn instances only support x86-64 at this time
-    if self.accelerator == compute::AcceleratorType::Neuron {
-      return Ok(self);
-    }
-
-    if self.accelerator == compute::AcceleratorType::Nvidia && self.enable_efa {
-      return Ok(self);
-    }
-
-    let cpu_arch_idx = Select::with_theme(&ColorfulTheme::default())
+    let idx = Select::with_theme(&ColorfulTheme::default())
       .with_prompt("CPU architecture")
       .item("x86-64")
       .item("arm64")
       .default(0)
       .interact()?;
-
-    let cpu_arch = match cpu_arch_idx {
-      1 => compute::CpuArch::Arm64,
-      _ => compute::CpuArch::X8664,
-    };
-    self.cpu_arch = cpu_arch;
+    self.cpu_arch = compute::CpuArch::from_idx(idx);
 
     Ok(self)
   }
@@ -268,14 +230,13 @@ impl Inputs {
       return Ok(self);
     }
 
-    let ami_types = ami::AmiType::get_ami_types(&self.accelerator, self.enable_efa, &self.cpu_arch)?;
-    let ami_type_idx = Select::with_theme(&ColorfulTheme::default())
+    let ami_types = ami::get_ami_types(&self.accelerator, self.require_efa, &self.cpu_arch);
+    let idx = Select::with_theme(&ColorfulTheme::default())
       .with_prompt("AMI type")
       .items(&ami_types[..])
       .default(0)
       .interact()?;
-
-    self.ami_type = ami::AmiType::from(ami_types[ami_type_idx]);
+    self.ami_type = ami::AmiType::from_idx(idx);
 
     Ok(self)
   }
@@ -286,7 +247,7 @@ impl Inputs {
     }
 
     let instance_type_names =
-      compute::get_instance_type_names(&self.cpu_arch, self.enable_efa, &self.accelerator, &self.reservation);
+      compute::get_instance_type_names(&self.cpu_arch, self.require_efa, &self.accelerator, &self.reservation);
 
     let instance_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
       .with_prompt("Instance type(s)")
@@ -294,7 +255,7 @@ impl Inputs {
       .interact()?;
 
     self.instance_types =
-      compute::limit_instances_selected(&self.reservation, self.enable_efa, instance_type_names, instance_idxs)?;
+      compute::limit_instances_selected(&self.reservation, self.require_efa, instance_type_names, instance_idxs)?;
 
     Ok(self)
   }
@@ -311,7 +272,9 @@ impl Inputs {
 
     // Based on the default AMI type selected, set the default instance type(s) for the default node group
     self.default_instance_types = match self.default_ami_type {
-      ami::AmiType::Al2023X8664Neuron | ami::AmiType::Al2023X8664Nvidia | ami::AmiType::BottlerocketArm64Nvidia => {
+      ami::AmiType::AL2023_ARM_64_STANDARD
+      | ami::AmiType::BOTTLEROCKET_ARM_64
+      | ami::AmiType::BOTTLEROCKET_ARM_64_NVIDIA => {
         vec!["m7g.xlarge".to_string(), "m6g.xlarge".to_string()]
       }
       _ => vec!["m7a.xlarge".to_string(), "m7i.xlarge".to_string()],
@@ -319,4 +282,26 @@ impl Inputs {
 
     Ok(self)
   }
+}
+
+fn should_collect_arch(
+  scaling_type: &compute::ScalingType,
+  accelerator: &compute::AcceleratorType,
+  require_efa: bool,
+) -> bool {
+  // Set on Auto Mode/Karpenter NodeClass
+  if *scaling_type == compute::ScalingType::Karpenter || *scaling_type == compute::ScalingType::AutoMode {
+    return false;
+  }
+
+  // Inf/Trn instances only support x86-64 at this time
+  if *accelerator == compute::AcceleratorType::Neuron {
+    return false;
+  }
+
+  if *accelerator == compute::AcceleratorType::Nvidia && require_efa {
+    return false;
+  }
+
+  true
 }

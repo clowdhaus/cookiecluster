@@ -4,7 +4,7 @@ gpu = {
 {{ #if (eq inputs.accelerator "Neuron") }}
 neuron = {
 {{ /if }}
-  {{ #if (or inputs.enable_efa (eq inputs.reservation "ODCR") (eq inputs.reservation "CBR")) }}
+  {{ #if (or inputs.require_efa (eq inputs.reservation "ODCR") (eq inputs.reservation "CBR")) }}
   ami_type       = "{{ inputs.ami_type }}"
   instance_types = [{{ #each inputs.instance_types }}"{{ this }}" {{ /each }}]
   {{ else }}
@@ -55,7 +55,7 @@ neuron = {
     }
   }
   {{ /if }}
-  {{ #if inputs.enable_efa}}
+  {{ #if inputs.require_efa}}
 
   # Add security group rules on the node group security group to
   # allow EFA traffic
@@ -65,7 +65,7 @@ neuron = {
   {{ /if }}
 
   labels = {
-    {{ #if inputs.enable_efa}}
+    {{ #if inputs.require_efa}}
     "vpc.amazonaws.com/efa.present" = "true"
     {{ #if (eq inputs.accelerator "NVIDIA") }}
     "nvidia.com/gpu.present"        = "true"

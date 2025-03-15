@@ -1,21 +1,17 @@
-use std::{collections::BTreeMap, fmt};
-
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
-use strum_macros::EnumIter;
+use strum::IntoEnumIterator;
+use strum_macros::{Display, EnumIter, EnumString, IntoStaticStr};
 
-use super::{
-  ami,
-  instance::{self, InstanceInfo},
-};
+use super::{ami, instance};
 
-/// Returns map of instance type name => instance type info
-fn get_instance_types<'a>(
+/// Filter and return available instance types by name
+pub fn get_instance_type_names<'a>(
   cpu_arch: &CpuArch,
-  enable_efa: bool,
+  require_efa: bool,
   accelerator: &AcceleratorType,
   reservation: &ReservationType,
-) -> BTreeMap<&'a str, &'a InstanceInfo<'a>> {
+) -> Vec<&'a str> {
   instance::INSTANCE_TYPES
     .iter()
     .filter(|i| i.cpu_arch == cpu_arch.to_string())
@@ -31,34 +27,24 @@ fn get_instance_types<'a>(
         i.nvidia_gpu_supported
       } else if accelerator == &AcceleratorType::Neuron {
         i.neuron_supported
+      } else if accelerator == &AcceleratorType::None {
+        !i.nvidia_gpu_supported && !i.neuron_supported
       } else {
-        true
+        false // no-op
       }
     })
     .filter(|i| {
-      // If `enable_efa` is true, only return instances that support EFA
+      // If `require_efa` is true, only return instances that support EFA
       // otherwise, do not filter out any instances based on EFA support
-      if enable_efa { i.efa_supported } else { true }
+      if require_efa { i.efa_supported } else { true }
     })
-    .map(|i| (i.instance_type, i))
-    .collect::<BTreeMap<&'a str, &InstanceInfo<'a>>>()
-}
-
-pub fn get_instance_type_names<'a>(
-  cpu_arch: &CpuArch,
-  enable_efa: bool,
-  accelerator: &AcceleratorType,
-  reservation: &ReservationType,
-) -> Vec<&'a str> {
-  get_instance_types(cpu_arch, enable_efa, accelerator, reservation)
-    .keys()
-    .copied()
-    .collect()
+    .map(|i| i.instance_type)
+    .collect::<Vec<&str>>()
 }
 
 pub fn limit_instances_selected(
   reservation: &ReservationType,
-  enable_efa: bool,
+  require_efa: bool,
   instance_type_names: Vec<&str>,
   mut instance_idxs: Vec<usize>,
 ) -> Result<Vec<String>> {
@@ -69,7 +55,7 @@ pub fn limit_instances_selected(
   // There are two scenarios where only a single instance type should be specified:
   // 1. EC2 capacity reservation(s)
   // 2. When using EFA
-  if reservation != &ReservationType::None || enable_efa {
+  if reservation != &ReservationType::None || require_efa {
     instance_idxs = vec![instance_idxs.last().unwrap().to_owned()];
   }
 
@@ -88,108 +74,101 @@ pub fn instance_storage_supported(instance_types: &[String], ami_type: &ami::Ami
     .all(|instance| instance.instance_storage_supported);
 
   match ami_type {
-    ami::AmiType::Al2023Arm64Standard
-    | ami::AmiType::Al2023X8664Standard
-    | ami::AmiType::Al2023X8664Nvidia
-    | ami::AmiType::Al2023X8664Neuron => instance_types_support,
+    ami::AmiType::AL2023_ARM_64_STANDARD
+    | ami::AmiType::AL2023_x86_64_STANDARD
+    | ami::AmiType::AL2023_x86_64_NVIDIA
+    | ami::AmiType::AL2023_x86_64_NEURON => instance_types_support,
     _ => false,
   }
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Display, EnumIter, EnumString, IntoStaticStr, PartialEq, Serialize, Deserialize)]
 pub enum AcceleratorType {
+  None,
   #[serde(rename = "NVIDIA")]
+  #[strum(serialize = "NVIDIA")]
   Nvidia,
-  #[serde(rename = "Neuron")]
   Neuron,
-  #[serde(rename = "None")]
-  None,
 }
 
-impl std::fmt::Display for AcceleratorType {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      AcceleratorType::Nvidia => write!(f, "NVIDIA"),
-      AcceleratorType::Neuron => write!(f, "Neuron"),
-      AcceleratorType::None => write!(f, "None"),
-    }
+impl AcceleratorType {
+  #[cfg(not(tarpaulin_include))]
+  pub fn from_idx(idx: usize) -> AcceleratorType {
+    AcceleratorType::iter().nth(idx).unwrap()
   }
 }
 
-#[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
+#[inline]
+#[cfg(not(tarpaulin_include))]
+pub fn get_accelerator_types() -> Vec<AcceleratorType> {
+  AcceleratorType::iter().collect()
+}
+
+#[derive(Debug, Display, EnumIter, EnumString, IntoStaticStr, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum ScalingType {
-  #[serde(rename = "auto-mode")]
+  #[strum(serialize = "EKS Auto Mode")]
   AutoMode,
-  #[serde(rename = "karpenter")]
   Karpenter,
-  #[serde(rename = "cluster-autoscaler")]
+  #[strum(serialize = "cluster-autoscaler")]
   ClusterAutoscaler,
-  #[serde(rename = "None")]
   None,
 }
 
-pub fn get_scaling_types<'a>(reservation: &ReservationType) -> Vec<&'a str> {
+impl ScalingType {
+  #[cfg(not(tarpaulin_include))]
+  pub fn from_idx(idx: usize) -> ScalingType {
+    ScalingType::iter().nth(idx).unwrap()
+  }
+}
+
+pub fn get_compute_scaling_types(reservation: &ReservationType) -> Vec<ScalingType> {
   match reservation {
-    ReservationType::None => vec!["auto-mode", "karpenter", "cluster-autoscaler", "None"],
-    ReservationType::OnDemandCapacityReservation => vec!["karpenter", "cluster-autoscaler", "None"],
-    _ => vec!["cluster-autoscaler", "None"],
+    ReservationType::None => ScalingType::iter().collect(),
+    ReservationType::OnDemandCapacityReservation => ScalingType::iter().filter(|s| s != &ScalingType::AutoMode).collect(),
+    _ => ScalingType::iter().filter(|s| s != &ScalingType::AutoMode && s != &ScalingType::Karpenter).collect(),
   }
 }
 
-impl std::convert::From<&str> for ScalingType {
-  fn from(s: &str) -> Self {
-    match s {
-      "auto-mode" => ScalingType::AutoMode,
-      "karpenter" => ScalingType::Karpenter,
-      "cluster-autoscaler" => ScalingType::ClusterAutoscaler,
-      _ => ScalingType::None,
-    }
-  }
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Display, EnumIter, EnumString, IntoStaticStr, PartialEq, Serialize, Deserialize)]
 pub enum CpuArch {
+  #[strum(serialize = "x86-64")]
   X8664,
+  #[strum(serialize = "arm64")]
   Arm64,
 }
 
-impl fmt::Display for CpuArch {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      CpuArch::X8664 => write!(f, "x86-64"),
-      CpuArch::Arm64 => write!(f, "arm64"),
-    }
+impl CpuArch {
+  #[cfg(not(tarpaulin_include))]
+  pub fn from_idx(idx: usize) -> CpuArch {
+    CpuArch::iter().nth(idx).unwrap()
   }
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Display, EnumIter, EnumString, IntoStaticStr, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ReservationType {
+  // TODO - remove rename when template is updated
   #[serde(rename = "ODCR")]
+  #[strum(serialize = "On-demand capacity reservation")]
   OnDemandCapacityReservation,
+  // TODO - remove rename when template is updated
   #[serde(rename = "CBR")]
+  #[strum(serialize = "ML capacity block reservation")]
   MlCapacityBlockReservation,
-  #[serde(rename = "None")]
   None,
 }
 
-pub fn get_reservation_types<'a>(accelerator: &AcceleratorType) -> Vec<&'a str> {
-  match accelerator {
-    AcceleratorType::Nvidia => vec![
-      "None",
-      "On-demand capacity reservation",
-      "ML capacity block reservation",
-    ],
-    _ => vec!["None", "On-demand capacity reservation"],
+impl ReservationType {
+  #[cfg(not(tarpaulin_include))]
+  pub fn from_idx(idx: usize) -> ReservationType {
+    ReservationType::iter().nth(idx).unwrap()
   }
 }
 
-impl std::convert::From<&str> for ReservationType {
-  fn from(s: &str) -> Self {
-    match s {
-      "On-demand capacity reservation" => ReservationType::OnDemandCapacityReservation,
-      "ML capacity block reservation" => ReservationType::MlCapacityBlockReservation,
-      _ => ReservationType::None,
-    }
+pub fn get_reservation_types(accelerator: &AcceleratorType) -> Vec<ReservationType> {
+  match accelerator {
+    AcceleratorType::Nvidia | AcceleratorType::Neuron => ReservationType::iter().collect(),
+    _ => ReservationType::iter().filter(|r| r != &ReservationType::MlCapacityBlockReservation).collect(),
   }
 }
 
@@ -200,12 +179,34 @@ mod tests {
   use super::*;
 
   #[rstest]
-  #[case(&[String::from("t3.micro")], &ami::AmiType::Al2023X8664Standard, false)]
-  #[case(&[String::from("p4d.24xlarge")], &ami::AmiType::Al2023X8664Nvidia, true)]
-  #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::Al2023X8664Nvidia, true)]
-  #[case(&[String::from("p4d.24xlarge"), String::from("t3.micro")], &ami::AmiType::Al2023X8664Nvidia, false)]
-  #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::Al2023X8664Nvidia, true)]
-  #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::BottlerocketX8664Nvidia, false)]
+  #[case(&CpuArch::X8664, false, &AcceleratorType::None, &ReservationType::None, vec!["m5.large", "c5.large", "r5.large"], vec!["p4d.24xlarge", "p5.48xlarge"])]
+  #[case(&CpuArch::Arm64, false, &AcceleratorType::None, &ReservationType::None, vec!["m7g.large", "c7g.large", "r7g.large"], vec!["p4d.24xlarge", "p5.48xlarge"])]
+  #[case(&CpuArch::X8664, true, &AcceleratorType::Nvidia, &ReservationType::None, vec!["g5.24xlarge", "g6e.24xlarge", "p5.48xlarge"], vec!["m5.large", "c5.large", "r5.large"])]
+  #[case(&CpuArch::X8664, false, &AcceleratorType::Nvidia, &ReservationType::None, vec!["g5.8xlarge", "g6e.24xlarge", "p5.48xlarge"], vec!["m5.large", "c5.large", "r5.large"])]
+  #[case(&CpuArch::X8664, true, &AcceleratorType::Nvidia, &ReservationType::MlCapacityBlockReservation, vec!["p4d.24xlarge", "p5.48xlarge", "p5en.48xlarge"], vec!["m5.large", "c5.large", "r5.large"])]
+  #[case(&CpuArch::X8664, true, &AcceleratorType::Neuron, &ReservationType::None, vec!["trn1.32xlarge", "trn1n.32xlarge", "trn2.48xlarge"], vec!["m5.large", "c5.large", "r5.large", "p5.48xlarge"])]
+  #[case(&CpuArch::X8664, false, &AcceleratorType::Neuron, &ReservationType::None, vec!["inf2.8xlarge", "inf2.48xlarge", "trn1.2xlarge"], vec!["m5.large", "c5.large", "r5.large", "p5.48xlarge"])]
+  #[case(&CpuArch::X8664, true, &AcceleratorType::Neuron, &ReservationType::MlCapacityBlockReservation, vec!["trn1.32xlarge", "trn2.48xlarge"], vec!["p4d.24xlarge", "p5.48xlarge", "p5en.48xlarge"])]
+  fn test_get_instance_type_names(
+    #[case] cpu_arch: &CpuArch,
+    #[case] require_efa: bool,
+    #[case] accelerator: &AcceleratorType,
+    #[case] reservation: &ReservationType,
+    #[case] expected: Vec<&str>,
+    #[case] not_expected: Vec<&str>,
+  ) {
+    let instance_types = get_instance_type_names(cpu_arch, require_efa, accelerator, reservation);
+    assert!(expected.iter().all(|item| instance_types.contains(item)));
+    assert!(not_expected.iter().all(|item| !instance_types.contains(item)));
+  }
+
+  #[rstest]
+  #[case(&[String::from("t3.micro")], &ami::AmiType::AL2023_x86_64_STANDARD, false)]
+  #[case(&[String::from("p4d.24xlarge")], &ami::AmiType::AL2023_x86_64_NVIDIA, true)]
+  #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::AL2023_x86_64_NVIDIA, true)]
+  #[case(&[String::from("p4d.24xlarge"), String::from("t3.micro")], &ami::AmiType::AL2023_x86_64_NVIDIA, false)]
+  #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::AL2023_x86_64_NVIDIA, true)]
+  #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::BOTTLEROCKET_x86_64_NVIDIA, false)]
   fn test_instance_storage_supported(
     #[case] instance_types: &[String],
     #[case] ami_type: &ami::AmiType,
@@ -216,96 +217,132 @@ mod tests {
   }
 
   #[rstest]
+  #[case(&ReservationType::None, vec![ScalingType::AutoMode, ScalingType::Karpenter, ScalingType::ClusterAutoscaler, ScalingType::None])]
+  #[case(&ReservationType::OnDemandCapacityReservation, vec![ScalingType::Karpenter, ScalingType::ClusterAutoscaler, ScalingType::None])]
+  #[case(&ReservationType::MlCapacityBlockReservation, vec![ScalingType::ClusterAutoscaler, ScalingType::None])]
+  fn test_get_compute_scaling_types(#[case] reservation: &ReservationType, #[case] expected: Vec<ScalingType>) {
+    let scaling_types = get_compute_scaling_types(reservation);
+    assert_eq!(scaling_types, expected);
+  }
+
+  #[rstest]
+  #[case(&AcceleratorType::None, vec![ReservationType::None, ReservationType::OnDemandCapacityReservation])]
+  #[case(&AcceleratorType::Nvidia, vec![ReservationType::None, ReservationType::OnDemandCapacityReservation, ReservationType::MlCapacityBlockReservation])]
+  #[case(&AcceleratorType::Neuron, vec![ReservationType::None, ReservationType::OnDemandCapacityReservation, ReservationType::MlCapacityBlockReservation])]
+  fn test_get_reservation_types(#[case] accelerator: &AcceleratorType, #[case] mut expected: Vec<ReservationType>) {
+    let mut reservation_types = get_reservation_types(accelerator);
+    assert_eq!(reservation_types.sort(), expected.sort());
+  }
+
+  #[rstest]
   #[case(&ReservationType::None, true, vec!["t2.micro", "t3.micro", "t3a.micro"], vec!["t3a.micro".to_string()])]
   fn test_limit_instances_selected(
     #[case] reservation: &ReservationType,
-    #[case] enable_efa: bool,
+    #[case] require_efa: bool,
     #[case] instance_type_names: Vec<&str>,
     #[case] expected: Vec<String>,
   ) {
     let instance_idxs = vec![0, 1, 2];
-    let instance_types = limit_instances_selected(reservation, enable_efa, instance_type_names, instance_idxs).unwrap();
+    let instance_types =
+      limit_instances_selected(reservation, require_efa, instance_type_names, instance_idxs).unwrap();
     assert_eq!(instance_types, expected);
   }
 
   #[test]
-  fn snapshot_standard_x86_64() {
-    let standard_x86_64 = get_instance_types(&CpuArch::X8664, false, &AcceleratorType::None, &ReservationType::None);
+  fn snapshot_x86_64() {
+    let standard_x86_64 =
+      get_instance_type_names(&CpuArch::X8664, false, &AcceleratorType::None, &ReservationType::None);
     insta::assert_debug_snapshot!(standard_x86_64);
   }
 
   #[test]
-  fn snapshot_standard_arm64() {
-    let standard_arm64 = get_instance_types(&CpuArch::Arm64, false, &AcceleratorType::None, &ReservationType::None);
+  fn snapshot_arm64() {
+    let standard_arm64 =
+      get_instance_type_names(&CpuArch::Arm64, false, &AcceleratorType::None, &ReservationType::None);
     insta::assert_debug_snapshot!(standard_arm64);
   }
 
   #[test]
   fn snapshot_nvidia_x86_64() {
-    let nvidia_x86_64 = get_instance_types(&CpuArch::X8664, false, &AcceleratorType::Nvidia, &ReservationType::None);
+    let nvidia_x86_64 =
+      get_instance_type_names(&CpuArch::X8664, false, &AcceleratorType::Nvidia, &ReservationType::None);
     insta::assert_debug_snapshot!(nvidia_x86_64);
   }
 
   #[test]
-  fn snapshot_efa_nvidia_x86_64() {
-    let efa_nvidia_x86_64 = get_instance_types(&CpuArch::X8664, true, &AcceleratorType::Nvidia, &ReservationType::None);
-    insta::assert_debug_snapshot!(efa_nvidia_x86_64);
+  fn snapshot_nvidia_x86_64_efa() {
+    let nvidia_x86_64_efa =
+      get_instance_type_names(&CpuArch::X8664, true, &AcceleratorType::Nvidia, &ReservationType::None);
+    insta::assert_debug_snapshot!(nvidia_x86_64_efa);
   }
 
   #[test]
-  fn snapshot_nvidia_ml_cbr_x86_64() {
-    let efa_nvidia_x86_64 = get_instance_types(
+  fn snapshot_nvidia_x86_64_ml_cbr() {
+    let nvidia_x86_64_ml_cbr = get_instance_type_names(
       &CpuArch::X8664,
       false,
       &AcceleratorType::Nvidia,
       &ReservationType::MlCapacityBlockReservation,
     );
-    insta::assert_debug_snapshot!(efa_nvidia_x86_64);
+    insta::assert_debug_snapshot!(nvidia_x86_64_ml_cbr);
+  }
+
+  #[test]
+  fn snapshot_nvidia_x86_64_odcr() {
+    let nvidia_x86_64_odcr = get_instance_type_names(
+      &CpuArch::X8664,
+      false,
+      &AcceleratorType::Nvidia,
+      &ReservationType::OnDemandCapacityReservation,
+    );
+    insta::assert_debug_snapshot!(nvidia_x86_64_odcr);
   }
 
   #[test]
   fn snapshot_neuron_x86_64() {
-    let neuron_x86_64 = get_instance_types(&CpuArch::X8664, false, &AcceleratorType::Neuron, &ReservationType::None);
+    let neuron_x86_64 =
+      get_instance_type_names(&CpuArch::X8664, false, &AcceleratorType::Neuron, &ReservationType::None);
     insta::assert_debug_snapshot!(neuron_x86_64);
   }
 
   #[test]
-  fn snapshot_efa_neuron_x86_64() {
-    let efa_neuron_x86_64 = get_instance_types(&CpuArch::X8664, true, &AcceleratorType::Neuron, &ReservationType::None);
-    insta::assert_debug_snapshot!(efa_neuron_x86_64);
+  fn snapshot_neuron_x86_64_efa() {
+    let neuron_x86_64_efa =
+      get_instance_type_names(&CpuArch::X8664, true, &AcceleratorType::Neuron, &ReservationType::None);
+    insta::assert_debug_snapshot!(neuron_x86_64_efa);
   }
 
   #[test]
-  fn snapshot_neuron_ml_cbr_x86_64() {
-    let efa_neuron_x86_64 = get_instance_types(
+  fn snapshot_neuron_x86_64_ml_cbr() {
+    let neuron_x86_64_ml_cbr = get_instance_type_names(
       &CpuArch::X8664,
-      true,
+      false,
       &AcceleratorType::Neuron,
       &ReservationType::MlCapacityBlockReservation,
     );
-    insta::assert_debug_snapshot!(efa_neuron_x86_64);
+    insta::assert_debug_snapshot!(neuron_x86_64_ml_cbr);
   }
 
   #[test]
-  fn snapshot_nvidia_cbr_reservation() {
-    let nvidia_cbr_reservation = get_instance_types(
+  fn snapshot_neuron_x86_64_odcr() {
+    let neuron_x86_64_odcr = get_instance_type_names(
       &CpuArch::X8664,
       false,
-      &AcceleratorType::Nvidia,
-      &ReservationType::MlCapacityBlockReservation,
+      &AcceleratorType::Neuron,
+      &ReservationType::OnDemandCapacityReservation,
     );
-    insta::assert_debug_snapshot!(nvidia_cbr_reservation);
+    insta::assert_debug_snapshot!(neuron_x86_64_odcr);
   }
 
   #[test]
-  fn snapshot_efa_x86_64() {
-    let efa_x86_64 = get_instance_types(&CpuArch::X8664, true, &AcceleratorType::None, &ReservationType::None);
+  fn snapshot_x86_64_efa() {
+    let efa_x86_64 = get_instance_type_names(&CpuArch::X8664, true, &AcceleratorType::None, &ReservationType::None);
     insta::assert_debug_snapshot!(efa_x86_64);
   }
 
   #[test]
-  fn snapshot_efa_arm64() {
-    let efa_arm64 = get_instance_types(&CpuArch::Arm64, true, &AcceleratorType::None, &ReservationType::None);
+  fn snapshot_arm64_efa() {
+    let efa_arm64 = get_instance_type_names(&CpuArch::Arm64, true, &AcceleratorType::None, &ReservationType::None);
     insta::assert_debug_snapshot!(efa_arm64);
   }
 }

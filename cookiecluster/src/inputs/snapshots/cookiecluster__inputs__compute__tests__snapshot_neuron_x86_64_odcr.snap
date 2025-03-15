@@ -1,6 +1,6 @@
 ---
 source: cookiecluster/src/inputs/compute.rs
-expression: neuron_x86_64
+expression: neuron_x86_64_odcr
 ---
 [
     "inf2.24xlarge",

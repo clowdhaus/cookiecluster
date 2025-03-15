@@ -1,46 +1,37 @@
-use std::fmt;
-
 use serde::{Deserialize, Serialize};
-use strum_macros::EnumIter;
+use strum::IntoEnumIterator;
+use strum_macros::{Display, EnumIter, EnumString, IntoStaticStr};
 
-#[derive(Debug, EnumIter, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, EnumIter, Display, EnumString, IntoStaticStr, PartialEq, Serialize, Deserialize)]
 pub enum ClusterVersion {
+  #[strum(serialize = "1.32")]
   #[serde(rename = "1.32")]
   K132,
+  #[strum(serialize = "1.31")]
   #[serde(rename = "1.31")]
   K131,
+  #[strum(serialize = "1.30")]
   #[serde(rename = "1.30")]
   K130,
+  #[strum(serialize = "1.29")]
   #[serde(rename = "1.29")]
   K129,
+  #[strum(serialize = "1.28")]
   #[serde(rename = "1.28")]
   K128,
+  #[strum(serialize = "1.27")]
   #[serde(rename = "1.27")]
   K127,
 }
 
-impl std::fmt::Display for ClusterVersion {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      ClusterVersion::K127 => write!(f, "1.27"),
-      ClusterVersion::K128 => write!(f, "1.28"),
-      ClusterVersion::K129 => write!(f, "1.29"),
-      ClusterVersion::K130 => write!(f, "1.30"),
-      ClusterVersion::K131 => write!(f, "1.31"),
-      ClusterVersion::K132 => write!(f, "1.32"),
-    }
+impl ClusterVersion {
+  #[cfg(not(tarpaulin_include))]
+  pub fn versions() -> Vec<ClusterVersion> {
+    ClusterVersion::iter().collect()
   }
-}
 
-impl std::convert::From<&str> for ClusterVersion {
-  fn from(s: &str) -> Self {
-    match s {
-      "1.27" => ClusterVersion::K127,
-      "1.28" => ClusterVersion::K128,
-      "1.29" => ClusterVersion::K129,
-      "1.30" => ClusterVersion::K130,
-      "1.31" => ClusterVersion::K131,
-      _ => ClusterVersion::K132,
-    }
+  #[cfg(not(tarpaulin_include))]
+  pub fn from_idx(idx: usize) -> ClusterVersion {
+    ClusterVersion::iter().nth(idx).unwrap()
   }
 }

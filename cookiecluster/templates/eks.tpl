@@ -38,7 +38,7 @@ The Neuron K8s device plugin Helm chart support can be tracked in the following 
 - https://github.com/aws/eks-charts/issues/1068
 - https://github.com/aws-neuron/aws-neuron-sdk/issues/707
   {{ /if }}
-  {{ #if inputs.enable_efa }}
+  {{ #if inputs.require_efa }}
 
 ## EFA K8s Device Plugin
 
@@ -113,7 +113,7 @@ module "eks" {
   }
   {{ /if }}
   {{ /if }}
-  {{ #if inputs.enable_efa}}
+  {{ #if inputs.require_efa}}
 
   # Add security group rules on the node group security group to
   # allow EFA traffic

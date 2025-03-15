@@ -1,0 +1,9 @@
+---
+source: cookiecluster/src/inputs/compute.rs
+expression: neuron_x86_64_efa
+---
+[
+    "trn1.32xlarge",
+    "trn1n.32xlarge",
+    "trn2.48xlarge",
+]
