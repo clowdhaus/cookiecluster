@@ -1,4 +1,4 @@
-{{ #if (eq inputs.compute_scaling "karpenter") }}
+{{ #if inputs.enable_karpenter }}
 ################################################################################
 # Controller & Node IAM roles, SQS Queue, Eventbridge Rules
 ################################################################################

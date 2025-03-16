@@ -58,10 +58,8 @@ module "eks" {
       }
     }
     gpu = {
-      ami_type = "AL2023_x86_64_NVIDIA"
-      instance_types = [
-        "p5.48xlarge",
-      ]
+      ami_type       = "AL2023_x86_64_NVIDIA"
+      instance_types = ["p5.48xlarge" ]
 
       min_size     = 2
       max_size     = 5
@@ -87,7 +85,7 @@ module "eks" {
       ]
 
       labels = {
-        "nvidia.com/gpu.present" = "true"
+        "nvidia.com/gpu.present"        = "true"
       }
     
       taints = {

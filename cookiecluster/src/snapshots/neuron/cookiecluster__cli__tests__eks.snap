@@ -96,6 +96,7 @@ module "eks" {
       }
 
       labels = {
+        "aws.amazon.com/neuron.present" = "true"
       }
     
       taints = {

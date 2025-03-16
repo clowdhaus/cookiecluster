@@ -84,7 +84,7 @@ module "eks" {
       }
 
       labels = {
-        "nvidia.com/gpu.present" = "true"
+        "nvidia.com/gpu.present"        = "true"
       }
     
       taints = {

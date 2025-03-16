@@ -1,10 +1,10 @@
-{{ #if (eq inputs.accelerator "NVIDIA") }}
+{{ #if inputs.enable_nvidia_gpus }}
 gpu = {
 {{ /if }}
-{{ #if (eq inputs.accelerator "Neuron") }}
+{{ #if inputs.enable_neuron_devices }}
 neuron = {
 {{ /if }}
-  {{ #if (or inputs.require_efa (eq inputs.reservation "ODCR") (eq inputs.reservation "CBR")) }}
+  {{ #if (or inputs.enable_efa inputs.enable_compute_reservation) }}
   ami_type       = "{{ inputs.ami_type }}"
   instance_types = [{{ #each inputs.instance_types }}"{{ this }}" {{ /each }}]
   {{ else }}
@@ -55,7 +55,7 @@ neuron = {
     }
   }
   {{ /if }}
-  {{ #if inputs.require_efa}}
+  {{ #if inputs.enable_efa}}
 
   # Add security group rules on the node group security group to
   # allow EFA traffic
@@ -65,23 +65,19 @@ neuron = {
   {{ /if }}
 
   labels = {
-    {{ #if inputs.require_efa}}
+    {{ #if inputs.enable_efa}}
     "vpc.amazonaws.com/efa.present" = "true"
-    {{ #if (eq inputs.accelerator "NVIDIA") }}
+    {{ /if }}
+    {{ #if inputs.enable_nvidia_gpus }}
     "nvidia.com/gpu.present"        = "true"
     {{ /if }}
-    {{ #if (eq inputs.accelerator "Neuron") }}
+    {{ #if inputs.enable_neuron_devices }}
     "aws.amazon.com/neuron.present" = "true"
-    {{ /if }}
-    {{ else }}
-    {{ #if (eq inputs.accelerator "NVIDIA") }}
-    "nvidia.com/gpu.present" = "true"
-    {{ /if }}
     {{ /if }}
   }
 
   taints = {
-    {{ #if (eq inputs.accelerator "NVIDIA") }}
+    {{ #if inputs.enable_nvidia_gpus }}
     # Ensure only GPU workloads are scheduled on this node group
     gpu = {
       key    = "nvidia.com/gpu"
@@ -89,7 +85,7 @@ neuron = {
       effect = "NO_SCHEDULE"
     }
     {{ /if }}
-    {{ #if (eq inputs.accelerator "Neuron") }}
+    {{ #if inputs.enable_neuron_devices }}
     # Ensure only Neuron workloads are scheduled on this node group
     neuron = {
       key    = "aws.amazon.com/neuron"
@@ -98,20 +94,19 @@ neuron = {
     }
     {{ /if }}
   }
-  {{ #if (or (eq inputs.reservation "ODCR") (eq inputs.reservation "CBR")) }}
+  {{ #if inputs.enable_compute_reservation }}
 
   # Capacity reservations are restricted to a single availability zone
   subnet_ids = data.aws_subnets.data_plane_reservation.ids
   {{ /if }}
-  {{ #if (eq inputs.reservation "ODCR") }}
+  {{ #if inputs.enable_odcr }}
 
   capacity_reservation_specification = {
     capacity_reservation_target = {
       capacity_reservation_resource_group_arn = aws_resourcegroups_group.odcr.arn
     }
   }
-  {{ /if }}
-  {{ #if (eq inputs.reservation "CBR") }}
+  {{ else if inputs.enable_ml_cbr }}
 
   # ML capacity block reservation
   capacity_type = "CAPACITY_BLOCK"

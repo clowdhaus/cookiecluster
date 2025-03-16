@@ -1,6 +1,6 @@
-{{ #if (or (eq inputs.accelerator "NVIDIA") (eq inputs.accelerator "Neuron")) }}
+{{ #if inputs.enable_accelerator }}
 /*
-  {{ #if (eq inputs.accelerator "NVIDIA") }}
+  {{ #if inputs.enable_nvidia_gpus }}
     {{ #if (eq inputs.ami_type "AL2023_x86_64_NVIDIA") }}
 ## NVIDIA K8s Device Plugin
 
@@ -16,7 +16,7 @@ applied to the node group.
 The "{{ inputs.ami_type }}" AMI type comes with the NVIDIA K8s device plugin pre-installed on the AMI.
     {{ /if }}
   {{ /if }}
-  {{ #if (eq inputs.accelerator "Neuron") }}
+  {{ #if inputs.enable_neuron_devices }}
 ## Neuron K8s Device Plugin
 
 The Neuron K8s device plugin, https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/tutorials/k8s-setup.html,
@@ -38,12 +38,12 @@ The Neuron K8s device plugin Helm chart support can be tracked in the following 
 - https://github.com/aws/eks-charts/issues/1068
 - https://github.com/aws-neuron/aws-neuron-sdk/issues/707
   {{ /if }}
-  {{ #if inputs.require_efa }}
+  {{ #if inputs.enable_efa }}
 
 ## EFA K8s Device Plugin
 
 The EFA K8s device plugin, https://github.com/aws/eks-charts/tree/master/stable/aws-efa-k8s-device-plugin,
-will need to  be installed in the cluster in order to mount and utilize the EFA devices
+will need to be installed in the cluster in order to mount and utilize the EFA devices
 in your pods. Add the following node selector and toleration to your device plugin Helm chart
 values to ensure the device plugin runs on nodes that have EFA devices present
 (as identified via the MNG label and taint provided below):
@@ -52,7 +52,7 @@ values to ensure the device plugin runs on nodes that have EFA devices present
 nodeSelector:
   vpc.amazonaws.com/efa.present: 'true'
 tolerations:
-{{ #if (eq inputs.accelerator "Neuron") }}
+{{ #if inputs.enable_neuron_devices }}
   - key: aws.amazon.com/neuron
     operator: Exists
     effect: NoSchedule
@@ -86,7 +86,7 @@ module "eks" {
   # allow deploying resources into the cluster
   enable_cluster_creator_admin_permissions = true
   {{ /if }}
-  {{ #if (eq inputs.compute_scaling "auto-mode") }}
+  {{ #if inputs.enable_auto_mode }}
 
   cluster_compute_config = {
     enabled    = true
@@ -113,7 +113,7 @@ module "eks" {
   }
   {{ /if }}
   {{ /if }}
-  {{ #if inputs.require_efa}}
+  {{ #if inputs.enable_efa }}
 
   # Add security group rules on the node group security group to
   # allow EFA traffic
@@ -123,12 +123,12 @@ module "eks" {
   vpc_id                   = data.aws_vpc.this.id
   control_plane_subnet_ids = data.aws_subnets.control_plane.ids
   subnet_ids               = data.aws_subnets.data_plane.ids
-  {{ #unless (eq inputs.compute_scaling "auto-mode") }}
+  {{ #unless inputs.enable_auto_mode }}
 
   {{> tpl_node_groups }}
   {{ /unless }}
 
-  {{ #if (eq inputs.compute_scaling "karpenter") }}
+  {{ #if inputs.enable_karpenter }}
   tags = merge(module.tags.tags, {
     # NOTE - if creating multiple security groups with this module, only tag the
     # security group that Karpenter should utilize with the following tag
@@ -139,7 +139,7 @@ module "eks" {
   tags = module.tags.tags
   {{ /if }}
 }
-{{ #if (and (eq inputs.reservation "ODCR") (neq inputs.compute_scaling "karpenter")) }}
+{{ #if (and inputs.enable_odcr (not inputs.enable_karpenter)) }}
 
 ################################################################################
 # Resource Group
@@ -170,7 +170,7 @@ resource "aws_resourcegroups_resource" "odcr" {
   resource_arn = element(var.on_demand_capacity_reservation_arns, count.index)
 }
 {{ /if }}
-{{ #unless (eq inputs.compute_scaling "auto-mode") }}
+{{ #unless inputs.enable_auto_mode }}
 {{ #if inputs.add_ons}}
 
 {{> tpl_pod_identity }}

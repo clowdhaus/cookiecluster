@@ -70,10 +70,8 @@ module "eks" {
       }
     }
     neuron = {
-      ami_type = "AL2023_x86_64_NEURON"
-      instance_types = [
-        "trn1.32xlarge",
-      ]
+      ami_type       = "AL2023_x86_64_NEURON"
+      instance_types = ["trn1.32xlarge" ]
 
       min_size     = 2
       max_size     = 5
@@ -99,6 +97,7 @@ module "eks" {
       ]
 
       labels = {
+        "aws.amazon.com/neuron.present" = "true"
       }
     
       taints = {

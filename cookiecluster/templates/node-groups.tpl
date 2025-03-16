@@ -1,5 +1,5 @@
 eks_managed_node_groups = {
-  {{ #if (eq inputs.compute_scaling "karpenter") }}
+  {{ #if inputs.enable_karpenter }}
   karpenter = {
     ami_type = "{{ inputs.default_ami_type }}"
     instance_types = [
@@ -31,7 +31,7 @@ eks_managed_node_groups = {
       }
     }
   }
-  {{ else if (or (eq inputs.accelerator "Neuron") (eq inputs.accelerator "NVIDIA")) }}
+  {{ else if inputs.enable_accelerator }}
   # This node group is for core addons such as CoreDNS
   default = {
     ami_type = "{{ inputs.default_ami_type }}"
@@ -99,7 +99,7 @@ eks_managed_node_groups = {
     {{ /if }}
   }
   {{ /if }}
-  {{ #if (and (or (eq inputs.accelerator "Neuron") (eq inputs.accelerator "NVIDIA")) (neq inputs.compute_scaling "karpenter")) }}
+  {{ #if (and inputs.enable_accelerator (not inputs.enable_karpenter)) }}
   {{> tpl_node_group_accel }}
   {{ /if }}
 }

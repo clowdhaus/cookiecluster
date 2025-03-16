@@ -7,7 +7,7 @@ use clap_verbosity_flag::{InfoLevel, Verbosity};
 use handlebars::Handlebars;
 use serde_json::value::Map;
 
-use crate::inputs::Inputs;
+use crate::inputs::Output;
 
 /// Styles for CLI
 fn get_styles() -> Styles {
@@ -43,18 +43,18 @@ pub struct Cli {
 }
 
 impl Cli {
-  pub fn write(self, inputs: &Inputs) -> Result<()> {
+  pub fn write(self, output: &Output) -> Result<()> {
     let handlebars = crate::register_handlebars()?;
 
-    fs::write(Path::new("eks.tf"), render_value("eks", inputs, &handlebars)?)?;
-    fs::write(Path::new("main.tf"), render_value("main", inputs, &handlebars)?)?;
+    fs::write(Path::new("eks.tf"), render_value("eks", output, &handlebars)?)?;
+    fs::write(Path::new("main.tf"), render_value("main", output, &handlebars)?)?;
 
-    let karp = render_value("karpenter", inputs, &handlebars)?;
+    let karp = render_value("karpenter", output, &handlebars)?;
     if !karp.is_empty() {
       fs::write(Path::new("karpenter.tf"), karp)?;
     }
 
-    let vars = render_value("variables", inputs, &handlebars)?;
+    let vars = render_value("variables", output, &handlebars)?;
     if !vars.is_empty() {
       fs::write(Path::new("variables.tf"), vars)?;
     }
@@ -68,9 +68,9 @@ impl Cli {
   }
 }
 
-fn render_value(name: &str, inputs: &Inputs, handlebars: &Handlebars) -> Result<String> {
+fn render_value(name: &str, output: &Output, handlebars: &Handlebars) -> Result<String> {
   let mut data = Map::new();
-  data.insert("inputs".to_string(), handlebars::to_json(inputs));
+  data.insert("inputs".to_string(), handlebars::to_json(output));
 
   handlebars.render(name, &data).map_err(Into::into)
 }
@@ -79,16 +79,16 @@ fn render_value(name: &str, inputs: &Inputs, handlebars: &Handlebars) -> Result<
 mod tests {
 
   use super::*;
-  use crate::inputs::{add_on, ami, compute, version};
+  use crate::inputs::{Inputs, add_on, ami, compute, version};
 
-  fn render(inputs: Inputs, dir_name: &str) -> Result<()> {
+  fn render(output: Output, dir_name: &str) -> Result<()> {
     let mut settings = insta::Settings::new();
     settings.set_snapshot_path(format!("./snapshots/{dir_name}"));
     let _guard = settings.bind_to_scope();
 
     for tpl in ["eks", "main", "karpenter", "variables"] {
       let handlebars = crate::register_handlebars()?;
-      let rendered = render_value(tpl, &inputs, &handlebars)?;
+      let rendered = render_value(tpl, &output, &handlebars)?;
       insta::assert_snapshot!(tpl, rendered);
     }
 
@@ -100,7 +100,7 @@ mod tests {
     // Defaults to AL2023
     let inputs = Inputs::default();
 
-    render(inputs, "default").unwrap();
+    render(inputs.to_output(), "default").unwrap();
   }
 
   #[test]
@@ -111,7 +111,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "al2023-x86-64").unwrap();
+    render(inputs.to_output(), "al2023-x86-64").unwrap();
   }
 
   #[test]
@@ -123,7 +123,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "al2032-arm64").unwrap();
+    render(inputs.to_output(), "al2032-arm64").unwrap();
   }
 
   #[test]
@@ -134,7 +134,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "bottlerocket-x86-64").unwrap();
+    render(inputs.to_output(), "bottlerocket-x86-64").unwrap();
   }
 
   #[test]
@@ -146,7 +146,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "bottlerocket-arm64").unwrap();
+    render(inputs.to_output(), "bottlerocket-arm64").unwrap();
   }
 
   #[test]
@@ -159,7 +159,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "nvidia").unwrap();
+    render(inputs.to_output(), "nvidia").unwrap();
   }
 
   #[test]
@@ -174,7 +174,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "nvidia_efa").unwrap();
+    render(inputs.to_output(), "nvidia_efa").unwrap();
   }
 
   #[test]
@@ -190,7 +190,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "nvidia-efa-odcr").unwrap();
+    render(inputs.to_output(), "nvidia-efa-odcr").unwrap();
   }
 
   #[test]
@@ -206,7 +206,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "nvidia-efa-cbr").unwrap();
+    render(inputs.to_output(), "nvidia-efa-cbr").unwrap();
   }
 
   #[test]
@@ -222,7 +222,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "nvidia-cbr").unwrap();
+    render(inputs.to_output(), "nvidia-cbr").unwrap();
   }
 
   #[test]
@@ -235,7 +235,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "neuron").unwrap();
+    render(inputs.to_output(), "neuron").unwrap();
   }
 
   #[test]
@@ -250,7 +250,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "neuron-efa").unwrap();
+    render(inputs.to_output(), "neuron-efa").unwrap();
   }
 
   #[test]
@@ -266,7 +266,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "neuron-cbr").unwrap();
+    render(inputs.to_output(), "neuron-cbr").unwrap();
   }
 
   #[test]
@@ -279,7 +279,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "al2023-instance-storage").unwrap();
+    render(inputs.to_output(), "al2023-instance-storage").unwrap();
   }
 
   #[test]
@@ -289,7 +289,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "karpenter").unwrap();
+    render(inputs.to_output(), "karpenter").unwrap();
   }
 
   #[test]
@@ -304,7 +304,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "karpenter-odcr").unwrap();
+    render(inputs.to_output(), "karpenter-odcr").unwrap();
   }
 
   #[test]
@@ -314,7 +314,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "auto-mode").unwrap();
+    render(inputs.to_output(), "auto-mode").unwrap();
   }
 
   #[test]
@@ -331,7 +331,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "enable-all").unwrap();
+    render(inputs.to_output(), "enable-all").unwrap();
   }
 
   #[test]
@@ -342,6 +342,6 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs, "all-add-ons").unwrap();
+    render(inputs.to_output(), "all-add-ons").unwrap();
   }
 }

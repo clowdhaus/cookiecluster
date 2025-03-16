@@ -34,6 +34,37 @@ pub struct Inputs {
   pub(crate) vpc_name: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Output {
+  enable_accelerator: bool,
+  enable_nvidia_gpus: bool,
+  enable_neuron_devices: bool,
+  enable_efa: bool,
+
+  enable_auto_mode: bool,
+  enable_karpenter: bool,
+  enable_compute_reservation: bool,
+  enable_odcr: bool,
+  enable_ml_cbr: bool,
+
+  // Pass through
+  add_ons: Vec<add_on::AddOn>,
+  ami_type: ami::AmiType,
+  cluster_endpoint_public_access: bool,
+  cluster_name: String,
+  cluster_version: version::ClusterVersion,
+  control_plane_subnet_filter: String,
+  cpu_arch: compute::CpuArch,
+  data_plane_subnet_filter: String,
+  default_ami_type: ami::AmiType,
+  default_instance_types: Vec<String>,
+  enable_cluster_creator_admin_permissions: bool,
+  instance_storage_supported: bool,
+  instance_types: Vec<String>,
+  reservation_availability_zone: String,
+  vpc_name: String,
+}
+
 impl Default for Inputs {
   fn default() -> Self {
     Inputs {
@@ -65,7 +96,7 @@ impl Inputs {
     Self::default()
   }
 
-  pub fn collect(self) -> Result<Self> {
+  pub fn collect(self) -> Result<Output> {
     let inputs = self
       .collect_cluster_settings()?
       .collect_accelerator_type()?
@@ -80,7 +111,9 @@ impl Inputs {
       .collect_storage_settings()?
       .collect_default_node_group_settings()?;
 
-    Ok(inputs)
+    let outputs = inputs.to_output();
+
+    Ok(outputs)
   }
 
   fn collect_cluster_settings(mut self) -> Result<Inputs> {
@@ -281,6 +314,39 @@ impl Inputs {
     };
 
     Ok(self)
+  }
+
+  pub fn to_output(self) -> Output {
+    Output {
+      enable_accelerator: self.accelerator != compute::AcceleratorType::None,
+      enable_nvidia_gpus: self.accelerator == compute::AcceleratorType::Nvidia,
+      enable_neuron_devices: self.accelerator == compute::AcceleratorType::Neuron,
+      enable_efa: self.require_efa,
+
+      enable_auto_mode: self.compute_scaling == compute::ScalingType::AutoMode,
+      enable_karpenter: self.compute_scaling == compute::ScalingType::Karpenter,
+
+      enable_compute_reservation: self.reservation != compute::ReservationType::None,
+      enable_odcr: self.reservation == compute::ReservationType::OnDemandCapacityReservation,
+      enable_ml_cbr: self.reservation == compute::ReservationType::MlCapacityBlockReservation,
+
+      // Pass through
+      add_ons: self.add_ons,
+      ami_type: self.ami_type,
+      cluster_endpoint_public_access: self.cluster_endpoint_public_access,
+      cluster_name: self.cluster_name,
+      cluster_version: self.cluster_version,
+      control_plane_subnet_filter: self.control_plane_subnet_filter,
+      cpu_arch: self.cpu_arch,
+      data_plane_subnet_filter: self.data_plane_subnet_filter,
+      default_ami_type: self.default_ami_type,
+      default_instance_types: self.default_instance_types,
+      enable_cluster_creator_admin_permissions: self.enable_cluster_creator_admin_permissions,
+      instance_storage_supported: self.instance_storage_supported,
+      instance_types: self.instance_types,
+      reservation_availability_zone: self.reservation_availability_zone,
+      vpc_name: self.vpc_name,
+    }
   }
 }
 

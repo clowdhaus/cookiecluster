@@ -35,7 +35,7 @@ data "aws_subnets" "data_plane" {
     values = ["{{ inputs.data_plane_subnet_filter }}"]
   }
 }
-{{ #if (or (eq inputs.reservation "ODCR") (eq inputs.reservation "CBR")) }}
+{{ #if inputs.enable_compute_reservation }}
 
 data "aws_subnets" "data_plane_reservation" {
   filter {
