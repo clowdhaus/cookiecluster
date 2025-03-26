@@ -43,6 +43,8 @@ pub struct Output {
 
   enable_add_ons: bool,
   enable_pod_identity: bool,
+  enable_helm: bool,
+
   enable_auto_mode: bool,
   enable_karpenter: bool,
   enable_compute_reservation: bool,
@@ -326,9 +328,10 @@ impl Inputs {
         .add_ons
         .iter()
         .any(|a| a.configuration.is_some() && a.configuration.as_ref().unwrap().pod_identity_role_arn.is_some()),
+      enable_helm: self.compute_scaling == compute::ScalingType::Karpenter,
+
       enable_auto_mode: self.compute_scaling == compute::ScalingType::AutoMode,
       enable_karpenter: self.compute_scaling == compute::ScalingType::Karpenter,
-
       enable_compute_reservation: self.reservation != compute::ReservationType::None,
       enable_odcr: self.reservation == compute::ReservationType::OnDemandCapacityReservation,
       enable_ml_cbr: self.reservation == compute::ReservationType::MlCapacityBlockReservation,
