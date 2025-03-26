@@ -167,7 +167,3 @@ resource "aws_resourcegroups_resource" "odcr" {
   group_arn    = aws_resourcegroups_group.odcr.arn
   resource_arn = element(var.on_demand_capacity_reservation_arns, count.index)
 }
-
-################################################################################
-# EKS Pod Identity IAM Roles
-################################################################################

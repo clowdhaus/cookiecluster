@@ -93,7 +93,7 @@ module "eks" {
     node_pools = ["general-purpose", "system"]
   }
   {{ else }}
-  {{ #if inputs.add_ons}}
+  {{ #if inputs.enable_add_ons}}
 
   # These will become the default in the next major version of the module
   bootstrap_self_managed_addons   = false
@@ -170,9 +170,7 @@ resource "aws_resourcegroups_resource" "odcr" {
   resource_arn = element(var.on_demand_capacity_reservation_arns, count.index)
 }
 {{ /if }}
-{{ #unless inputs.enable_auto_mode }}
-{{ #if inputs.add_ons}}
+{{ #if inputs.enable_pod_identity }}
 
 {{> tpl_pod_identity }}
 {{ /if }}
-{{ /unless }}

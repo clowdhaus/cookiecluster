@@ -153,15 +153,11 @@ impl CpuArch {
   Debug, Display, EnumIter, EnumString, IntoStaticStr, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize,
 )]
 pub enum ReservationType {
-  // TODO - remove rename when template is updated
-  #[serde(rename = "ODCR")]
+  None,
   #[strum(serialize = "On-demand capacity reservation")]
   OnDemandCapacityReservation,
-  // TODO - remove rename when template is updated
-  #[serde(rename = "CBR")]
   #[strum(serialize = "ML capacity block reservation")]
   MlCapacityBlockReservation,
-  None,
 }
 
 impl ReservationType {

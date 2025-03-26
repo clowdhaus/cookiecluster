@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString, IntoStaticStr};
 
+use super::compute;
+
 #[derive(
   Debug, EnumIter, Display, EnumString, IntoStaticStr, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize,
 )]
@@ -34,6 +36,7 @@ impl AddOnType {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddOn {
+  pub auto_mode: bool,
   pub default: bool,
   pub name: String,
   pub configuration: Option<AddOnConfiguration>,
@@ -50,6 +53,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
     (
       AddOnType::Adot,
       AddOn {
+        auto_mode: true,
         default: false,
         name: AddOnType::Adot.to_string(),
         configuration: None,
@@ -58,6 +62,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
     (
       AddOnType::AmazonCloudwatchObservability,
       AddOn {
+        auto_mode: true,
         default: false,
         name: AddOnType::AmazonCloudwatchObservability.to_string(),
         configuration: Some(AddOnConfiguration {
@@ -69,6 +74,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
     (
       AddOnType::AwsEbsCsiDriver,
       AddOn {
+        auto_mode: false,
         default: false,
         name: AddOnType::AwsEbsCsiDriver.to_string(),
         configuration: Some(AddOnConfiguration {
@@ -80,6 +86,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
     (
       AddOnType::AwsEfsCsiDriver,
       AddOn {
+        auto_mode: true,
         default: false,
         name: AddOnType::AwsEfsCsiDriver.to_string(),
         configuration: Some(AddOnConfiguration {
@@ -91,6 +98,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
     (
       AddOnType::AwsGuarddutyAgent,
       AddOn {
+        auto_mode: false,
         default: false,
         name: AddOnType::AwsGuarddutyAgent.to_string(),
         configuration: None,
@@ -99,6 +107,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
     (
       AddOnType::AwsMountpointS3CsiDriver,
       AddOn {
+        auto_mode: true,
         default: false,
         name: AddOnType::AwsMountpointS3CsiDriver.to_string(),
         configuration: Some(AddOnConfiguration {
@@ -110,6 +119,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
     (
       AddOnType::CoreDns,
       AddOn {
+        auto_mode: false,
         default: true,
         name: AddOnType::CoreDns.to_string(),
         configuration: None,
@@ -118,6 +128,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
     (
       AddOnType::KubeProxy,
       AddOn {
+        auto_mode: false,
         default: true,
         name: AddOnType::KubeProxy.to_string(),
         configuration: None,
@@ -126,6 +137,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
     (
       AddOnType::EksNodeMonitoringAgent,
       AddOn {
+        auto_mode: false,
         default: true,
         name: AddOnType::EksNodeMonitoringAgent.to_string(),
         configuration: None,
@@ -134,6 +146,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
     (
       AddOnType::EksPodIdentityAgent,
       AddOn {
+        auto_mode: false,
         default: true,
         name: AddOnType::EksPodIdentityAgent.to_string(),
         configuration: None,
@@ -142,6 +155,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
     (
       AddOnType::SnapshotController,
       AddOn {
+        auto_mode: false,
         default: false,
         name: AddOnType::SnapshotController.to_string(),
         configuration: None,
@@ -150,6 +164,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
     (
       AddOnType::VpcCni,
       AddOn {
+        auto_mode: false,
         default: true,
         name: AddOnType::VpcCni.to_string(),
         configuration: None,
@@ -167,8 +182,15 @@ pub fn _get_all_add_ons() -> Vec<AddOn> {
 
 #[inline]
 #[cfg(not(tarpaulin_include))]
-pub fn get_add_on_names() -> Vec<&'static str> {
-  AddOnType::iter().map(|aot| aot.into()).collect()
+pub fn get_add_on_names(scaling_type: &compute::ScalingType) -> Vec<&'static str> {
+  ADD_ONS
+    .iter()
+    .filter(|(_, v)| match scaling_type {
+      compute::ScalingType::AutoMode => v.auto_mode,
+      _ => true,
+    })
+    .map(|(_, v)| v.name.as_str())
+    .collect::<Vec<_>>()
 }
 
 #[inline]

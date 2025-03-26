@@ -41,6 +41,8 @@ pub struct Output {
   enable_neuron_devices: bool,
   enable_efa: bool,
 
+  enable_add_ons: bool,
+  enable_pod_identity: bool,
   enable_auto_mode: bool,
   enable_karpenter: bool,
   enable_compute_reservation: bool,
@@ -142,30 +144,6 @@ impl Inputs {
     Ok(self)
   }
 
-  fn collect_add_ons(mut self) -> Result<Inputs> {
-    // TODO - fix this. Some add ons are handled by Auto Mode, others are fair game to deploy
-    if self.compute_scaling == compute::ScalingType::AutoMode {
-      self.add_ons = vec![];
-      return Ok(self);
-    }
-
-    let all_add_ons = add_on::get_add_on_names();
-    let add_ons_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
-      .with_prompt("EKS add-on(s)")
-      .items(&all_add_ons[..])
-      // Select first 4 add-ons by default
-      .defaults(&add_on::get_default_add_on_flags())
-      .interact()?;
-
-    let add_ons = add_ons_idxs
-      .iter()
-      .map(|&i| add_on::get_add_on(add_on::AddOnType::from_idx(i)).unwrap())
-      .collect::<Vec<add_on::AddOn>>();
-    self.add_ons = add_ons;
-
-    Ok(self)
-  }
-
   fn collect_accelerator_type(mut self) -> Result<Inputs> {
     let all_accelerators = compute::get_accelerator_types();
     let idx = Select::with_theme(&ColorfulTheme::default())
@@ -212,6 +190,23 @@ impl Inputs {
       .default(0)
       .interact()?;
     self.compute_scaling = compute::ScalingType::from_idx(idx);
+
+    Ok(self)
+  }
+
+  fn collect_add_ons(mut self) -> Result<Inputs> {
+    let all_add_ons = add_on::get_add_on_names(&self.compute_scaling);
+    let add_ons_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
+      .with_prompt("EKS add-on(s)")
+      .items(&all_add_ons[..])
+      .defaults(&add_on::get_default_add_on_flags())
+      .interact()?;
+
+    let add_ons = add_ons_idxs
+      .iter()
+      .map(|&i| add_on::get_add_on(add_on::AddOnType::from_idx(i)).unwrap())
+      .collect::<Vec<add_on::AddOn>>();
+    self.add_ons = add_ons;
 
     Ok(self)
   }
@@ -317,12 +312,20 @@ impl Inputs {
   }
 
   pub fn to_output(self) -> Output {
+    tracing::warn!("Add ons {:?}", self.add_ons);
+    tracing::warn!("Enable add ons {:?}", !self.add_ons.is_empty());
+
     Output {
       enable_accelerator: self.accelerator != compute::AcceleratorType::None,
       enable_nvidia_gpus: self.accelerator == compute::AcceleratorType::Nvidia,
       enable_neuron_devices: self.accelerator == compute::AcceleratorType::Neuron,
       enable_efa: self.require_efa,
 
+      enable_add_ons: !self.add_ons.is_empty(),
+      enable_pod_identity: self
+        .add_ons
+        .iter()
+        .any(|a| a.configuration.is_some() && a.configuration.as_ref().unwrap().pod_identity_role_arn.is_some()),
       enable_auto_mode: self.compute_scaling == compute::ScalingType::AutoMode,
       enable_karpenter: self.compute_scaling == compute::ScalingType::Karpenter,
 

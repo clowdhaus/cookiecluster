@@ -311,6 +311,7 @@ mod tests {
   fn snapshot_auto_mode() {
     let inputs = Inputs {
       compute_scaling: compute::ScalingType::AutoMode,
+      add_ons: vec![],
       ..Inputs::default()
     };
 
