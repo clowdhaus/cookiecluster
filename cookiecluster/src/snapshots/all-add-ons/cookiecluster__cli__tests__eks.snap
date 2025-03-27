@@ -26,18 +26,21 @@ module "eks" {
         service_account = "cloudwatch-agent"
       }]
     }
+    
     aws-ebs-csi-driver = {
       pod_identity_role_arn = [{
         role_arn        = module.aws_ebs_csi_driver_pod_identity.iam_role_arn
         service_account = "ebs-csi-controller-sa"
       }]
     }
+    
     aws-efs-csi-driver = {
       pod_identity_role_arn = [{
         role_arn        = module.aws_efs_csi_driver_pod_identity.iam_role_arn
         service_account = "efs-csi-controller-sa"
       }]
     }
+    
     aws-guardduty-agent = {}
     aws-mountpoint-s3-csi-driver = {
       pod_identity_role_arn = [{
@@ -45,12 +48,17 @@ module "eks" {
         service_account = "s3-csi-driver-sa"
       }]
     }
+    
     coredns = {}
-    kube-proxy = {}
     eks-node-monitoring-agent = {}
-    eks-pod-identity-agent = {}
+    eks-pod-identity-agent = {
+      before_compute = true
+    }
+    kube-proxy = {}
     snapshot-controller = {}
-    vpc-cni = {}
+    vpc-cni = {
+      before_compute = true
+    }
   }
 
   vpc_id                   = data.aws_vpc.this.id

@@ -107,6 +107,12 @@ module "eks" {
         role_arn        = {{ a.configuration.pod_identity_role_arn }}
         service_account = "{{ a.configuration.pod_identity_service_account }}"
       }]
+      {{ #if a.configuration.before_compute }}
+      before_compute = true
+      {{ /if }}
+    }
+    {{ else if a.configuration.before_compute }}{
+      before_compute = true
     }
     {{ ~else }}{}{{ /if }}
   {{ /each}}

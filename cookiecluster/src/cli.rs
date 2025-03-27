@@ -49,9 +49,9 @@ impl Cli {
     fs::write(Path::new("eks.tf"), render_value("eks", output, &handlebars)?)?;
     fs::write(Path::new("main.tf"), render_value("main", output, &handlebars)?)?;
 
-    let karp = render_value("karpenter", output, &handlebars)?;
-    if !karp.is_empty() {
-      fs::write(Path::new("karpenter.tf"), karp)?;
+    let helm = render_value("helm", output, &handlebars)?;
+    if !helm.is_empty() {
+      fs::write(Path::new("helm.tf"), helm)?;
     }
 
     let vars = render_value("variables", output, &handlebars)?;
@@ -86,7 +86,7 @@ mod tests {
     settings.set_snapshot_path(format!("./snapshots/{dir_name}"));
     let _guard = settings.bind_to_scope();
 
-    for tpl in ["eks", "main", "karpenter", "variables"] {
+    for tpl in ["eks", "main", "helm", "variables"] {
       let handlebars = crate::register_handlebars()?;
       let rendered = render_value(tpl, &output, &handlebars)?;
       insta::assert_snapshot!(tpl, rendered);

@@ -47,10 +47,14 @@ module "eks" {
 
   cluster_addons = {
     coredns = {}
-    kube-proxy = {}
     eks-node-monitoring-agent = {}
-    eks-pod-identity-agent = {}
-    vpc-cni = {}
+    eks-pod-identity-agent = {
+      before_compute = true
+    }
+    kube-proxy = {}
+    vpc-cni = {
+      before_compute = true
+    }
   }
 
   # Add security group rules on the node group security group to

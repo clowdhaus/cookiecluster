@@ -20,10 +20,14 @@ module "eks" {
 
   cluster_addons = {
     coredns = {}
-    kube-proxy = {}
     eks-node-monitoring-agent = {}
-    eks-pod-identity-agent = {}
-    vpc-cni = {}
+    eks-pod-identity-agent = {
+      before_compute = true
+    }
+    kube-proxy = {}
+    vpc-cni = {
+      before_compute = true
+    }
   }
 
   vpc_id                   = data.aws_vpc.this.id

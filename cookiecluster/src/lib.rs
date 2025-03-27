@@ -33,7 +33,7 @@ fn register_handlebars() -> Result<Handlebars<'static>> {
   handlebars.register_helper("camel_case", Box::new(camel_case));
 
   // Register templates
-  let templates = HashSet::from(["eks.tpl", "karpenter.tpl", "main.tpl", "variables.tpl"]);
+  let templates = HashSet::from(["eks.tpl", "helm.tpl", "main.tpl", "variables.tpl"]);
   for tpl in &templates {
     trace!("Registering template: {}", tpl.as_str());
     let embed: rust_embed::EmbeddedFile = Templates::get(tpl.as_str()).unwrap();

@@ -44,6 +44,7 @@ pub struct Output {
   enable_add_ons: bool,
   enable_pod_identity: bool,
   enable_helm: bool,
+  enable_public_ecr_helm: bool,
 
   enable_auto_mode: bool,
   enable_karpenter: bool,
@@ -314,9 +315,6 @@ impl Inputs {
   }
 
   pub fn to_output(self) -> Output {
-    tracing::warn!("Add ons {:?}", self.add_ons);
-    tracing::warn!("Enable add ons {:?}", !self.add_ons.is_empty());
-
     Output {
       enable_accelerator: self.accelerator != compute::AcceleratorType::None,
       enable_nvidia_gpus: self.accelerator == compute::AcceleratorType::Nvidia,
@@ -328,7 +326,8 @@ impl Inputs {
         .add_ons
         .iter()
         .any(|a| a.configuration.is_some() && a.configuration.as_ref().unwrap().pod_identity_role_arn.is_some()),
-      enable_helm: self.compute_scaling == compute::ScalingType::Karpenter,
+      enable_helm: should_enable_helm(&self.accelerator, self.require_efa),
+      enable_public_ecr_helm: should_enable_public_ecr_helm(&self.accelerator, &self.compute_scaling),
 
       enable_auto_mode: self.compute_scaling == compute::ScalingType::AutoMode,
       enable_karpenter: self.compute_scaling == compute::ScalingType::Karpenter,
@@ -376,4 +375,22 @@ fn should_collect_arch(
   }
 
   true
+}
+
+// Standard Helm resources are:
+// - NVIDIA device plugin
+// - EFA device plugin
+fn should_enable_helm(accelerator: &compute::AcceleratorType, require_efa: bool) -> bool {
+  if accelerator == &compute::AcceleratorType::Nvidia || require_efa {
+    return true;
+  }
+  false
+}
+
+// Karpenter and Neuron helm charts are stored in Public ECR
+fn should_enable_public_ecr_helm(accelerator: &compute::AcceleratorType, compute: &compute::ScalingType) -> bool {
+  if accelerator == &compute::AcceleratorType::Neuron || compute == &compute::ScalingType::Karpenter {
+    return true;
+  }
+  false
 }

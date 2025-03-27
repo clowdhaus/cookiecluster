@@ -20,9 +20,9 @@ pub enum AddOnType {
   AwsMountpointS3CsiDriver,
   #[strum(serialize = "coredns")]
   CoreDns,
-  KubeProxy,
   EksNodeMonitoringAgent,
   EksPodIdentityAgent,
+  KubeProxy,
   SnapshotController,
   VpcCni,
 }
@@ -46,6 +46,7 @@ pub struct AddOn {
 pub struct AddOnConfiguration {
   pub pod_identity_role_arn: Option<String>,
   pub pod_identity_service_account: Option<String>,
+  pub before_compute: bool,
 }
 
 static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
@@ -68,6 +69,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
         configuration: Some(AddOnConfiguration {
           pod_identity_role_arn: Some("module.amazon_cloudwatch_observability_pod_identity.iam_role_arn".to_string()),
           pod_identity_service_account: Some("cloudwatch-agent".to_string()),
+          before_compute: false,
         }),
       },
     ),
@@ -80,6 +82,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
         configuration: Some(AddOnConfiguration {
           pod_identity_role_arn: Some("module.aws_ebs_csi_driver_pod_identity.iam_role_arn".to_string()),
           pod_identity_service_account: Some("ebs-csi-controller-sa".to_string()),
+          before_compute: false,
         }),
       },
     ),
@@ -92,6 +95,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
         configuration: Some(AddOnConfiguration {
           pod_identity_role_arn: Some("module.aws_efs_csi_driver_pod_identity.iam_role_arn".to_string()),
           pod_identity_service_account: Some("efs-csi-controller-sa".to_string()),
+          before_compute: false,
         }),
       },
     ),
@@ -113,6 +117,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
         configuration: Some(AddOnConfiguration {
           pod_identity_role_arn: Some("module.aws_mountpoint_s3_csi_driver_pod_identity.iam_role_arn".to_string()),
           pod_identity_service_account: Some("s3-csi-driver-sa".to_string()),
+          before_compute: false,
         }),
       },
     ),
@@ -122,15 +127,6 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
         auto_mode: false,
         default: true,
         name: AddOnType::CoreDns.to_string(),
-        configuration: None,
-      },
-    ),
-    (
-      AddOnType::KubeProxy,
-      AddOn {
-        auto_mode: false,
-        default: true,
-        name: AddOnType::KubeProxy.to_string(),
         configuration: None,
       },
     ),
@@ -149,6 +145,19 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
         auto_mode: false,
         default: true,
         name: AddOnType::EksPodIdentityAgent.to_string(),
+        configuration: Some(AddOnConfiguration {
+          pod_identity_role_arn: None,
+          pod_identity_service_account: None,
+          before_compute: true,
+        }),
+      },
+    ),
+    (
+      AddOnType::KubeProxy,
+      AddOn {
+        auto_mode: false,
+        default: true,
+        name: AddOnType::KubeProxy.to_string(),
         configuration: None,
       },
     ),
@@ -167,7 +176,11 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
         auto_mode: false,
         default: true,
         name: AddOnType::VpcCni.to_string(),
-        configuration: None,
+        configuration: Some(AddOnConfiguration {
+          pod_identity_role_arn: None,
+          pod_identity_service_account: None,
+          before_compute: true,
+        }),
       },
     ),
   ])
