@@ -155,7 +155,7 @@ mod tests {
       accelerator: compute::AcceleratorType::Nvidia,
       ami_type: ami::AmiType::AL2023_x86_64_NVIDIA,
       compute_scaling: compute::ScalingType::None,
-      instance_types: vec!["g5.4xlarge".to_owned()],
+      instance_types: vec!["g6e.2xlarge".to_owned()],
       ..Inputs::default()
     };
 

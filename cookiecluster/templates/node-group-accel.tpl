@@ -56,6 +56,8 @@ neuron = {
   # Add security group rules on the node group security group to
   # allow EFA traffic
   enable_efa_support = true
+  # Enable efa-only interfaces to reduce IP consumption
+  # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/efa.html
   enable_efa_only    = true
   efa_indices        = [0]
   {{ /if }}
