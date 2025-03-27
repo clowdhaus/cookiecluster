@@ -79,7 +79,7 @@ fn render_value(name: &str, output: &Output, handlebars: &Handlebars) -> Result<
 mod tests {
 
   use super::*;
-  use crate::inputs::{Inputs, add_on, ami, compute, version};
+  use crate::inputs::{Inputs, add_on, ami, compute};
 
   fn render(output: Output, dir_name: &str) -> Result<()> {
     let mut settings = insta::Settings::new();
@@ -358,7 +358,6 @@ mod tests {
   fn snapshot_enable_all() {
     let inputs = Inputs {
       cluster_name: "cookiecluster".to_string(),
-      cluster_version: version::ClusterVersion::K128,
       cluster_endpoint_public_access: true,
       compute_scaling: compute::ScalingType::None,
       control_plane_subnet_filter: "*-intra-*".to_string(),

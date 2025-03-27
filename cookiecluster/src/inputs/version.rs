@@ -13,15 +13,6 @@ pub enum ClusterVersion {
   #[strum(serialize = "1.30")]
   #[serde(rename = "1.30")]
   K130,
-  #[strum(serialize = "1.29")]
-  #[serde(rename = "1.29")]
-  K129,
-  #[strum(serialize = "1.28")]
-  #[serde(rename = "1.28")]
-  K128,
-  #[strum(serialize = "1.27")]
-  #[serde(rename = "1.27")]
-  K127,
 }
 
 impl ClusterVersion {

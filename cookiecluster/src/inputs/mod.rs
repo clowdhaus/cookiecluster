@@ -380,7 +380,11 @@ fn should_collect_arch(
 // Standard Helm resources are:
 // - NVIDIA device plugin
 // - EFA device plugin
-fn should_enable_helm(accelerator: &compute::AcceleratorType, compute: &compute::ScalingType, require_efa: bool) -> bool {
+fn should_enable_helm(
+  accelerator: &compute::AcceleratorType,
+  compute: &compute::ScalingType,
+  require_efa: bool,
+) -> bool {
   // Auto Mode bundles the NVIDIA device plugin and EFA device plugin
   if compute == &compute::ScalingType::AutoMode {
     return false;
