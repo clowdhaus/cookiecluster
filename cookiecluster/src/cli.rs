@@ -319,6 +319,42 @@ mod tests {
   }
 
   #[test]
+  fn snapshot_auto_mode_nvidia() {
+    let inputs = Inputs {
+      accelerator: compute::AcceleratorType::Nvidia,
+      compute_scaling: compute::ScalingType::AutoMode,
+      add_ons: vec![],
+      ..Inputs::default()
+    };
+
+    render(inputs.to_output(), "auto-mode-nvidia").unwrap();
+  }
+
+  #[test]
+  fn snapshot_auto_mode_neuron() {
+    let inputs = Inputs {
+      accelerator: compute::AcceleratorType::Neuron,
+      compute_scaling: compute::ScalingType::AutoMode,
+      add_ons: vec![],
+      ..Inputs::default()
+    };
+
+    render(inputs.to_output(), "auto-mode-neuron").unwrap();
+  }
+
+  #[test]
+  fn snapshot_auto_mode_efa() {
+    let inputs = Inputs {
+      require_efa: true,
+      compute_scaling: compute::ScalingType::AutoMode,
+      add_ons: vec![],
+      ..Inputs::default()
+    };
+
+    render(inputs.to_output(), "auto-mode-efa").unwrap();
+  }
+
+  #[test]
   fn snapshot_enable_all() {
     let inputs = Inputs {
       cluster_name: "cookiecluster".to_string(),

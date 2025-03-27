@@ -326,7 +326,7 @@ impl Inputs {
         .add_ons
         .iter()
         .any(|a| a.configuration.is_some() && a.configuration.as_ref().unwrap().pod_identity_role_arn.is_some()),
-      enable_helm: should_enable_helm(&self.accelerator, self.require_efa),
+      enable_helm: should_enable_helm(&self.accelerator, &self.compute_scaling, self.require_efa),
       enable_public_ecr_helm: should_enable_public_ecr_helm(&self.accelerator, &self.compute_scaling),
 
       enable_auto_mode: self.compute_scaling == compute::ScalingType::AutoMode,
@@ -380,15 +380,25 @@ fn should_collect_arch(
 // Standard Helm resources are:
 // - NVIDIA device plugin
 // - EFA device plugin
-fn should_enable_helm(accelerator: &compute::AcceleratorType, require_efa: bool) -> bool {
+fn should_enable_helm(accelerator: &compute::AcceleratorType, compute: &compute::ScalingType, require_efa: bool) -> bool {
+  // Auto Mode bundles the NVIDIA device plugin and EFA device plugin
+  if compute == &compute::ScalingType::AutoMode {
+    return false;
+  }
   if accelerator == &compute::AcceleratorType::Nvidia || require_efa {
     return true;
   }
   false
 }
 
-// Karpenter and Neuron helm charts are stored in Public ECR
+// Public ECR Helm resources are:
+// - Neuron Helm chart
+// - Karpenter Helm chart
 fn should_enable_public_ecr_helm(accelerator: &compute::AcceleratorType, compute: &compute::ScalingType) -> bool {
+  // Auto Mode bundles the Neuron Helm chart and Karpenter Helm chart (equivalents)
+  if compute == &compute::ScalingType::AutoMode {
+    return false;
+  }
   if accelerator == &compute::AcceleratorType::Neuron || compute == &compute::ScalingType::Karpenter {
     return true;
   }

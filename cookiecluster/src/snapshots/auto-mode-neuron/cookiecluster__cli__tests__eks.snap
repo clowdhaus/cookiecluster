@@ -1,0 +1,26 @@
+---
+source: cookiecluster/src/cli.rs
+expression: rendered
+---
+################################################################################
+# EKS Cluster
+################################################################################
+
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 20.34"
+
+  cluster_name    = "example"
+  cluster_version = "1.32"
+
+  cluster_compute_config = {
+    enabled    = true
+    node_pools = ["general-purpose", "system"]
+  }
+
+  vpc_id                   = data.aws_vpc.this.id
+  control_plane_subnet_ids = data.aws_subnets.control_plane.ids
+  subnet_ids               = data.aws_subnets.data_plane.ids
+
+  tags = module.tags.tags
+}
