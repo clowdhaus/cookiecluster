@@ -64,6 +64,12 @@ module "eks" {
   subnet_ids               = data.aws_subnets.data_plane.ids
   {{ #unless inputs.enable_auto_mode }}
 
+  eks_managed_node_group_defaults = {
+    node_repair_config = {
+      enabled = true
+    }
+  }
+
   {{> tpl_node_groups }}
   {{ /unless }}
 

@@ -11,7 +11,7 @@ module "eks" {
   version = "~> 20.34"
 
   cluster_name    = "cookiecluster"
-  cluster_version = "1.28"
+  cluster_version = "1.32"
 
   # To facilitate easier interaction for demonstration purposes
   cluster_endpoint_public_access = true
@@ -41,6 +41,12 @@ module "eks" {
   control_plane_subnet_ids = data.aws_subnets.control_plane.ids
   subnet_ids               = data.aws_subnets.data_plane.ids
 
+  eks_managed_node_group_defaults = {
+    node_repair_config = {
+      enabled = true
+    }
+  }
+
   eks_managed_node_groups = {
     default = {
       ami_type = "AL2023_x86_64_STANDARD"
@@ -52,10 +58,6 @@ module "eks" {
       min_size     = 2
       max_size     = 3
       desired_size = 2
-  
-      node_repair_config = {
-        enabled = true
-      }
 
       # Increase root EBS volume
       block_device_mappings = {
