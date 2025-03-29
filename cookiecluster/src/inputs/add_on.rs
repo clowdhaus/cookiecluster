@@ -24,6 +24,7 @@ pub enum AddOnType {
   EksPodIdentityAgent,
   KubeProxy,
   SnapshotController,
+  TritonInferenceServer,
   VpcCni,
 }
 
@@ -40,6 +41,7 @@ pub struct AddOn {
   pub default: bool,
   pub name: String,
   pub configuration: Option<AddOnConfiguration>,
+  pub self_managed: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -58,6 +60,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
         default: false,
         name: AddOnType::Adot.to_string(),
         configuration: None,
+        self_managed: false,
       },
     ),
     (
@@ -71,6 +74,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
           pod_identity_service_account: Some("cloudwatch-agent".to_string()),
           before_compute: false,
         }),
+        self_managed: false,
       },
     ),
     (
@@ -84,6 +88,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
           pod_identity_service_account: Some("ebs-csi-controller-sa".to_string()),
           before_compute: false,
         }),
+        self_managed: false,
       },
     ),
     (
@@ -97,6 +102,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
           pod_identity_service_account: Some("efs-csi-controller-sa".to_string()),
           before_compute: false,
         }),
+        self_managed: false,
       },
     ),
     (
@@ -106,6 +112,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
         default: false,
         name: AddOnType::AwsGuarddutyAgent.to_string(),
         configuration: None,
+        self_managed: false,
       },
     ),
     (
@@ -119,6 +126,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
           pod_identity_service_account: Some("s3-csi-driver-sa".to_string()),
           before_compute: false,
         }),
+        self_managed: false,
       },
     ),
     (
@@ -128,6 +136,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
         default: true,
         name: AddOnType::CoreDns.to_string(),
         configuration: None,
+        self_managed: false,
       },
     ),
     (
@@ -137,6 +146,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
         default: true,
         name: AddOnType::EksNodeMonitoringAgent.to_string(),
         configuration: None,
+        self_managed: false,
       },
     ),
     (
@@ -150,6 +160,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
           pod_identity_service_account: None,
           before_compute: true,
         }),
+        self_managed: false,
       },
     ),
     (
@@ -159,6 +170,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
         default: true,
         name: AddOnType::KubeProxy.to_string(),
         configuration: None,
+        self_managed: false,
       },
     ),
     (
@@ -168,6 +180,17 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
         default: false,
         name: AddOnType::SnapshotController.to_string(),
         configuration: None,
+        self_managed: false,
+      },
+    ),
+    (
+      AddOnType::TritonInferenceServer,
+      AddOn {
+        auto_mode: false,
+        default: false,
+        name: AddOnType::TritonInferenceServer.to_string(),
+        configuration: None,
+        self_managed: true,
       },
     ),
     (
@@ -181,6 +204,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
           pod_identity_service_account: None,
           before_compute: true,
         }),
+        self_managed: false,
       },
     ),
   ])
