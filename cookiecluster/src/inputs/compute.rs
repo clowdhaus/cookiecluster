@@ -205,10 +205,10 @@ mod tests {
   }
 
   #[rstest]
-  #[case(&[String::from("t3.micro")], &ami::AmiType::AL2023_x86_64_STANDARD, false)]
+  #[case(&[String::from("m5.large")], &ami::AmiType::AL2023_x86_64_STANDARD, false)]
   #[case(&[String::from("p4d.24xlarge")], &ami::AmiType::AL2023_x86_64_NVIDIA, true)]
   #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::AL2023_x86_64_NVIDIA, true)]
-  #[case(&[String::from("p4d.24xlarge"), String::from("t3.micro")], &ami::AmiType::AL2023_x86_64_NVIDIA, false)]
+  #[case(&[String::from("p4d.24xlarge"), String::from("m5.large")], &ami::AmiType::AL2023_x86_64_NVIDIA, false)]
   #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::AL2023_x86_64_NVIDIA, true)]
   #[case(&[String::from("p4d.24xlarge"), String::from("p5.48xlarge")], &ami::AmiType::BOTTLEROCKET_x86_64_NVIDIA, false)]
   fn test_instance_storage_supported(
