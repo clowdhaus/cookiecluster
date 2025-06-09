@@ -67,9 +67,9 @@ dependencies = [
 
 [[package]]
 name = "anstyle"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55cc3b69f167a1ef2e161439aa98aed94e6028e5f9a59be9a6ffb47aef1651f9"
+checksum = "862ed96ca487e809f1c8e5a8447f6ee2cf102f846893800b20cebdf541fc6bbd"
 
 [[package]]
 name = "anstyle-parse"
@@ -209,9 +209,9 @@ dependencies = [
 
 [[package]]
 name = "aws-sdk-ec2"
-version = "1.136.0"
+version = "1.137.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3588a07d1ee564be066ea27ed556e877f39bd8882abec6bf7f3ed8183eb6a08"
+checksum = "585421f712436d157ae651f7b54ade6922f9fdb56fde9ea9fe6c0dbb6bb16327"
 dependencies = [
  "aws-credential-types",
  "aws-runtime",
