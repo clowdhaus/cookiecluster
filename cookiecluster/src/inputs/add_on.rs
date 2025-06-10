@@ -190,7 +190,7 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
 #[inline]
 #[cfg(not(tarpaulin_include))]
 pub fn _get_all_add_ons() -> Vec<AddOn> {
-  ADD_ONS.iter().map(|(_, v)| v.clone()).collect::<Vec<_>>()
+  ADD_ONS.values().map(|v| v.clone()).collect::<Vec<_>>()
 }
 
 #[inline]
@@ -219,7 +219,7 @@ pub fn get_default_add_ons() -> Vec<AddOn> {
 #[inline]
 #[cfg(not(tarpaulin_include))]
 pub fn get_default_add_on_flags() -> Vec<bool> {
-  ADD_ONS.iter().map(|(_, v)| v.default).collect::<Vec<_>>()
+  ADD_ONS.values().map(|v| v.default).collect::<Vec<_>>()
 }
 
 #[cfg(not(tarpaulin_include))]

@@ -3688,7 +3688,7 @@ pub const INSTANCE_TYPES: &[InstanceInfo] = &[
     efa_supported: true,
     nvidia_gpu_supported: true,
     neuron_supported: false,
-    cbr_supported: false,
+    cbr_supported: true,
     cpu_arch: "x86-64",
   },
   InstanceInfo {
@@ -3711,6 +3711,15 @@ pub const INSTANCE_TYPES: &[InstanceInfo] = &[
   },
   InstanceInfo {
     instance_type: "p5en.48xlarge",
+    instance_storage_supported: true,
+    efa_supported: true,
+    nvidia_gpu_supported: true,
+    neuron_supported: false,
+    cbr_supported: true,
+    cpu_arch: "x86-64",
+  },
+  InstanceInfo {
+    instance_type: "p6-b200.48xlarge",
     instance_storage_supported: true,
     efa_supported: true,
     nvidia_gpu_supported: true,
