@@ -6,7 +6,7 @@
 
 module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 20.34"
+  version = "~> 20.37"
 
   cluster_name = module.eks.cluster_name
 
@@ -34,7 +34,7 @@ resource "helm_release" "karpenter" {
   namespace  = "kube-system"
   repository = "oci://public.ecr.aws/karpenter"
   chart      = "karpenter"
-  version    = "1.3.3"
+  version    = "1.5.0"
   wait       = false
 
   values = [
@@ -60,7 +60,7 @@ resource "helm_release" "nvidia_device_plugin" {
   name             = "nvidia-device-plugin"
   repository       = "https://nvidia.github.io/k8s-device-plugin"
   chart            = "nvidia-device-plugin"
-  version          = "0.17.1"
+  version          = "0.17.2"
   namespace        = "nvidia-device-plugin"
   create_namespace = true
   wait             = false
@@ -75,7 +75,7 @@ resource "helm_release" "neuron" {
   name             = "neuron"
   repository       = "oci://public.ecr.aws/neuron"
   chart            = "neuron-helm-chart"
-  version          = "1.1.1"
+  version          = "1.1.2"
   namespace        = "neuron"
   create_namespace = true
   wait             = false
@@ -97,7 +97,7 @@ resource "helm_release" "aws_efa_device_plugin" {
   namespace  = "kube-system"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-efa-k8s-device-plugin"
-  version    = "v0.5.7"
+  version    = "v0.5.11"
   wait       = false
 
   values = [

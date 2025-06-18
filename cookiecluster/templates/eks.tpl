@@ -4,7 +4,7 @@
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.34"
+  version = "~> 20.37"
 
   cluster_name    = "{{ inputs.cluster_name }}"
   cluster_version = "{{ inputs.cluster_version }}"
