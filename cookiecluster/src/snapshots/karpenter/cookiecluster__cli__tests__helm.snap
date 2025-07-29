@@ -8,18 +8,13 @@ expression: rendered
 
 module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 20.37"
+  version = "~> 21.0"
 
   cluster_name = module.eks.cluster_name
-
-  # Enable permissions for Karpenter v1.0+
-  enable_v1_permissions = true
-  namespace             = "kube-system"
 
   # Name needs to match role name passed to the EC2NodeClass
   node_iam_role_use_name_prefix   = false
   node_iam_role_name              = "example-karpenter-node"
-  create_pod_identity_association = true
 
   tags = module.tags.tags
 }
@@ -29,14 +24,11 @@ module "karpenter" {
 ################################################################################
 
 resource "helm_release" "karpenter" {
-  # Use the Helm provider that is authenticated with Public ECR
-  provider = helm.public_ecr
-
   name       = "karpenter"
   namespace  = "kube-system"
   repository = "oci://public.ecr.aws/karpenter"
   chart      = "karpenter"
-  version    = "1.5.0"
+  version    = "1.6.0"
   wait       = false
 
   values = [

@@ -8,24 +8,19 @@ expression: rendered
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.37"
+  version = "~> 21.0"
 
-  cluster_name    = "cookiecluster"
-  cluster_version = "1.32"
+  name               = "cookiecluster"
+  kubernetes_version = "1.33"
 
   # To facilitate easier interaction for demonstration purposes
-  cluster_endpoint_public_access = true
+  endpoint_public_access = true
 
   # Gives Terraform identity admin access to cluster which will
   # allow deploying resources into the cluster
   enable_cluster_creator_admin_permissions = true
 
-  # These will become the default in the next major version of the module
-  bootstrap_self_managed_addons   = false
-  enable_irsa                     = false
-  enable_security_groups_for_pods = false
-
-  cluster_addons = {
+  addons = {
     coredns = {}
     eks-node-monitoring-agent = {}
     eks-pod-identity-agent = {
@@ -40,12 +35,6 @@ module "eks" {
   vpc_id                   = data.aws_vpc.this.id
   control_plane_subnet_ids = data.aws_subnets.control_plane.ids
   subnet_ids               = data.aws_subnets.data_plane.ids
-
-  eks_managed_node_group_defaults = {
-    node_repair_config = {
-      enabled = true
-    }
-  }
 
   eks_managed_node_groups = {
     default = {
@@ -67,6 +56,10 @@ module "eks" {
             volume_size = 24
           }
         }
+      }
+
+      node_repair_config = {
+        enabled = true
       }
     }
   }

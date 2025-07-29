@@ -357,8 +357,8 @@ mod tests {
   #[test]
   fn snapshot_enable_all() {
     let inputs = Inputs {
-      cluster_name: "cookiecluster".to_string(),
-      cluster_endpoint_public_access: true,
+      name: "cookiecluster".to_string(),
+      endpoint_public_access: true,
       compute_scaling: compute::ScalingType::None,
       control_plane_subnet_filter: "*-intra-*".to_string(),
       data_plane_subnet_filter: "*-data-*".to_string(),

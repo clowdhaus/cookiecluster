@@ -4,14 +4,14 @@
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.37"
+  version = "~> 21.0"
 
-  cluster_name    = "{{ inputs.cluster_name }}"
-  cluster_version = "{{ inputs.cluster_version }}"
-  {{ #if inputs.cluster_endpoint_public_access }}
+  name               = "{{ inputs.name }}"
+  kubernetes_version = "{{ inputs.kubernetes_version }}"
+  {{ #if inputs.endpoint_public_access }}
 
   # To facilitate easier interaction for demonstration purposes
-  cluster_endpoint_public_access = true
+  endpoint_public_access = true
   {{ /if }}
   {{ #if inputs.enable_cluster_creator_admin_permissions }}
 
@@ -21,19 +21,14 @@ module "eks" {
   {{ /if }}
   {{ #if inputs.enable_auto_mode }}
 
-  cluster_compute_config = {
+  compute_config = {
     enabled    = true
     node_pools = ["general-purpose", "system"]
   }
   {{ else }}
   {{ #if inputs.enable_add_ons}}
 
-  # These will become the default in the next major version of the module
-  bootstrap_self_managed_addons   = false
-  enable_irsa                     = false
-  enable_security_groups_for_pods = false
-
-  cluster_addons = {
+  addons = {
   {{ #each inputs.add_ons as |a| }}
     {{ a.name }} = {{ #if a.configuration.pod_identity_role_arn }}{
       pod_identity_role_arn = [{
@@ -52,23 +47,11 @@ module "eks" {
   }
   {{ /if }}
   {{ /if }}
-  {{ #if (and inputs.enable_efa (not inputs.enable_auto_mode)) }}
-
-  # Add security group rules on the node group security group to
-  # allow EFA traffic
-  enable_efa_support = true
-  {{ /if }}
 
   vpc_id                   = data.aws_vpc.this.id
   control_plane_subnet_ids = data.aws_subnets.control_plane.ids
   subnet_ids               = data.aws_subnets.data_plane.ids
   {{ #unless inputs.enable_auto_mode }}
-
-  eks_managed_node_group_defaults = {
-    node_repair_config = {
-      enabled = true
-    }
-  }
 
   {{> tpl_node_groups }}
   {{ /unless }}
@@ -78,7 +61,7 @@ module "eks" {
     # NOTE - if creating multiple security groups with this module, only tag the
     # security group that Karpenter should utilize with the following tag
     # (i.e. - at most, only one security group should have this tag in your account)
-    "karpenter.sh/discovery" = {{ inputs.cluster_name }}
+    "karpenter.sh/discovery" = "{{ inputs.name }}"
   })
   {{ else }}
   tags = module.tags.tags
@@ -91,7 +74,7 @@ module "eks" {
 ################################################################################
 
 resource "aws_resourcegroups_group" "odcr" {
-  name        = "{{ inputs.cluster_name }}-odcr"
+  name        = "{{ inputs.name }}-odcr"
   description = "On-demand capacity reservations"
 
   configuration {

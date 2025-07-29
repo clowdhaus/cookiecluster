@@ -6,18 +6,13 @@
 
 module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 20.37"
+  version = "~> 21.0"
 
   cluster_name = module.eks.cluster_name
 
-  # Enable permissions for Karpenter v1.0+
-  enable_v1_permissions = true
-  namespace             = "kube-system"
-
   # Name needs to match role name passed to the EC2NodeClass
   node_iam_role_use_name_prefix   = false
-  node_iam_role_name              = "{{ inputs.cluster_name }}-karpenter-node"
-  create_pod_identity_association = true
+  node_iam_role_name              = "{{ inputs.name }}-karpenter-node"
 
   tags = module.tags.tags
 }
@@ -27,14 +22,11 @@ module "karpenter" {
 ################################################################################
 
 resource "helm_release" "karpenter" {
-  # Use the Helm provider that is authenticated with Public ECR
-  provider = helm.public_ecr
-
   name       = "karpenter"
   namespace  = "kube-system"
   repository = "oci://public.ecr.aws/karpenter"
   chart      = "karpenter"
-  version    = "1.5.0"
+  version    = "1.6.0"
   wait       = false
 
   values = [
@@ -60,7 +52,7 @@ resource "helm_release" "nvidia_device_plugin" {
   name             = "nvidia-device-plugin"
   repository       = "https://nvidia.github.io/k8s-device-plugin"
   chart            = "nvidia-device-plugin"
-  version          = "0.17.2"
+  version          = "0.17.3"
   namespace        = "nvidia-device-plugin"
   create_namespace = true
   wait             = false
@@ -69,13 +61,10 @@ resource "helm_release" "nvidia_device_plugin" {
 {{ #if inputs.enable_neuron_devices }}
 
 resource "helm_release" "neuron" {
-  # Use the Helm provider that is authenticated with Public ECR
-  provider = helm.public_ecr
-
   name             = "neuron"
   repository       = "oci://public.ecr.aws/neuron"
   chart            = "neuron-helm-chart"
-  version          = "1.1.2"
+  version          = "1.2.0"
   namespace        = "neuron"
   create_namespace = true
   wait             = false
@@ -97,7 +86,7 @@ resource "helm_release" "aws_efa_device_plugin" {
   namespace  = "kube-system"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-efa-k8s-device-plugin"
-  version    = "v0.5.11"
+  version    = "v0.5.13"
   wait       = false
 
   values = [

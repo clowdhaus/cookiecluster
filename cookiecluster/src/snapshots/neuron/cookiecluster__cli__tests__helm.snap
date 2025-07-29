@@ -7,13 +7,10 @@ expression: rendered
 ################################################################################
 
 resource "helm_release" "neuron" {
-  # Use the Helm provider that is authenticated with Public ECR
-  provider = helm.public_ecr
-
   name             = "neuron"
   repository       = "oci://public.ecr.aws/neuron"
   chart            = "neuron-helm-chart"
-  version          = "1.1.2"
+  version          = "1.2.0"
   namespace        = "neuron"
   create_namespace = true
   wait             = false

@@ -8,12 +8,12 @@ expression: rendered
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.37"
+  version = "~> 21.0"
 
-  cluster_name    = "example"
-  cluster_version = "1.32"
+  name               = "example"
+  kubernetes_version = "1.33"
 
-  cluster_compute_config = {
+  compute_config = {
     enabled    = true
     node_pools = ["general-purpose", "system"]
   }

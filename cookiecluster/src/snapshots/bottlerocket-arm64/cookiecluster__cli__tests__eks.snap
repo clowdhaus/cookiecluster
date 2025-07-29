@@ -8,17 +8,12 @@ expression: rendered
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.37"
+  version = "~> 21.0"
 
-  cluster_name    = "example"
-  cluster_version = "1.32"
+  name               = "example"
+  kubernetes_version = "1.33"
 
-  # These will become the default in the next major version of the module
-  bootstrap_self_managed_addons   = false
-  enable_irsa                     = false
-  enable_security_groups_for_pods = false
-
-  cluster_addons = {
+  addons = {
     coredns = {}
     eks-node-monitoring-agent = {}
     eks-pod-identity-agent = {
@@ -34,12 +29,6 @@ module "eks" {
   control_plane_subnet_ids = data.aws_subnets.control_plane.ids
   subnet_ids               = data.aws_subnets.data_plane.ids
 
-  eks_managed_node_group_defaults = {
-    node_repair_config = {
-      enabled = true
-    }
-  }
-
   eks_managed_node_groups = {
     default = {
       ami_type = "BOTTLEROCKET_ARM_64"
@@ -51,6 +40,10 @@ module "eks" {
       min_size     = 2
       max_size     = 3
       desired_size = 2
+
+      node_repair_config = {
+        enabled = true
+      }
     }
   }
 

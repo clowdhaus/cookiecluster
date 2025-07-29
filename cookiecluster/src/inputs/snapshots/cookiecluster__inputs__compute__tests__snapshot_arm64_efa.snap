@@ -3,7 +3,6 @@ source: cookiecluster/src/inputs/compute.rs
 expression: efa_arm64
 ---
 [
-    "c6gn.16xlarge",
     "c7g.16xlarge",
     "c7gd.16xlarge",
     "c7gn.16xlarge",
@@ -11,6 +10,9 @@ expression: efa_arm64
     "c8g.48xlarge",
     "c8gd.24xlarge",
     "c8gd.48xlarge",
+    "c8gn.16xlarge",
+    "c8gn.24xlarge",
+    "c8gn.48xlarge",
     "hpc7g.16xlarge",
     "hpc7g.4xlarge",
     "hpc7g.8xlarge",

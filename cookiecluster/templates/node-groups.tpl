@@ -12,6 +12,10 @@ eks_managed_node_groups = {
     max_size     = 3
     desired_size = 2
 
+    node_repair_config = {
+      enabled = true
+    }
+
     labels = {
       # Used to ensure Karpenter runs on nodes that it does not manage
       "karpenter.sh/controller" = "true"
@@ -85,6 +89,10 @@ eks_managed_node_groups = {
     }
     {{ /if }}
     {{ /if }}
+
+    node_repair_config = {
+      enabled = true
+    }
   }
   {{ /if }}
   {{ #if (and inputs.enable_accelerator (not inputs.enable_karpenter)) }}

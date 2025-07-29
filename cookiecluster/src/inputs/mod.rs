@@ -14,9 +14,9 @@ pub struct Inputs {
   pub(crate) accelerator: compute::AcceleratorType,
   pub(crate) add_ons: Vec<add_on::AddOn>,
   pub(crate) ami_type: ami::AmiType,
-  pub(crate) cluster_endpoint_public_access: bool,
-  pub(crate) cluster_name: String,
-  pub(crate) cluster_version: version::ClusterVersion,
+  pub(crate) endpoint_public_access: bool,
+  pub(crate) name: String,
+  pub(crate) kubernetes_version: version::ClusterVersion,
   pub(crate) control_plane_subnet_filter: String,
   pub(crate) compute_scaling: compute::ScalingType,
   pub(crate) cpu_arch: compute::CpuArch,
@@ -55,9 +55,9 @@ pub struct Output {
   // Pass through
   add_ons: Vec<add_on::AddOn>,
   ami_type: ami::AmiType,
-  cluster_endpoint_public_access: bool,
-  cluster_name: String,
-  cluster_version: version::ClusterVersion,
+  endpoint_public_access: bool,
+  name: String,
+  kubernetes_version: version::ClusterVersion,
   control_plane_subnet_filter: String,
   cpu_arch: compute::CpuArch,
   data_plane_subnet_filter: String,
@@ -76,9 +76,9 @@ impl Default for Inputs {
       accelerator: compute::AcceleratorType::None,
       add_ons: add_on::get_default_add_ons(),
       ami_type: ami::AmiType::AL2023_x86_64_STANDARD,
-      cluster_endpoint_public_access: false,
-      cluster_name: String::from("example"),
-      cluster_version: version::ClusterVersion::K132,
+      endpoint_public_access: false,
+      name: String::from("example"),
+      kubernetes_version: version::ClusterVersion::K133,
       control_plane_subnet_filter: String::from("*-private-*"),
       compute_scaling: compute::ScalingType::AutoMode,
       cpu_arch: compute::CpuArch::X8664,
@@ -122,7 +122,7 @@ impl Inputs {
   }
 
   fn collect_cluster_settings(mut self) -> Result<Inputs> {
-    self.cluster_name = Input::with_theme(&ColorfulTheme::default())
+    self.name = Input::with_theme(&ColorfulTheme::default())
       .with_prompt("Cluster name")
       .interact_text()?;
 
@@ -132,9 +132,9 @@ impl Inputs {
       .items(&cluster_versions[..])
       .default(0)
       .interact()?;
-    self.cluster_version = version::ClusterVersion::from_idx(idx);
+    self.kubernetes_version = version::ClusterVersion::from_idx(idx);
 
-    self.cluster_endpoint_public_access = Confirm::with_theme(&ColorfulTheme::default())
+    self.endpoint_public_access = Confirm::with_theme(&ColorfulTheme::default())
       .with_prompt("Enable public access to cluster endpoint")
       .default(false)
       .interact()?;
@@ -338,9 +338,9 @@ impl Inputs {
       // Pass through
       add_ons: self.add_ons,
       ami_type: self.ami_type,
-      cluster_endpoint_public_access: self.cluster_endpoint_public_access,
-      cluster_name: self.cluster_name,
-      cluster_version: self.cluster_version,
+      endpoint_public_access: self.endpoint_public_access,
+      name: self.name,
+      kubernetes_version: self.kubernetes_version,
       control_plane_subnet_filter: self.control_plane_subnet_filter,
       cpu_arch: self.cpu_arch,
       data_plane_subnet_filter: self.data_plane_subnet_filter,
@@ -377,19 +377,18 @@ fn should_collect_arch(
   true
 }
 
-// Standard Helm resources are:
-// - NVIDIA device plugin
-// - EFA device plugin
 fn should_enable_helm(
   accelerator: &compute::AcceleratorType,
   compute: &compute::ScalingType,
   require_efa: bool,
 ) -> bool {
-  // Auto Mode bundles the NVIDIA device plugin and EFA device plugin
-  if compute == &compute::ScalingType::AutoMode {
-    return false;
+  match &compute {
+    compute::ScalingType::AutoMode => return false,
+    compute::ScalingType::Karpenter => return true,
+    _ => {}
   }
-  if accelerator == &compute::AcceleratorType::Nvidia || require_efa {
+
+  if accelerator != &compute::AcceleratorType::None || require_efa {
     return true;
   }
   false
