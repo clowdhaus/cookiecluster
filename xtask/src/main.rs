@@ -196,15 +196,27 @@ async fn update_ec2_instances() -> Result<()> {
 
   // Not GA and requires allow listing
   instances.insert(
-    "p4de.24xlarge".to_owned(),
+    "u-p6e-gb200x36".to_owned(),
     InstanceInfo {
-      instance_type: "p4de.24xlarge".to_owned(),
+      instance_type: "u-p6e-gb200x36".to_owned(),
       instance_storage_supported: true,
       efa_supported: true,
       nvidia_gpu_supported: true,
       neuron_supported: false,
-      cbr_supported: false,
-      cpu_arch: "x86-64".to_owned(),
+      cbr_supported: true,
+      cpu_arch: "arm64".to_owned(),
+    },
+  );
+  instances.insert(
+    "u-p6e-gb200x72".to_owned(),
+    InstanceInfo {
+      instance_type: "u-p6e-gb200x72".to_owned(),
+      instance_storage_supported: true,
+      efa_supported: true,
+      nvidia_gpu_supported: true,
+      neuron_supported: false,
+      cbr_supported: true,
+      cpu_arch: "arm64".to_owned(),
     },
   );
 

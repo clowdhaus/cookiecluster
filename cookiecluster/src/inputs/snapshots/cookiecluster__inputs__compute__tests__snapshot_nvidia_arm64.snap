@@ -1,0 +1,13 @@
+---
+source: cookiecluster/src/inputs/compute.rs
+expression: nvidia_arm64
+---
+[
+    "g5g.16xlarge",
+    "g5g.2xlarge",
+    "g5g.4xlarge",
+    "g5g.8xlarge",
+    "g5g.xlarge",
+    "u-p6e-gb200x36",
+    "u-p6e-gb200x72",
+]

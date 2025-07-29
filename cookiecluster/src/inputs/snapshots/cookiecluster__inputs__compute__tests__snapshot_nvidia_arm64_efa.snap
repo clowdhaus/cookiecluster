@@ -1,0 +1,8 @@
+---
+source: cookiecluster/src/inputs/compute.rs
+expression: nvidia_arm64_efa
+---
+[
+    "u-p6e-gb200x36",
+    "u-p6e-gb200x72",
+]

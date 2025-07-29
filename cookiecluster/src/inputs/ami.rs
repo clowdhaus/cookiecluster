@@ -30,23 +30,18 @@ impl AmiType {
   }
 }
 
-pub fn get_ami_types(accelerator: &AcceleratorType, require_efa: bool, cpu_arch: &CpuArch) -> Vec<AmiType> {
+pub fn get_ami_types(accelerator: &AcceleratorType, cpu_arch: &CpuArch) -> Vec<AmiType> {
   match accelerator {
-    AcceleratorType::Nvidia => match (cpu_arch, require_efa) {
-      (CpuArch::X8664, true) => vec![AmiType::AL2023_x86_64_NVIDIA, AmiType::BOTTLEROCKET_x86_64_NVIDIA],
-      (CpuArch::X8664, false) => vec![AmiType::AL2023_x86_64_NVIDIA, AmiType::BOTTLEROCKET_x86_64_NVIDIA],
-      (CpuArch::Arm64, true) => vec![AmiType::AL2023_ARM_64_NVIDIA, AmiType::BOTTLEROCKET_ARM_64_NVIDIA],
-      (CpuArch::Arm64, false) => vec![AmiType::AL2023_ARM_64_NVIDIA, AmiType::BOTTLEROCKET_ARM_64_NVIDIA],
+    AcceleratorType::Nvidia => match cpu_arch {
+      CpuArch::X8664 => vec![AmiType::AL2023_x86_64_NVIDIA, AmiType::BOTTLEROCKET_x86_64_NVIDIA],
+      CpuArch::Arm64 => vec![AmiType::AL2023_ARM_64_NVIDIA, AmiType::BOTTLEROCKET_ARM_64_NVIDIA],
     },
-    AcceleratorType::Neuron => match (cpu_arch, require_efa) {
-      (CpuArch::X8664, true) => vec![AmiType::AL2023_x86_64_NEURON, AmiType::BOTTLEROCKET_x86_64],
-      (CpuArch::X8664, false) => vec![AmiType::AL2023_x86_64_NEURON, AmiType::BOTTLEROCKET_x86_64],
-      (CpuArch::Arm64, true) => vec![AmiType::BOTTLEROCKET_ARM_64],
-      (CpuArch::Arm64, false) => vec![AmiType::BOTTLEROCKET_ARM_64],
+    AcceleratorType::Neuron => match cpu_arch {
+      CpuArch::X8664 => vec![AmiType::AL2023_x86_64_NEURON, AmiType::BOTTLEROCKET_x86_64],
+      CpuArch::Arm64 => vec![AmiType::BOTTLEROCKET_ARM_64],
     },
-    _ => match (cpu_arch, require_efa) {
-      (CpuArch::X8664, true) => vec![AmiType::AL2023_x86_64_NVIDIA, AmiType::AL2023_x86_64_NEURON],
-      (CpuArch::X8664, false) => vec![
+    _ => match cpu_arch {
+      CpuArch::X8664 => vec![
         AmiType::AL2023_x86_64_STANDARD,
         AmiType::BOTTLEROCKET_x86_64,
         AmiType::WINDOWS_CORE_2019_x86_64,
@@ -54,8 +49,7 @@ pub fn get_ami_types(accelerator: &AcceleratorType, require_efa: bool, cpu_arch:
         AmiType::WINDOWS_FULL_2019_x86_64,
         AmiType::WINDOWS_FULL_2022_x86_64,
       ],
-      (CpuArch::Arm64, true) => vec![AmiType::AL2023_ARM_64_NVIDIA, AmiType::BOTTLEROCKET_ARM_64],
-      (CpuArch::Arm64, false) => vec![AmiType::AL2023_ARM_64_STANDARD, AmiType::BOTTLEROCKET_ARM_64],
+      CpuArch::Arm64 => vec![AmiType::AL2023_ARM_64_STANDARD, AmiType::BOTTLEROCKET_ARM_64],
     },
   }
 }
@@ -80,15 +74,11 @@ mod tests {
   use super::*;
 
   #[rstest]
-  #[case(AcceleratorType::Nvidia, false, CpuArch::X8664, vec![AmiType::AL2023_x86_64_NVIDIA, AmiType::BOTTLEROCKET_x86_64_NVIDIA])]
-  #[case(AcceleratorType::Nvidia, false, CpuArch::Arm64, vec![AmiType::AL2023_ARM_64_NVIDIA, AmiType::BOTTLEROCKET_ARM_64_NVIDIA])]
-  #[case(AcceleratorType::Nvidia, true, CpuArch::X8664, vec![AmiType::AL2023_x86_64_NVIDIA, AmiType::BOTTLEROCKET_x86_64_NVIDIA])]
-  #[case(AcceleratorType::Nvidia, true, CpuArch::Arm64, vec![AmiType::AL2023_ARM_64_NVIDIA, AmiType::BOTTLEROCKET_ARM_64_NVIDIA])]
-  #[case(AcceleratorType::Neuron, false, CpuArch::X8664, vec![AmiType::AL2023_x86_64_NEURON, AmiType::BOTTLEROCKET_x86_64])]
-  #[case(AcceleratorType::Neuron, false, CpuArch::Arm64, vec![AmiType::BOTTLEROCKET_ARM_64])]
-  #[case(AcceleratorType::Neuron, true, CpuArch::X8664, vec![AmiType::AL2023_x86_64_NEURON, AmiType::BOTTLEROCKET_x86_64])]
-  #[case(AcceleratorType::Neuron, true, CpuArch::Arm64, vec![AmiType::BOTTLEROCKET_ARM_64])]
-  #[case(AcceleratorType::None, false, CpuArch::X8664, vec![
+  #[case(AcceleratorType::Nvidia, CpuArch::X8664, vec![AmiType::AL2023_x86_64_NVIDIA, AmiType::BOTTLEROCKET_x86_64_NVIDIA])]
+  #[case(AcceleratorType::Nvidia, CpuArch::Arm64, vec![AmiType::AL2023_ARM_64_NVIDIA, AmiType::BOTTLEROCKET_ARM_64_NVIDIA])]
+  #[case(AcceleratorType::Neuron, CpuArch::X8664, vec![AmiType::AL2023_x86_64_NEURON, AmiType::BOTTLEROCKET_x86_64])]
+  #[case(AcceleratorType::Neuron, CpuArch::Arm64, vec![AmiType::BOTTLEROCKET_ARM_64])]
+  #[case(AcceleratorType::None, CpuArch::X8664, vec![
     AmiType::AL2023_x86_64_STANDARD,
     AmiType::BOTTLEROCKET_x86_64,
     AmiType::WINDOWS_CORE_2019_x86_64,
@@ -96,16 +86,13 @@ mod tests {
     AmiType::WINDOWS_FULL_2019_x86_64,
     AmiType::WINDOWS_FULL_2022_x86_64,
   ])]
-  #[case(AcceleratorType::None, false, CpuArch::Arm64, vec![AmiType::AL2023_ARM_64_STANDARD, AmiType::BOTTLEROCKET_ARM_64])]
-  #[case(AcceleratorType::None, true, CpuArch::X8664, vec![AmiType::AL2023_x86_64_NVIDIA, AmiType::AL2023_x86_64_NEURON])]
-  #[case(AcceleratorType::None, true, CpuArch::Arm64, vec![AmiType::AL2023_ARM_64_NVIDIA, AmiType::BOTTLEROCKET_ARM_64])]
+  #[case(AcceleratorType::None, CpuArch::Arm64, vec![AmiType::AL2023_ARM_64_STANDARD, AmiType::BOTTLEROCKET_ARM_64])]
   fn test_get_ami_types(
     #[case] accelerator: AcceleratorType,
-    #[case] require_efa: bool,
     #[case] cpu_arch: CpuArch,
     #[case] expected: Vec<AmiType>,
   ) {
-    let ami_types = get_ami_types(&accelerator, require_efa, &cpu_arch);
+    let ami_types = get_ami_types(&accelerator, &cpu_arch);
     assert_eq!(ami_types, expected);
   }
 

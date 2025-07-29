@@ -276,10 +276,24 @@ mod tests {
   }
 
   #[test]
+  fn snapshot_nvidia_arm64() {
+    let nvidia_arm64 =
+      get_instance_type_names(&CpuArch::Arm64, false, &AcceleratorType::Nvidia, &ReservationType::None);
+    insta::assert_debug_snapshot!(nvidia_arm64);
+  }
+
+  #[test]
   fn snapshot_nvidia_x86_64_efa() {
     let nvidia_x86_64_efa =
       get_instance_type_names(&CpuArch::X8664, true, &AcceleratorType::Nvidia, &ReservationType::None);
     insta::assert_debug_snapshot!(nvidia_x86_64_efa);
+  }
+
+  #[test]
+  fn snapshot_nvidia_arm64_efa() {
+    let nvidia_arm64_efa =
+      get_instance_type_names(&CpuArch::Arm64, true, &AcceleratorType::Nvidia, &ReservationType::None);
+    insta::assert_debug_snapshot!(nvidia_arm64_efa);
   }
 
   #[test]

@@ -241,7 +241,7 @@ impl Inputs {
   }
 
   fn collect_cpu_arch(mut self) -> Result<Inputs> {
-    if !should_collect_arch(&self.compute_scaling, &self.accelerator, self.require_efa) {
+    if !should_collect_arch(&self.compute_scaling, &self.accelerator) {
       return Ok(self);
     }
 
@@ -261,7 +261,7 @@ impl Inputs {
       return Ok(self);
     }
 
-    let ami_types = ami::get_ami_types(&self.accelerator, self.require_efa, &self.cpu_arch);
+    let ami_types = ami::get_ami_types(&self.accelerator, &self.cpu_arch);
     let idx = Select::with_theme(&ColorfulTheme::default())
       .with_prompt("AMI type")
       .items(&ami_types[..])
@@ -358,7 +358,6 @@ impl Inputs {
 fn should_collect_arch(
   scaling_type: &compute::ScalingType,
   accelerator: &compute::AcceleratorType,
-  require_efa: bool,
 ) -> bool {
   // Set on Auto Mode/Karpenter NodeClass
   if *scaling_type == compute::ScalingType::Karpenter || *scaling_type == compute::ScalingType::AutoMode {
@@ -367,10 +366,6 @@ fn should_collect_arch(
 
   // Inf/Trn instances only support x86-64 at this time
   if *accelerator == compute::AcceleratorType::Neuron {
-    return false;
-  }
-
-  if *accelerator == compute::AcceleratorType::Nvidia && require_efa {
     return false;
   }
 
