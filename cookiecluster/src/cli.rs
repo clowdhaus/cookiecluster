@@ -1,4 +1,7 @@
-use std::{fs, path::Path};
+use std::{
+  fs,
+  path::{Path, PathBuf},
+};
 
 use anstyle::{AnsiColor, Color, Style};
 use anyhow::Result;
@@ -40,6 +43,10 @@ fn get_styles() -> Styles {
 pub struct Cli {
   #[clap(flatten)]
   pub verbose: Verbosity<InfoLevel>,
+
+  /// Path to a configuration file in YAML format
+  #[clap(long)]
+  pub config: Option<PathBuf>,
 }
 
 impl Cli {
@@ -311,7 +318,7 @@ mod tests {
   fn snapshot_auto_mode() {
     let inputs = Inputs {
       compute_scaling: compute::ScalingType::AutoMode,
-      add_ons: vec![],
+      add_on_types: vec![],
       ..Inputs::default()
     };
 
@@ -323,7 +330,7 @@ mod tests {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Nvidia,
       compute_scaling: compute::ScalingType::AutoMode,
-      add_ons: vec![],
+      add_on_types: vec![],
       ..Inputs::default()
     };
 
@@ -335,7 +342,7 @@ mod tests {
     let inputs = Inputs {
       accelerator: compute::AcceleratorType::Neuron,
       compute_scaling: compute::ScalingType::AutoMode,
-      add_ons: vec![],
+      add_on_types: vec![],
       ..Inputs::default()
     };
 
@@ -347,7 +354,7 @@ mod tests {
     let inputs = Inputs {
       require_efa: true,
       compute_scaling: compute::ScalingType::AutoMode,
-      add_ons: vec![],
+      add_on_types: vec![],
       ..Inputs::default()
     };
 
@@ -373,7 +380,7 @@ mod tests {
   #[test]
   fn snapshot_all_add_ons() {
     let inputs = Inputs {
-      add_ons: add_on::_get_all_add_ons(),
+      add_on_types: add_on::_get_all_add_on_types(),
       compute_scaling: compute::ScalingType::None,
       ..Inputs::default()
     };

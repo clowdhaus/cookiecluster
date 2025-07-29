@@ -13,6 +13,11 @@ fn main() -> Result<()> {
     .finish();
   tracing::subscriber::set_global_default(subscriber).expect("Setting default subscriber failed");
 
-  let inputs = Inputs::new().collect()?;
-  cli.write(&inputs)
+  match cli.config {
+    Some(ref config) => cookiecluster::config::get_configs(config),
+    None => {
+      let inputs = Inputs::new().collect()?;
+      cli.write(&inputs)
+    }
+  }
 }

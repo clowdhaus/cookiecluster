@@ -1,6 +1,7 @@
 #![feature(str_as_str)]
 
 pub mod cli;
+pub mod config;
 pub mod inputs;
 
 use std::{collections::HashSet, str};

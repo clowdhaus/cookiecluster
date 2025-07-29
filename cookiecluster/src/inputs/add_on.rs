@@ -3,14 +3,13 @@ use std::{collections::BTreeMap, sync::LazyLock};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
-use strum_macros::{Display, EnumIter, EnumString, IntoStaticStr};
+use strum_macros::{Display, EnumIter, EnumString};
 
 use super::compute;
 
-#[derive(
-  Debug, EnumIter, Display, EnumString, IntoStaticStr, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize,
-)]
+#[derive(Clone, Debug, Display, EnumString, EnumIter, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 #[strum(serialize_all = "kebab-case")]
+#[serde(rename_all = "kebab-case")]
 pub enum AddOnType {
   Adot,
   AmazonCloudwatchObservability,
@@ -19,6 +18,7 @@ pub enum AddOnType {
   AwsGuarddutyAgent,
   AwsMountpointS3CsiDriver,
   #[strum(serialize = "coredns")]
+  #[serde(rename = "coredns")]
   CoreDns,
   EksNodeMonitoringAgent,
   EksPodIdentityAgent,
@@ -189,8 +189,8 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
 /// Get all available add-ons
 #[inline]
 #[cfg(not(tarpaulin_include))]
-pub fn _get_all_add_ons() -> Vec<AddOn> {
-  ADD_ONS.values().map(|v| v.clone()).collect::<Vec<_>>()
+pub fn _get_all_add_on_types() -> Vec<AddOnType> {
+  ADD_ONS.keys().cloned().collect()
 }
 
 #[inline]
@@ -208,11 +208,11 @@ pub fn get_add_on_names(scaling_type: &compute::ScalingType) -> Vec<&'static str
 
 #[inline]
 #[cfg(not(tarpaulin_include))]
-pub fn get_default_add_ons() -> Vec<AddOn> {
+pub fn get_default_add_on_types() -> Vec<AddOnType> {
   ADD_ONS
     .iter()
     .filter(|(_, v)| v.default)
-    .map(|(_, v)| v.clone())
+    .map(|(k, _v)| k.clone())
     .collect::<Vec<_>>()
 }
 
@@ -223,9 +223,9 @@ pub fn get_default_add_on_flags() -> Vec<bool> {
 }
 
 #[cfg(not(tarpaulin_include))]
-pub fn get_add_on(add_on_type: AddOnType) -> Result<AddOn> {
+pub fn get_add_on(add_on_type: &AddOnType) -> Result<AddOn> {
   let config = ADD_ONS
-    .get(&add_on_type)
+    .get(add_on_type)
     .ok_or_else(|| anyhow::anyhow!("Add-on not found"))?;
   Ok(config.clone())
 }
@@ -250,7 +250,7 @@ mod tests {
   #[case(AddOnType::AwsGuarddutyAgent, None)]
   #[case(AddOnType::AmazonCloudwatchObservability, Some("module.amazon_cloudwatch_observability_pod_identity.iam_role_arn".to_string()))]
   fn test_get_add_on_configuration(#[case] aot: AddOnType, #[case] expected: Option<String>) {
-    let add_on = get_add_on(aot).unwrap();
+    let add_on = get_add_on(&aot).unwrap();
     let result = match add_on.configuration {
       Some(c) => c.pod_identity_role_arn,
       None => None,
