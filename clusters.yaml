@@ -1,0 +1,35 @@
+- name: example
+  description: |
+    # Example EKS cluster configuration
+
+    Does this render as correct markdown?
+
+    ## Maybe
+
+    Maybe it does ... maybe it doesn't
+
+  target_dir: ./clusters
+  params:
+    accelerator: None
+    add_on_types:
+      - coredns
+      - kube-proxy
+      - vpc-cni
+    ami_type: AL2023_x86_64_STANDARD
+    endpoint_public_access: false
+    name: "example"
+    kubernetes_version: "1.33"
+    control_plane_subnet_filter: "*-private-*"
+    compute_scaling: None
+    cpu_arch: x86-64
+    data_plane_subnet_filter: "*-private-*"
+    default_ami_type: AL2023_x86_64_STANDARD
+    default_instance_types: ["m7a.xlarge", "m7i.xlarge"]
+    enable_cluster_creator_admin_permissions: false
+    require_efa: false
+    instance_storage_supported: false
+    instance_types: ["m7a.xlarge", "m7i.xlarge"]
+    reservation: None
+    reservation_availability_zone: "us-west-2a"
+    vpc_name: "example"
+

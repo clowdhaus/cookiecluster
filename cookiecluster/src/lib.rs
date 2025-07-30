@@ -1,15 +1,15 @@
 #![feature(str_as_str)]
 
 pub mod cli;
+pub mod config;
 pub mod inputs;
-
-use std::{collections::HashSet, str};
+use std::{collections::HashSet, fs, path::Path, str};
 
 use anyhow::Result;
 pub use cli::Cli;
 use handlebars::{Handlebars, handlebars_helper};
 use rust_embed::RustEmbed;
-use serde_json::Value;
+use serde_json::{Value, value::Map};
 use tracing::trace;
 
 /// Embeds the contents of the `templates/` directory into the binary
@@ -53,4 +53,38 @@ fn register_handlebars() -> Result<Handlebars<'static>> {
   }
 
   Ok(handlebars)
+}
+
+fn render_template(name: &str, configuration: &inputs::Configuration, handlebars: &Handlebars) -> Result<String> {
+  let mut data = Map::new();
+  data.insert("inputs".to_string(), handlebars::to_json(configuration));
+
+  handlebars.render(name, &data).map_err(Into::into)
+}
+
+fn write_cluster_configs(dir: &Path, configuration: &inputs::Configuration) -> Result<()> {
+  let handlebars = crate::register_handlebars()?;
+
+  fs::write(dir.join("eks.tf"), render_template("eks", configuration, &handlebars)?)?;
+  fs::write(
+    dir.join("main.tf"),
+    render_template("main", configuration, &handlebars)?,
+  )?;
+
+  let helm = render_template("helm", configuration, &handlebars)?;
+  if !helm.is_empty() {
+    fs::write(dir.join("helm.tf"), helm)?;
+  }
+
+  let vars = render_template("variables", configuration, &handlebars)?;
+  if !vars.is_empty() {
+    fs::write(dir.join("variables.tf"), vars)?;
+  }
+
+  match std::process::Command::new("terraform").arg("fmt").arg(".").output() {
+    Ok(_) => tracing::trace!("Terraform files have been formatted"),
+    _ => tracing::trace!("Terraform executable not found. Skipping formatting."),
+  };
+
+  Ok(())
 }

@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Inputs {
   pub(crate) accelerator: compute::AcceleratorType,
-  pub(crate) add_ons: Vec<add_on::AddOn>,
+  pub(crate) add_on_types: Vec<add_on::AddOnType>,
   pub(crate) ami_type: ami::AmiType,
   pub(crate) endpoint_public_access: bool,
   pub(crate) name: String,
@@ -34,47 +34,11 @@ pub struct Inputs {
   pub(crate) vpc_name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Output {
-  enable_accelerator: bool,
-  enable_nvidia_gpus: bool,
-  enable_neuron_devices: bool,
-  enable_efa: bool,
-
-  enable_add_ons: bool,
-  enable_pod_identity: bool,
-  enable_helm: bool,
-  enable_public_ecr_helm: bool,
-
-  enable_auto_mode: bool,
-  enable_karpenter: bool,
-  enable_compute_reservation: bool,
-  enable_odcr: bool,
-  enable_ml_cbr: bool,
-
-  // Pass through
-  add_ons: Vec<add_on::AddOn>,
-  ami_type: ami::AmiType,
-  endpoint_public_access: bool,
-  name: String,
-  kubernetes_version: version::ClusterVersion,
-  control_plane_subnet_filter: String,
-  cpu_arch: compute::CpuArch,
-  data_plane_subnet_filter: String,
-  default_ami_type: ami::AmiType,
-  default_instance_types: Vec<String>,
-  enable_cluster_creator_admin_permissions: bool,
-  instance_storage_supported: bool,
-  instance_types: Vec<String>,
-  reservation_availability_zone: String,
-  vpc_name: String,
-}
-
 impl Default for Inputs {
   fn default() -> Self {
     Inputs {
       accelerator: compute::AcceleratorType::None,
-      add_ons: add_on::get_default_add_ons(),
+      add_on_types: add_on::get_default_add_on_types(),
       ami_type: ami::AmiType::AL2023_x86_64_STANDARD,
       endpoint_public_access: false,
       name: String::from("example"),
@@ -101,14 +65,14 @@ impl Inputs {
     Self::default()
   }
 
-  pub fn collect(self) -> Result<Output> {
+  pub fn collect(self) -> Result<Configuration> {
     let inputs = self
       .collect_cluster_settings()?
       .collect_accelerator_type()?
       .collect_require_efa()?
       .collect_reservation_type()?
       .collect_compute_scaling_type()?
-      .collect_add_ons()?
+      .collect_add_on_types()?
       .collect_networking_settings()?
       .collect_cpu_arch()?
       .collect_ami_type()?
@@ -116,9 +80,9 @@ impl Inputs {
       .collect_storage_settings()?
       .collect_default_node_group_settings()?;
 
-    let outputs = inputs.to_output();
+    let configuration = inputs.to_configuration();
 
-    Ok(outputs)
+    Ok(configuration)
   }
 
   fn collect_cluster_settings(mut self) -> Result<Inputs> {
@@ -197,7 +161,7 @@ impl Inputs {
     Ok(self)
   }
 
-  fn collect_add_ons(mut self) -> Result<Inputs> {
+  fn collect_add_on_types(mut self) -> Result<Inputs> {
     let all_add_ons = add_on::get_add_on_names(&self.compute_scaling);
     let add_ons_idxs = MultiSelect::with_theme(&ColorfulTheme::default())
       .with_prompt("EKS add-on(s)")
@@ -205,11 +169,11 @@ impl Inputs {
       .defaults(&add_on::get_default_add_on_flags())
       .interact()?;
 
-    let add_ons = add_ons_idxs
+    let add_on_types = add_ons_idxs
       .iter()
-      .map(|&i| add_on::get_add_on(add_on::AddOnType::from_idx(i)).unwrap())
-      .collect::<Vec<add_on::AddOn>>();
-    self.add_ons = add_ons;
+      .map(|&i| add_on::AddOnType::from_idx(i))
+      .collect::<Vec<add_on::AddOnType>>();
+    self.add_on_types = add_on_types;
 
     Ok(self)
   }
@@ -314,17 +278,18 @@ impl Inputs {
     Ok(self)
   }
 
-  pub fn to_output(self) -> Output {
-    Output {
+  pub fn to_configuration(self) -> Configuration {
+    Configuration {
       enable_accelerator: self.accelerator != compute::AcceleratorType::None,
       enable_nvidia_gpus: self.accelerator == compute::AcceleratorType::Nvidia,
       enable_neuron_devices: self.accelerator == compute::AcceleratorType::Neuron,
       enable_efa: self.require_efa,
 
-      enable_add_ons: !self.add_ons.is_empty(),
+      enable_add_ons: !self.add_on_types.is_empty(),
       enable_pod_identity: self
-        .add_ons
+        .add_on_types
         .iter()
+        .map(|a| add_on::get_add_on(a).unwrap())
         .any(|a| a.configuration.is_some() && a.configuration.as_ref().unwrap().pod_identity_role_arn.is_some()),
       enable_helm: should_enable_helm(&self.accelerator, &self.compute_scaling, self.require_efa),
       enable_public_ecr_helm: should_enable_public_ecr_helm(&self.accelerator, &self.compute_scaling),
@@ -336,7 +301,11 @@ impl Inputs {
       enable_ml_cbr: self.reservation == compute::ReservationType::MlCapacityBlockReservation,
 
       // Pass through
-      add_ons: self.add_ons,
+      add_ons: self
+        .add_on_types
+        .iter()
+        .map(|a| add_on::get_add_on(a).unwrap())
+        .collect::<Vec<add_on::AddOn>>(),
       ami_type: self.ami_type,
       endpoint_public_access: self.endpoint_public_access,
       name: self.name,
@@ -355,10 +324,43 @@ impl Inputs {
   }
 }
 
-fn should_collect_arch(
-  scaling_type: &compute::ScalingType,
-  accelerator: &compute::AcceleratorType,
-) -> bool {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Configuration {
+  enable_accelerator: bool,
+  enable_nvidia_gpus: bool,
+  enable_neuron_devices: bool,
+  enable_efa: bool,
+
+  enable_add_ons: bool,
+  enable_pod_identity: bool,
+  enable_helm: bool,
+  enable_public_ecr_helm: bool,
+
+  enable_auto_mode: bool,
+  enable_karpenter: bool,
+  enable_compute_reservation: bool,
+  enable_odcr: bool,
+  enable_ml_cbr: bool,
+
+  // Pass through
+  add_ons: Vec<add_on::AddOn>,
+  ami_type: ami::AmiType,
+  endpoint_public_access: bool,
+  name: String,
+  kubernetes_version: version::ClusterVersion,
+  control_plane_subnet_filter: String,
+  cpu_arch: compute::CpuArch,
+  data_plane_subnet_filter: String,
+  default_ami_type: ami::AmiType,
+  default_instance_types: Vec<String>,
+  enable_cluster_creator_admin_permissions: bool,
+  instance_storage_supported: bool,
+  instance_types: Vec<String>,
+  reservation_availability_zone: String,
+  vpc_name: String,
+}
+
+fn should_collect_arch(scaling_type: &compute::ScalingType, accelerator: &compute::AcceleratorType) -> bool {
   // Set on Auto Mode/Karpenter NodeClass
   if *scaling_type == compute::ScalingType::Karpenter || *scaling_type == compute::ScalingType::AutoMode {
     return false;

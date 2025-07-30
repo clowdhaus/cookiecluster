@@ -108,10 +108,12 @@ pub fn get_accelerator_types() -> Vec<AcceleratorType> {
 #[serde(rename_all = "kebab-case")]
 pub enum ScalingType {
   #[strum(serialize = "EKS Auto Mode")]
+  #[serde(rename = "EKS Auto Mode")]
   AutoMode,
   Karpenter,
   #[strum(serialize = "cluster-autoscaler")]
   ClusterAutoscaler,
+  #[serde(rename = "None")]
   None,
 }
 
@@ -137,8 +139,10 @@ pub fn get_compute_scaling_types(reservation: &ReservationType) -> Vec<ScalingTy
 #[derive(Debug, Display, EnumIter, EnumString, IntoStaticStr, PartialEq, Serialize, Deserialize)]
 pub enum CpuArch {
   #[strum(serialize = "x86-64")]
+  #[serde(rename = "x86-64")]
   X8664,
   #[strum(serialize = "arm64")]
+  #[serde(rename = "arm64")]
   Arm64,
 }
 
