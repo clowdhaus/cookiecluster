@@ -13,11 +13,14 @@ fn main() -> Result<()> {
     .finish();
   tracing::subscriber::set_global_default(subscriber).expect("Setting default subscriber failed");
 
-  match cli.config {
-    Some(ref config) => cookiecluster::config::generate_cluster_configurations(config),
-    None => {
-      let output = Inputs::new().collect()?;
-      cli.write_cluster_configs(&output)
-    }
+  if let Some(config) = &cli.config {
+    return cookiecluster::config::generate_cluster_configurations(config);
   }
+
+  if let Some(template) = &cli.template {
+    return cookiecluster::template::generate_from_template(template);
+  }
+
+  let output = Inputs::new().collect()?;
+  cli.write_cluster_configs(&output)
 }

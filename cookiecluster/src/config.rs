@@ -10,9 +10,9 @@ use serde::{Deserialize, Serialize};
 use crate::inputs::{Inputs, add_on, ami, compute, version};
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Configuration {
+pub(crate) struct Configuration {
   defaults: DefaultInputs,
-  clusters: Vec<ClusterSpec>,
+  pub(crate) clusters: Vec<ClusterSpec>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -21,7 +21,7 @@ struct DefaultInputs {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct ConfigInputs {
+pub(crate) struct ConfigInputs {
   accelerator: Option<compute::AcceleratorType>,
   add_on_types: Option<Vec<add_on::AddOnType>>,
   ami_type: Option<ami::AmiType>,
@@ -40,14 +40,14 @@ struct ConfigInputs {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct ClusterSpec {
-  name: String,
+pub(crate) struct ClusterSpec {
+  pub(crate) name: String,
   description: String,
   target_dir: Option<PathBuf>,
-  params: Option<ConfigInputs>,
+  pub(crate) params: Option<ConfigInputs>,
 }
 
-fn load_cluster_specifications(config_path: &Path) -> Result<Configuration> {
+pub(crate) fn load_cluster_specifications(config_path: &Path) -> Result<Configuration> {
   let path = config_path.canonicalize().expect("Failed to canonicalize config path");
   let file = std::fs::File::open(path.as_os_str())?;
   let config: Configuration = serde_yaml::from_reader(file)?;
@@ -87,7 +87,7 @@ pub fn generate_cluster_configurations(config_path: &Path) -> Result<()> {
 }
 
 // Takes user defined parameters and updates the default inputs accordingly
-fn update_default_inputs(params: ConfigInputs, name: String) -> Result<Inputs> {
+pub(crate) fn update_default_inputs(params: ConfigInputs, name: String) -> Result<Inputs> {
   let mut inputs = Inputs::default();
 
   if let Some(accelerator) = params.accelerator {

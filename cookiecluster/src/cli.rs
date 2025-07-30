@@ -40,8 +40,12 @@ pub struct Cli {
   pub verbose: Verbosity<InfoLevel>,
 
   /// Path to a configuration file in YAML format
-  #[clap(long)]
+  #[clap(short, long)]
   pub config: Option<PathBuf>,
+
+  /// Name of the template to use
+  #[clap(short, long)]
+  pub template: Option<String>,
 }
 
 impl Cli {

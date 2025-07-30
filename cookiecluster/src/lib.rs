@@ -3,6 +3,7 @@
 pub mod cli;
 pub mod config;
 pub mod inputs;
+pub mod template;
 use std::{collections::HashSet, fs, path::Path, str};
 
 use anyhow::Result;
@@ -36,7 +37,7 @@ fn register_handlebars() -> Result<Handlebars<'static>> {
   let templates = HashSet::from(["eks.tpl", "helm.tpl", "main.tpl", "variables.tpl"]);
   for tpl in &templates {
     trace!("Registering template: {}", tpl.as_str());
-    let embed: rust_embed::EmbeddedFile = Templates::get(tpl.as_str()).unwrap();
+    let embed = Templates::get(tpl.as_str()).unwrap();
     let name = tpl.replace(".tpl", "");
     handlebars.register_template_string(&name, std::str::from_utf8(embed.data.as_ref())?)?;
   }
