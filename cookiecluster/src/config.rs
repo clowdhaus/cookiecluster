@@ -1,27 +1,46 @@
-use std::path::Path;
+use std::{fs::File, path::{Path, PathBuf}};
+use std::io::prelude::*;
 
 use anyhow::Result;
-use config::Config;
+use serde::{Deserialize, Serialize};
 
 use crate::inputs::Inputs;
 
-pub fn get_configs(config_path: &Path) -> Result<()> {
-  let canonical_config_path = config_path.canonicalize().expect("Failed to canonicalize config path");
-  let config_path_str = canonical_config_path
-    .as_os_str()
-    .to_str()
-    .expect("Failed to convert config path to string");
+#[derive(Debug, Serialize, Deserialize)]
+struct ClusterSpec {
+  name: String,
+  description: String,
+  target_dir: PathBuf,
+  params: Inputs,
+}
 
-  let settings = Config::builder()
-    .set_default("accelerator", "")?
-    .add_source(config::File::new(config_path_str, config::FileFormat::Yaml))
-    .build()?;
+fn load_cluster_specifications(config_path: &Path) -> Result<Vec<ClusterSpec>> {
+  let config = config_path.canonicalize().expect("Failed to canonicalize config path");
+  let file = std::fs::File::open(config.as_os_str())?;
+  let specs: Vec<ClusterSpec> = serde_yaml::from_reader(file)?;
+  tracing::trace!("Loaded cluster specifications: {:#?}", specs);
 
-  let configs: Vec<Inputs> = settings
-    .try_deserialize()
-    .expect("Failed to deserialize inputs from config");
+  Ok(specs)
+}
 
-  println!("Loaded configurations: {:#?}", configs);
+pub fn generate_cluster_configurations(config_path: &Path) -> Result<()> {
+  let specs = load_cluster_specifications(config_path)?;
+
+  for spec in specs {
+    tracing::trace!("Generating cluster spec: {}", spec.name);
+
+    let target_dir = spec.target_dir.canonicalize().unwrap_or_else(|_| spec.target_dir.clone());
+    let unique_dir = target_dir.join(&spec.name);
+
+    if !unique_dir.exists() {
+      std::fs::create_dir_all(&unique_dir)?;
+    }
+
+    crate::write_cluster_configs(&unique_dir, &spec.params.to_configuration())?;
+
+    let mut readme = File::create(&unique_dir.join("README.md"))?;
+    readme.write_all(&spec.description.as_bytes())?;
+  }
 
   Ok(())
 }

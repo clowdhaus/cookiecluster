@@ -113,6 +113,7 @@ pub enum ScalingType {
   Karpenter,
   #[strum(serialize = "cluster-autoscaler")]
   ClusterAutoscaler,
+  #[serde(rename = "None")]
   None,
 }
 

@@ -34,42 +34,6 @@ pub struct Inputs {
   pub(crate) vpc_name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Output {
-  enable_accelerator: bool,
-  enable_nvidia_gpus: bool,
-  enable_neuron_devices: bool,
-  enable_efa: bool,
-
-  enable_add_ons: bool,
-  enable_pod_identity: bool,
-  enable_helm: bool,
-  enable_public_ecr_helm: bool,
-
-  enable_auto_mode: bool,
-  enable_karpenter: bool,
-  enable_compute_reservation: bool,
-  enable_odcr: bool,
-  enable_ml_cbr: bool,
-
-  // Pass through
-  add_ons: Vec<add_on::AddOn>,
-  ami_type: ami::AmiType,
-  endpoint_public_access: bool,
-  name: String,
-  kubernetes_version: version::ClusterVersion,
-  control_plane_subnet_filter: String,
-  cpu_arch: compute::CpuArch,
-  data_plane_subnet_filter: String,
-  default_ami_type: ami::AmiType,
-  default_instance_types: Vec<String>,
-  enable_cluster_creator_admin_permissions: bool,
-  instance_storage_supported: bool,
-  instance_types: Vec<String>,
-  reservation_availability_zone: String,
-  vpc_name: String,
-}
-
 impl Default for Inputs {
   fn default() -> Self {
     Inputs {
@@ -101,7 +65,7 @@ impl Inputs {
     Self::default()
   }
 
-  pub fn collect(self) -> Result<Output> {
+  pub fn collect(self) -> Result<Configuration> {
     let inputs = self
       .collect_cluster_settings()?
       .collect_accelerator_type()?
@@ -116,9 +80,9 @@ impl Inputs {
       .collect_storage_settings()?
       .collect_default_node_group_settings()?;
 
-    let outputs = inputs.to_output();
+    let configuration = inputs.to_configuration();
 
-    Ok(outputs)
+    Ok(configuration)
   }
 
   fn collect_cluster_settings(mut self) -> Result<Inputs> {
@@ -314,8 +278,8 @@ impl Inputs {
     Ok(self)
   }
 
-  pub fn to_output(self) -> Output {
-    Output {
+  pub fn to_configuration(self) -> Configuration {
+    Configuration {
       enable_accelerator: self.accelerator != compute::AcceleratorType::None,
       enable_nvidia_gpus: self.accelerator == compute::AcceleratorType::Nvidia,
       enable_neuron_devices: self.accelerator == compute::AcceleratorType::Neuron,
@@ -358,6 +322,42 @@ impl Inputs {
       vpc_name: self.vpc_name,
     }
   }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Configuration {
+  enable_accelerator: bool,
+  enable_nvidia_gpus: bool,
+  enable_neuron_devices: bool,
+  enable_efa: bool,
+
+  enable_add_ons: bool,
+  enable_pod_identity: bool,
+  enable_helm: bool,
+  enable_public_ecr_helm: bool,
+
+  enable_auto_mode: bool,
+  enable_karpenter: bool,
+  enable_compute_reservation: bool,
+  enable_odcr: bool,
+  enable_ml_cbr: bool,
+
+  // Pass through
+  add_ons: Vec<add_on::AddOn>,
+  ami_type: ami::AmiType,
+  endpoint_public_access: bool,
+  name: String,
+  kubernetes_version: version::ClusterVersion,
+  control_plane_subnet_filter: String,
+  cpu_arch: compute::CpuArch,
+  data_plane_subnet_filter: String,
+  default_ami_type: ami::AmiType,
+  default_instance_types: Vec<String>,
+  enable_cluster_creator_admin_permissions: bool,
+  instance_storage_supported: bool,
+  instance_types: Vec<String>,
+  reservation_availability_zone: String,
+  vpc_name: String,
 }
 
 fn should_collect_arch(scaling_type: &compute::ScalingType, accelerator: &compute::AcceleratorType) -> bool {
