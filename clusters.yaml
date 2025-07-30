@@ -1,35 +1,182 @@
-- name: example
-  description: |
-    # Example EKS cluster configuration
-
-    Does this render as correct markdown?
-
-    ## Maybe
-
-    Maybe it does ... maybe it doesn't
-
+defaults:
   target_dir: ./clusters
-  params:
-    accelerator: None
-    add_on_types:
-      - coredns
-      - kube-proxy
-      - vpc-cni
-    ami_type: AL2023_x86_64_STANDARD
-    endpoint_public_access: false
-    name: "example"
-    kubernetes_version: "1.33"
-    control_plane_subnet_filter: "*-private-*"
-    compute_scaling: None
-    cpu_arch: x86-64
-    data_plane_subnet_filter: "*-private-*"
-    default_ami_type: AL2023_x86_64_STANDARD
-    default_instance_types: ["m7a.xlarge", "m7i.xlarge"]
-    enable_cluster_creator_admin_permissions: false
-    require_efa: false
-    instance_storage_supported: false
-    instance_types: ["m7a.xlarge", "m7i.xlarge"]
-    reservation: None
-    reservation_availability_zone: "us-west-2a"
-    vpc_name: "example"
 
+# These follow the CLI snapshot tests in `cookiecluster/src/cli.rs`
+clusters:
+  - name: default
+    description: |
+      # Default `cookiecluster` configuration
+
+  - name: al2023-x86-64
+    description: |
+      # EKS Managed Node Group w/ Amazon Linux 2023 x86-64
+    params:
+      ami_type: AL2023_x86_64_STANDARD
+      compute_scaling: None
+
+  - name: al2023-arm64
+    description: |
+      # EKS Managed Node Group w/ Amazon Linux 2023 ARM64
+    params:
+      ami_type: AL2023_ARM_64_STANDARD
+      compute_scaling: None
+      instance_types: ["m7g.xlarge", "m6g.xlarge"]
+
+  - name: bottlerocket-x86-64
+    description: |
+      # EKS Managed Node Group w/ Bottlerocket x86-64
+    params:
+      ami_type: BOTTLEROCKET_x86_64
+      compute_scaling: None
+
+  - name: bottlerocket-arm64
+    description: |
+      # EKS Managed Node Group w/ Bottlerocket ARM64
+    params:
+      ami_type: BOTTLEROCKET_ARM_64
+      compute_scaling: None
+      instance_types: ["m7g.xlarge", "m6g.xlarge"]
+
+  - name: nvidia
+    description: |
+      # EKS Managed Node Group w/ NVIDIA GPUs
+    params:
+      accelerator: NVIDIA
+      ami_type: AL2023_x86_64_NVIDIA
+      compute_scaling: None
+      instance_types: ["g6e.2xlarge"]
+
+  - name: nvidia-efa
+    description: |
+      # EKS Managed Node Group w/ NVIDIA GPUs and EFA
+    params:
+      accelerator: NVIDIA
+      ami_type: AL2023_x86_64_NVIDIA
+      compute_scaling: None
+      instance_types: ["p5.48xlarge"]
+      require_efa: true
+
+  - name: nvidia-efa-odcr
+    description: |
+      # EKS Managed Node Group w/ NVIDIA GPUs, EFA, and On-Demand Capacity Reservation
+    params:
+      accelerator: NVIDIA
+      ami_type: AL2023_x86_64_NVIDIA
+      compute_scaling: None
+      instance_types: ["p5.48xlarge"]
+      require_efa: true
+      reservation: On-demand capacity reservation
+      reservation_availability_zone: us-west-2a
+
+  - name: nvidia-efa-cbr
+    description: |
+      # EKS Managed Node Group w/ NVIDIA GPUs, EFA, and ML Capacity Block Reservation
+    params:
+      accelerator: NVIDIA
+      ami_type: AL2023_x86_64_NVIDIA
+      compute_scaling: None
+      instance_types: ["p5.48xlarge"]
+      require_efa: true
+      reservation: ML capacity block reservation
+      reservation_availability_zone: us-west-2a
+
+  - name: nvidia-cbr
+    description: |
+      # EKS Managed Node Group w/ NVIDIA GPUs and ML Capacity Block Reservation
+    params:
+      accelerator: NVIDIA
+      ami_type: AL2023_x86_64_NVIDIA
+      compute_scaling: None
+      instance_types: ["p5.48xlarge"]
+      reservation: ML capacity block reservation
+      reservation_availability_zone: us-west-2a
+
+  - name: neuron
+    description: |
+      # EKS Managed Node Group w/ AWS Neuron Devices
+    params:
+      accelerator: Neuron
+      ami_type: AL2023_x86_64_NEURON
+      compute_scaling: None
+      instance_types: ["inf2.xlarge"]
+
+  - name: neuron-efa
+    description: |
+      # EKS Managed Node Group w/ AWS Neuron Devices and EFA
+    params:
+      accelerator: Neuron
+      ami_type: AL2023_x86_64_NEURON
+      compute_scaling: None
+      instance_types: ["trn1n.32xlarge"]
+      require_efa: true
+
+  - name: neuron-efa-cbr
+    description: |
+      # EKS Managed Node Group w/ AWS Neuron Devices, EFA, and ML Capacity Block Reservation
+    params:
+      accelerator: Neuron
+      ami_type: AL2023_x86_64_NEURON
+      compute_scaling: None
+      instance_types: ["trn1n.32xlarge"]
+      require_efa: true
+      reservation: ML capacity block reservation
+      reservation_availability_zone: us-west-2a
+
+  - name: al2023-instance-storage
+    description: |
+      # EKS Managed Node Group w/ Amazon Linux 2023 ARM64 and Instance Storage
+    params:
+      ami_type: AL2023_ARM_64_STANDARD
+      compute_scaling: None
+      instance_types: ["m7gd.2xlarge"]
+
+  - name: karpenter
+    description: |
+      # EKS cluster with Karpenter
+    params:
+      compute_scaling: karpenter
+
+  # TODO - what is this intended to show?
+  # - name: karpenter-odcr
+  #   description: |
+  #     # EKS cluster with Karpenter and On-Demand Capacity Reservation
+  #   params:
+  #     accelerator: NVIDIA
+  #     ami_type: AL2023_x86_64_NVIDIA
+  #     compute_scaling: karpenter
+  #     instance_types: ["p5.48xlarge"]
+  #     reservation: On-demand capacity reservation
+  #     reservation_availability_zone: us-west-2a
+
+  - name: auto-mode
+    description: |
+      # EKS cluster with Auto Mode enabled
+    params:
+      compute_scaling: EKS Auto Mode
+
+  # TODO - what is this intended to show?
+  # - name: auto-mode-nvidia
+  #   description: |
+  #     # EKS cluster with Auto Mode enabled and NVIDIA GPUs
+  #   params:
+  #     accelerator: NVIDIA
+  #     compute_scaling: EKS Auto Mode
+
+  # TODO - what is this intended to show?
+  # - name: auto-mode-neuron
+  #   description: |
+  #     # EKS cluster with Auto Mode enabled and AWS Neuron Devices
+  #   params:
+  #     accelerator: Neuron
+  #     compute_scaling: EKS Auto Mode
+
+  - name: enable-all
+    description: |
+      # EKS cluster with all features enabled
+    params:
+      endpoint_public_access: true
+      compute_scaling: None
+      control_plane_subnet_filter: "*-intra-*"
+      data_plane_subnet_filter: "*-data-*"
+      enable_cluster_creator_admin_permissions: true
+      vpc_name: "cookiecluster"

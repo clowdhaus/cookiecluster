@@ -65,7 +65,16 @@ module "eks" {
         }
       ]
 
+      node_repair_config = {
+        enabled = true
+      }
+    
+      # Add security group rules on the node group security group to
+      # allow EFA traffic
+      enable_efa_support = true
+
       labels = {
+        "vpc.amazonaws.com/efa.present" = "true"
         "aws.amazon.com/neuron.present" = "true"
       }
     

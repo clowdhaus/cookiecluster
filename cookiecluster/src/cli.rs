@@ -82,7 +82,6 @@ mod tests {
   #[test]
   fn snapshot_al2023_x86_64() {
     let inputs = Inputs {
-      ami_type: ami::AmiType::AL2023_x86_64_STANDARD,
       compute_scaling: compute::ScalingType::None,
       ..Inputs::default()
     };
@@ -235,7 +234,7 @@ mod tests {
       accelerator: compute::AcceleratorType::Neuron,
       ami_type: ami::AmiType::AL2023_x86_64_NEURON,
       compute_scaling: compute::ScalingType::None,
-      require_efa: false,
+      require_efa: true,
       instance_storage_supported: true,
       instance_types: vec!["trn1.32xlarge".to_owned()],
       reservation: compute::ReservationType::MlCapacityBlockReservation,

@@ -1,0 +1,22 @@
+################################################################################
+# Helm charts
+################################################################################
+
+resource "helm_release" "neuron" {
+  name             = "neuron"
+  repository       = "oci://public.ecr.aws/neuron"
+  chart            = "neuron-helm-chart"
+  version          = "1.2.0"
+  namespace        = "neuron"
+  create_namespace = true
+  wait             = false
+
+  values = [
+    <<-EOT
+      nodeSelector:
+        aws.amazon.com/neuron.present: 'true'
+      npd:
+        enabled: false
+    EOT
+  ]
+}

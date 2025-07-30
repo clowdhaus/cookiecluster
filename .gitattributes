@@ -1,0 +1,3 @@
+# Generated cluster configurations from config file
+clusters/** linguist-generated
+clusters.yaml linguist-vendored

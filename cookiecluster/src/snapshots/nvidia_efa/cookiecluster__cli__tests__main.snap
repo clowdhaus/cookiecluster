@@ -41,7 +41,7 @@ module "tags" {
 
   application = "cookiecluster"
   environment = "nonprod"
-  repository  = "github.com/clowdhaus/cookiecluster"
+  repository  = "https://github.com/clowdhaus/cookiecluster"
 }
 
 ################################################################################

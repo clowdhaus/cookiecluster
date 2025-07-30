@@ -159,8 +159,10 @@ impl CpuArch {
 pub enum ReservationType {
   None,
   #[strum(serialize = "On-demand capacity reservation")]
+  #[serde(rename = "On-demand capacity reservation")]
   OnDemandCapacityReservation,
   #[strum(serialize = "ML capacity block reservation")]
+  #[serde(rename = "ML capacity block reservation")]
   MlCapacityBlockReservation,
 }
 

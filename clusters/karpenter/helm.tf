@@ -1,0 +1,45 @@
+################################################################################
+# Karpenter Controller & Node IAM roles, SQS Queue, and Eventbridge Rules
+################################################################################
+
+module "karpenter" {
+  source  = "terraform-aws-modules/eks/aws//modules/karpenter"
+  version = "~> 21.0"
+
+  cluster_name = module.eks.cluster_name
+
+  # Name needs to match role name passed to the EC2NodeClass
+  node_iam_role_use_name_prefix   = false
+  node_iam_role_name              = "karpenter-karpenter-node"
+
+  tags = module.tags.tags
+}
+
+################################################################################
+# Karpenter Helm chart
+################################################################################
+
+resource "helm_release" "karpenter" {
+  name       = "karpenter"
+  namespace  = "kube-system"
+  repository = "oci://public.ecr.aws/karpenter"
+  chart      = "karpenter"
+  version    = "1.6.0"
+  wait       = false
+
+  values = [
+    <<-EOT
+      dnsPolicy: Default
+      serviceAccount:
+        name: ${module.karpenter.service_account}
+      settings:
+        clusterName: ${module.eks.cluster_name}
+        clusterEndpoint: ${module.eks.cluster_endpoint}
+        interruptionQueue: ${module.karpenter.queue_name}
+    EOT
+  ]
+}
+
+################################################################################
+# Helm charts
+################################################################################

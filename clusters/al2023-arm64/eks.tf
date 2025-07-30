@@ -6,11 +6,15 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 21.0"
 
-  name               = "example"
+  name               = "al2023-arm64"
   kubernetes_version = "1.33"
 
   addons = {
     coredns = {}
+    eks-node-monitoring-agent = {}
+    eks-pod-identity-agent = {
+      before_compute = true
+    }
     kube-proxy = {}
     vpc-cni = {
       before_compute = true
@@ -23,10 +27,10 @@ module "eks" {
 
   eks_managed_node_groups = {
     default = {
-      ami_type = "AL2023_x86_64_STANDARD"
+      ami_type = "AL2023_ARM_64_STANDARD"
       instance_types = [
-        "m7a.xlarge",
-        "m7i.xlarge",
+        "m7g.xlarge",
+        "m6g.xlarge",
       ]
   
       min_size     = 2
