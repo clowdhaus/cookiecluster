@@ -5511,7 +5511,7 @@ pub const INSTANCE_TYPES: &[InstanceInfo] = &[
   },
   InstanceInfo {
     instance_type: "trn2.48xlarge",
-    instance_storage_supported: false,
+    instance_storage_supported: true,
     efa_supported: true,
     nvidia_gpu_supported: false,
     neuron_supported: true,
