@@ -6,6 +6,7 @@ expression: nvidia_x86_64_ml_cbr
     "p4d.24xlarge",
     "p4de.24xlarge",
     "p5.48xlarge",
+    "p5.4xlarge",
     "p5e.48xlarge",
     "p5en.48xlarge",
     "p6-b200.48xlarge",

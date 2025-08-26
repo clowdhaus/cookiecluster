@@ -37,4 +37,6 @@ expression: efa_x86_64
     "r7a.48xlarge",
     "r7i.48xlarge",
     "r7iz.32xlarge",
+    "r8i.48xlarge",
+    "r8i.96xlarge",
 ]
