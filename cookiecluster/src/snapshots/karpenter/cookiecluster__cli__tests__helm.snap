@@ -28,7 +28,7 @@ resource "helm_release" "karpenter" {
   namespace  = "kube-system"
   repository = "oci://public.ecr.aws/karpenter"
   chart      = "karpenter"
-  version    = "1.6.0"
+  version    = "1.6.2"
   wait       = false
 
   values = [

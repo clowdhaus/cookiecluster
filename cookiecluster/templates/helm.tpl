@@ -26,7 +26,7 @@ resource "helm_release" "karpenter" {
   namespace  = "kube-system"
   repository = "oci://public.ecr.aws/karpenter"
   chart      = "karpenter"
-  version    = "1.6.0"
+  version    = "1.6.2"
   wait       = false
 
   values = [
@@ -86,7 +86,7 @@ resource "helm_release" "aws_efa_device_plugin" {
   namespace  = "kube-system"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-efa-k8s-device-plugin"
-  version    = "v0.5.13"
+  version    = "v0.5.14"
   wait       = false
 
   values = [
