@@ -10,7 +10,7 @@ module "eks" {
   kubernetes_version = "1.33"
 
   addons = {
-    coredns = {}
+    coredns                   = {}
     eks-node-monitoring-agent = {}
     eks-pod-identity-agent = {
       before_compute = true
@@ -32,7 +32,7 @@ module "eks" {
         "m7g.xlarge",
         "m6g.xlarge",
       ]
-  
+
       min_size     = 2
       max_size     = 3
       desired_size = 2

@@ -10,7 +10,7 @@ module "eks" {
   kubernetes_version = "1.33"
 
   addons = {
-    coredns = {}
+    coredns                   = {}
     eks-node-monitoring-agent = {}
     eks-pod-identity-agent = {
       before_compute = true
@@ -33,7 +33,7 @@ module "eks" {
         "m7a.xlarge",
         "m7i.xlarge",
       ]
-  
+
       min_size     = 2
       max_size     = 3
       desired_size = 2
@@ -63,7 +63,7 @@ module "eks" {
       labels = {
         "aws.amazon.com/neuron.present" = "true"
       }
-    
+
       taints = {
         # Ensure only Neuron workloads are scheduled on this node group
         neuron = {

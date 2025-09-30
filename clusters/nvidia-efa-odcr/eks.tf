@@ -10,7 +10,7 @@ module "eks" {
   kubernetes_version = "1.33"
 
   addons = {
-    coredns = {}
+    coredns                   = {}
     eks-node-monitoring-agent = {}
     eks-pod-identity-agent = {
       before_compute = true
@@ -33,14 +33,14 @@ module "eks" {
         "m7a.xlarge",
         "m7i.xlarge",
       ]
-  
+
       min_size     = 2
       max_size     = 3
       desired_size = 2
     }
     gpu = {
       ami_type       = "AL2023_x86_64_NVIDIA"
-      instance_types = ["p5.48xlarge" ]
+      instance_types = ["p5.48xlarge"]
 
       min_size     = 0
       max_size     = 5
@@ -64,7 +64,7 @@ module "eks" {
       node_repair_config = {
         enabled = true
       }
-    
+
       # Add security group rules on the node group security group to
       # allow EFA traffic
       enable_efa_support = true
@@ -73,7 +73,7 @@ module "eks" {
         "vpc.amazonaws.com/efa.present" = "true"
         "nvidia.com/gpu.present"        = "true"
       }
-    
+
       taints = {
         # Ensure only GPU workloads are scheduled on this node group
         gpu = {

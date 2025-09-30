@@ -9,8 +9,8 @@ module "karpenter" {
   cluster_name = module.eks.cluster_name
 
   # Name needs to match role name passed to the EC2NodeClass
-  node_iam_role_use_name_prefix   = false
-  node_iam_role_name              = "karpenter-karpenter-node"
+  node_iam_role_use_name_prefix = false
+  node_iam_role_name            = "karpenter-karpenter-node"
 
   tags = module.tags.tags
 }

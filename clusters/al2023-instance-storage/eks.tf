@@ -10,7 +10,7 @@ module "eks" {
   kubernetes_version = "1.33"
 
   addons = {
-    coredns = {}
+    coredns                   = {}
     eks-node-monitoring-agent = {}
     eks-pod-identity-agent = {
       before_compute = true
@@ -31,7 +31,7 @@ module "eks" {
       instance_types = [
         "m7gd.2xlarge",
       ]
-  
+
       min_size     = 2
       max_size     = 3
       desired_size = 2

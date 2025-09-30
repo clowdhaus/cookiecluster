@@ -73,7 +73,7 @@ data "aws_subnets" "data_plane_reservation" {
 
   # Capacity reservations are restricted to a single availability zone
   filter {
-    name = "availability-zone"
+    name   = "availability-zone"
     values = ["us-west-2a"]
   }
 }
