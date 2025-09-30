@@ -26,6 +26,11 @@ expression: efa_arm64
     "r7gd.16xlarge",
     "r8g.24xlarge",
     "r8g.48xlarge",
+    "r8gb.16xlarge",
+    "r8gb.24xlarge",
     "r8gd.24xlarge",
     "r8gd.48xlarge",
+    "r8gn.16xlarge",
+    "r8gn.24xlarge",
+    "r8gn.48xlarge",
 ]
