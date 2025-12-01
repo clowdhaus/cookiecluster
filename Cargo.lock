@@ -201,9 +201,9 @@ dependencies = [
 
 [[package]]
 name = "aws-sdk-ec2"
-version = "1.193.0"
+version = "1.194.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "779a7fd891d0cf74a72a7afdb9a2a2a97ea421fc227c5d8eeb4943a81301c23b"
+checksum = "f55f9073b102788b24a8382fdadd27f5bf34d5ff4869eb88cdf251a455599e63"
 dependencies = [
  "aws-credential-types",
  "aws-runtime",
@@ -1521,9 +1521,9 @@ dependencies = [
 
 [[package]]
 name = "insta"
-version = "1.44.1"
+version = "1.44.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8732d3774162a0851e3f2b150eb98f31a9885dd75985099421d393385a01dfd"
+checksum = "b5c943d4415edd8153251b6f197de5eb1640e56d84e8d9159bea190421c73698"
 dependencies = [
  "console 0.15.11",
  "once_cell",
