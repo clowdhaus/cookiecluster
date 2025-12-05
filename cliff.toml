@@ -45,6 +45,8 @@ commit_parsers = [
     { message = "^[Tt]est", group = "Testing" },
     { message = "^[Cc]hore", group = "Miscellaneous Tasks" },
 
+    { message = "^chore(deps)", skip = true },
+
     { message = ".*", group = "Other" },
 ]
 protect_breaking_commits = false
