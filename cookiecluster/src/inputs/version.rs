@@ -4,15 +4,15 @@ use strum_macros::{Display, EnumIter, EnumString, IntoStaticStr};
 
 #[derive(Debug, EnumIter, Display, EnumString, IntoStaticStr, PartialEq, Serialize, Deserialize)]
 pub enum ClusterVersion {
+  #[strum(serialize = "1.34")]
+  #[serde(rename = "1.34")]
+  K134,
   #[strum(serialize = "1.33")]
   #[serde(rename = "1.33")]
   K133,
   #[strum(serialize = "1.32")]
   #[serde(rename = "1.32")]
   K132,
-  #[strum(serialize = "1.31")]
-  #[serde(rename = "1.31")]
-  K131,
 }
 
 impl ClusterVersion {

@@ -42,7 +42,7 @@ impl Default for Inputs {
       ami_type: ami::AmiType::AL2023_x86_64_STANDARD,
       endpoint_public_access: false,
       name: String::from("example"),
-      kubernetes_version: version::ClusterVersion::K133,
+      kubernetes_version: version::ClusterVersion::K134,
       control_plane_subnet_filter: String::from("*-private-*"),
       compute_scaling: compute::ScalingType::AutoMode,
       cpu_arch: compute::CpuArch::X8664,

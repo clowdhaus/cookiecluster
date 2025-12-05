@@ -134,7 +134,7 @@ async fn get_ec2_instances(
         | itype.starts_with("v")
         | itype.starts_with("x")
         | itype.starts_with("z")
-        | itype.contains("-flex")=>
+        | itype.contains("-flex") =>
       {
         continue;
       }
