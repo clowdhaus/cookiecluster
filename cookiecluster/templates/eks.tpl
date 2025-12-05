@@ -4,7 +4,7 @@
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 21.0"
+  version = "~> 21.10"
 
   name               = "{{ inputs.name }}"
   kubernetes_version = "{{ inputs.kubernetes_version }}"

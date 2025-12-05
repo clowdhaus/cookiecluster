@@ -8,7 +8,7 @@ expression: rendered
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 21.0"
+  version = "~> 21.10"
 
   name               = "example"
   kubernetes_version = "1.34"
@@ -97,7 +97,7 @@ module "eks" {
 
 module "amazon_cloudwatch_observability_pod_identity" {
   source = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "~> 1.12"
+  version = "~> 2.5"
 
   name = "aws-cloudwatch-observability"
 
@@ -108,7 +108,7 @@ module "amazon_cloudwatch_observability_pod_identity" {
 
 module "aws_ebs_csi_driver_pod_identity" {
   source = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "~> 1.12"
+  version = "~> 2.5"
 
   name = "aws-ebs-csi"
 
@@ -119,7 +119,7 @@ module "aws_ebs_csi_driver_pod_identity" {
 
 module "aws_efs_csi_driver_pod_identity" {
   source = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "~> 1.12"
+  version = "~> 2.5"
 
   name = "aws-efs-csi"
 
@@ -130,7 +130,7 @@ module "aws_efs_csi_driver_pod_identity" {
 
 module "aws_mountpoint_s3_csi_driver_pod_identity" {
   source = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "~> 1.12"
+  version = "~> 2.5"
 
   name = "mountpoint-s3-csi"
 
