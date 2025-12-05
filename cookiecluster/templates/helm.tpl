@@ -14,6 +14,9 @@ module "karpenter" {
   node_iam_role_use_name_prefix   = false
   node_iam_role_name              = "{{ inputs.name }}-karpenter-node"
 
+  # Avoid policy size limit error
+  enable_inline_policy = true
+
   tags = module.tags.tags
 }
 
@@ -26,7 +29,7 @@ resource "helm_release" "karpenter" {
   namespace  = "kube-system"
   repository = "oci://public.ecr.aws/karpenter"
   chart      = "karpenter"
-  version    = "1.6.2"
+  version    = "1.8.2"
   wait       = false
 
   values = [
