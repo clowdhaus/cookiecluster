@@ -48,4 +48,5 @@ expression: nvidia_x86_64
     "p5e.48xlarge",
     "p5en.48xlarge",
     "p6-b200.48xlarge",
+    "p6-b300.48xlarge",
 ]
