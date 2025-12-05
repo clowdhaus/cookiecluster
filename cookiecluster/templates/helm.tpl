@@ -55,7 +55,7 @@ resource "helm_release" "nvidia_device_plugin" {
   name             = "nvidia-device-plugin"
   repository       = "https://nvidia.github.io/k8s-device-plugin"
   chart            = "nvidia-device-plugin"
-  version          = "0.17.3"
+  version          = "0.18.0"
   namespace        = "nvidia-device-plugin"
   create_namespace = true
   wait             = false
@@ -67,7 +67,7 @@ resource "helm_release" "neuron" {
   name             = "neuron"
   repository       = "oci://public.ecr.aws/neuron"
   chart            = "neuron-helm-chart"
-  version          = "1.2.0"
+  version          = "1.3.1"
   namespace        = "neuron"
   create_namespace = true
   wait             = false
@@ -89,7 +89,7 @@ resource "helm_release" "aws_efa_device_plugin" {
   namespace  = "kube-system"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-efa-k8s-device-plugin"
-  version    = "v0.5.14"
+  version    = "v0.5.19"
   wait       = false
 
   values = [
