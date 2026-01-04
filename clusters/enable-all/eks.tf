@@ -4,10 +4,10 @@
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 21.0"
+  version = "~> 21.10"
 
   name               = "enable-all"
-  kubernetes_version = "1.33"
+  kubernetes_version = "1.34"
 
   # To facilitate easier interaction for demonstration purposes
   endpoint_public_access = true

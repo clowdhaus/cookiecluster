@@ -4,11 +4,11 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 6.0"
+      version = ">= 6.23"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = ">= 3.0"
+      version = ">= 3.1"
     }
   }
 }
@@ -33,7 +33,7 @@ provider "helm" {
 
 module "tags" {
   source  = "clowdhaus/tags/aws"
-  version = "~> 1.1"
+  version = "~> 2.1"
 
   application = "cookiecluster"
   environment = "nonprod"

@@ -4,13 +4,16 @@
 
 module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 21.0"
+  version = "~> 21.10"
 
   cluster_name = module.eks.cluster_name
 
   # Name needs to match role name passed to the EC2NodeClass
   node_iam_role_use_name_prefix = false
   node_iam_role_name            = "karpenter-karpenter-node"
+
+  # Avoid policy size limit error
+  enable_inline_policy = true
 
   tags = module.tags.tags
 }
@@ -24,7 +27,7 @@ resource "helm_release" "karpenter" {
   namespace  = "kube-system"
   repository = "oci://public.ecr.aws/karpenter"
   chart      = "karpenter"
-  version    = "1.6.0"
+  version    = "1.8.3"
   wait       = false
 
   values = [

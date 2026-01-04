@@ -29,7 +29,7 @@ resource "helm_release" "karpenter" {
   namespace  = "kube-system"
   repository = "oci://public.ecr.aws/karpenter"
   chart      = "karpenter"
-  version    = "1.8.2"
+  version    = "1.8.3"
   wait       = false
 
   values = [
@@ -67,7 +67,7 @@ resource "helm_release" "neuron" {
   name             = "neuron"
   repository       = "oci://public.ecr.aws/neuron"
   chart            = "neuron-helm-chart"
-  version          = "1.3.1"
+  version          = "1.4.0"
   namespace        = "neuron"
   create_namespace = true
   wait             = false
@@ -89,7 +89,7 @@ resource "helm_release" "aws_efa_device_plugin" {
   namespace  = "kube-system"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-efa-k8s-device-plugin"
-  version    = "v0.5.19"
+  version    = "v0.5.20"
   wait       = false
 
   values = [

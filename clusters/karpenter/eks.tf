@@ -4,10 +4,10 @@
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 21.0"
+  version = "~> 21.10"
 
   name               = "karpenter"
-  kubernetes_version = "1.33"
+  kubernetes_version = "1.34"
 
   addons = {
     coredns                   = {}

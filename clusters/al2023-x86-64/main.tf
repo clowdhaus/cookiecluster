@@ -4,7 +4,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 6.0"
+      version = ">= 6.23"
     }
   }
 }
@@ -15,7 +15,7 @@ terraform {
 
 module "tags" {
   source  = "clowdhaus/tags/aws"
-  version = "~> 1.1"
+  version = "~> 2.1"
 
   application = "cookiecluster"
   environment = "nonprod"
