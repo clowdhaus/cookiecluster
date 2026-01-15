@@ -37,7 +37,7 @@ module "eks" {
         "m7a.xlarge",
         "m7i.xlarge",
       ]
-  
+
       min_size     = 2
       max_size     = 3
       desired_size = 2
@@ -68,7 +68,7 @@ module "eks" {
       node_repair_config = {
         enabled = true
       }
-    
+
       # Add security group rules on the node group security group to
       # allow EFA traffic
       enable_efa_support = true
@@ -77,7 +77,7 @@ module "eks" {
         "vpc.amazonaws.com/efa.present" = "true"
         "aws.amazon.com/neuron.present" = "true"
       }
-    
+
       taints = {
         # Ensure only Neuron workloads are scheduled on this node group
         neuron = {

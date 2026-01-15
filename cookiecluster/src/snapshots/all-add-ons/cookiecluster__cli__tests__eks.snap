@@ -21,21 +21,21 @@ module "eks" {
         service_account = "cloudwatch-agent"
       }]
     }
-    
+
     aws-ebs-csi-driver = {
       pod_identity_role_arn = [{
         role_arn        = module.aws_ebs_csi_driver_pod_identity.iam_role_arn
         service_account = "ebs-csi-controller-sa"
       }]
     }
-    
+
     aws-efs-csi-driver = {
       pod_identity_role_arn = [{
         role_arn        = module.aws_efs_csi_driver_pod_identity.iam_role_arn
         service_account = "efs-csi-controller-sa"
       }]
     }
-    
+
     aws-guardduty-agent = {}
     aws-mountpoint-s3-csi-driver = {
       pod_identity_role_arn = [{
@@ -43,7 +43,7 @@ module "eks" {
         service_account = "s3-csi-driver-sa"
       }]
     }
-    
+
     coredns = {}
     eks-node-monitoring-agent = {}
     eks-pod-identity-agent = {
@@ -67,7 +67,7 @@ module "eks" {
         "m7a.xlarge",
         "m7i.xlarge",
       ]
-  
+
       min_size     = 2
       max_size     = 3
       desired_size = 2

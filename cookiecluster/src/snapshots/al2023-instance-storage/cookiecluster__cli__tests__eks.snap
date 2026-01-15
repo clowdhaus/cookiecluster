@@ -35,7 +35,7 @@ module "eks" {
       instance_types = [
         "m7gd.2xlarge",
       ]
-  
+
       min_size     = 2
       max_size     = 3
       desired_size = 2
