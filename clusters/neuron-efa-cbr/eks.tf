@@ -4,7 +4,7 @@
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 21.10"
+  version = "~> 21.14"
 
   name               = "neuron-efa-cbr"
   kubernetes_version = "1.34"

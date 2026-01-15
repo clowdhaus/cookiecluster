@@ -6,7 +6,7 @@
 {{ #if a.configuration.pod_identity_role_arn }}
 module "{{ camel_case a.name }}_pod_identity" {
   source = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "~> 2.6"
+  version = "~> 2.7"
 
   {{ #if (eq a.name "aws-ebs-csi-driver") }}
   name = "aws-ebs-csi"

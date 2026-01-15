@@ -8,7 +8,7 @@ expression: rendered
 
 module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 21.10"
+  version = "~> 21.14"
 
   cluster_name = module.eks.cluster_name
 
@@ -55,7 +55,7 @@ resource "helm_release" "nvidia_device_plugin" {
   name             = "nvidia-device-plugin"
   repository       = "https://nvidia.github.io/k8s-device-plugin"
   chart            = "nvidia-device-plugin"
-  version          = "0.18.0"
+  version          = "0.18.1"
   namespace        = "nvidia-device-plugin"
   create_namespace = true
   wait             = false
