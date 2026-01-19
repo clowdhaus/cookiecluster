@@ -30,7 +30,7 @@ tracing-log.workspace = true
 tracing-subscriber.workspace = true
 
 [dev-dependencies]
-insta = "1.45"
+insta = "1.46"
 rstest = "0.26"
 
 [lints.rust]
