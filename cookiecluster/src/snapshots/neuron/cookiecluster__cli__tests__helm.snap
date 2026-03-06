@@ -10,6 +10,7 @@ resource "helm_release" "neuron" {
   name             = "neuron"
   repository       = "oci://public.ecr.aws/neuron"
   chart            = "neuron-helm-chart"
+  # Update to the latest compatible version: https://github.com/aws-neuron/neuron-helm-charts
   version          = "1.4.0"
   namespace        = "neuron"
   create_namespace = true

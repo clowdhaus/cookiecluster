@@ -83,12 +83,22 @@ data "aws_vpc" "this" {
 
 data "aws_subnets" "control_plane" {
   filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.this.id]
+  }
+
+  filter {
     name   = "tag:Name"
     values = ["{{ inputs.control_plane_subnet_filter }}"]
   }
 }
 
 data "aws_subnets" "data_plane" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.this.id]
+  }
+
   filter {
     name   = "tag:Name"
     values = ["{{ inputs.data_plane_subnet_filter }}"]
@@ -97,6 +107,11 @@ data "aws_subnets" "data_plane" {
 {{ #if inputs.enable_compute_reservation }}
 
 data "aws_subnets" "data_plane_reservation" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.this.id]
+  }
+
   filter {
     name   = "tag:Name"
     values = ["{{ inputs.data_plane_subnet_filter }}"]

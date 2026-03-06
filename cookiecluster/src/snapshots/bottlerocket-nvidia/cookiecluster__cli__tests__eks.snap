@@ -43,38 +43,33 @@ module "eks" {
       desired_size = 2
     }
     gpu = {
-      ami_type       = "AL2023_x86_64_NVIDIA"
-      instance_types = ["p5.48xlarge" ]
+      ami_type = "BOTTLEROCKET_x86_64_NVIDIA"
+      instance_types = [
+        "g6e.2xlarge",
+      ]
 
       min_size     = 0
       max_size     = 5
       desired_size = 2
 
-      cloudinit_pre_nodeadm = [
-        {
-          content_type = "application/node.eks.aws"
-          content      = <<-EOT
-            ---
-            apiVersion: node.eks.aws/v1alpha1
-            kind: NodeConfig
-            spec:
-              instance:
-                localStorage:
-                  strategy: RAID0
-          EOT
+      # Increase root EBS volume size (default is 8Gb)
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+            volume_size           = 256
+            volume_type           = "gp3"
+            encrypted             = true
+            delete_on_termination = true
+          }
         }
-      ]
+      }
 
       node_repair_config = {
         enabled = true
       }
 
-      # Add security group rules on the node group security group to
-      # allow EFA traffic
-      enable_efa_support = true
-
       labels = {
-        "vpc.amazonaws.com/efa.present" = "true"
         "nvidia.com/gpu.present"        = "true"
       }
     

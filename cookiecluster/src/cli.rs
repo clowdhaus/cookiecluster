@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use anstyle::{AnsiColor, Color, Style};
 use anyhow::Result;
@@ -46,12 +46,29 @@ pub struct Cli {
   /// Name of the template to use
   #[clap(short, long)]
   pub template: Option<String>,
+
+  /// List available built-in templates
+  #[clap(long)]
+  pub list_templates: bool,
+
+  /// Output directory for generated files
+  #[clap(short, long, default_value = ".")]
+  pub output_dir: PathBuf,
+
+  /// Overwrite existing files without prompting
+  #[clap(short, long)]
+  pub force: bool,
 }
 
 impl Cli {
   pub fn write_cluster_configs(self, configuration: &inputs::Configuration) -> Result<()> {
-    let dir = Path::new(".");
-    crate::write_cluster_configs(dir, configuration)
+    let dir = &self.output_dir;
+    if !self.force {
+      crate::check_existing_tf_files(dir)?;
+    }
+    crate::write_cluster_configs(dir, configuration)?;
+    println!("Generated Terraform files in {}", std::fs::canonicalize(dir)?.display());
+    Ok(())
   }
 }
 
@@ -80,7 +97,7 @@ mod tests {
     // Defaults to AL2023
     let inputs = Inputs::default();
 
-    render(inputs.to_configuration(), "default").unwrap();
+    render(inputs.to_configuration().unwrap(),"default").unwrap();
   }
 
   #[test]
@@ -90,7 +107,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "al2023-x86-64").unwrap();
+    render(inputs.to_configuration().unwrap(),"al2023-x86-64").unwrap();
   }
 
   #[test]
@@ -102,7 +119,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "al2032-arm64").unwrap();
+    render(inputs.to_configuration().unwrap(),"al2023-arm64").unwrap();
   }
 
   #[test]
@@ -113,7 +130,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "bottlerocket-x86-64").unwrap();
+    render(inputs.to_configuration().unwrap(),"bottlerocket-x86-64").unwrap();
   }
 
   #[test]
@@ -125,7 +142,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "bottlerocket-arm64").unwrap();
+    render(inputs.to_configuration().unwrap(),"bottlerocket-arm64").unwrap();
   }
 
   #[test]
@@ -138,7 +155,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "nvidia").unwrap();
+    render(inputs.to_configuration().unwrap(),"nvidia").unwrap();
   }
 
   #[test]
@@ -153,7 +170,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "nvidia_efa").unwrap();
+    render(inputs.to_configuration().unwrap(),"nvidia_efa").unwrap();
   }
 
   #[test]
@@ -169,7 +186,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "nvidia-efa-odcr").unwrap();
+    render(inputs.to_configuration().unwrap(),"nvidia-efa-odcr").unwrap();
   }
 
   #[test]
@@ -185,7 +202,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "nvidia-efa-cbr").unwrap();
+    render(inputs.to_configuration().unwrap(),"nvidia-efa-cbr").unwrap();
   }
 
   #[test]
@@ -201,7 +218,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "nvidia-cbr").unwrap();
+    render(inputs.to_configuration().unwrap(),"nvidia-cbr").unwrap();
   }
 
   #[test]
@@ -214,7 +231,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "neuron").unwrap();
+    render(inputs.to_configuration().unwrap(),"neuron").unwrap();
   }
 
   #[test]
@@ -229,7 +246,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "neuron-efa").unwrap();
+    render(inputs.to_configuration().unwrap(),"neuron-efa").unwrap();
   }
 
   #[test]
@@ -245,7 +262,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "neuron-cbr").unwrap();
+    render(inputs.to_configuration().unwrap(),"neuron-cbr").unwrap();
   }
 
   #[test]
@@ -258,7 +275,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "al2023-instance-storage").unwrap();
+    render(inputs.to_configuration().unwrap(),"al2023-instance-storage").unwrap();
   }
 
   #[test]
@@ -268,7 +285,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "karpenter").unwrap();
+    render(inputs.to_configuration().unwrap(),"karpenter").unwrap();
   }
 
   #[test]
@@ -283,7 +300,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "karpenter-odcr").unwrap();
+    render(inputs.to_configuration().unwrap(),"karpenter-odcr").unwrap();
   }
 
   #[test]
@@ -294,7 +311,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "auto-mode").unwrap();
+    render(inputs.to_configuration().unwrap(),"auto-mode").unwrap();
   }
 
   #[test]
@@ -306,7 +323,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "auto-mode-nvidia").unwrap();
+    render(inputs.to_configuration().unwrap(),"auto-mode-nvidia").unwrap();
   }
 
   #[test]
@@ -318,7 +335,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "auto-mode-neuron").unwrap();
+    render(inputs.to_configuration().unwrap(),"auto-mode-neuron").unwrap();
   }
 
   #[test]
@@ -330,7 +347,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "auto-mode-efa").unwrap();
+    render(inputs.to_configuration().unwrap(),"auto-mode-efa").unwrap();
   }
 
   #[test]
@@ -346,17 +363,71 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "enable-all").unwrap();
+    render(inputs.to_configuration().unwrap(),"enable-all").unwrap();
   }
 
   #[test]
   fn snapshot_all_add_ons() {
     let inputs = Inputs {
-      add_on_types: add_on::_get_all_add_on_types(),
+      add_on_types: add_on::get_all_add_on_types(),
       compute_scaling: compute::ScalingType::None,
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration(), "all-add-ons").unwrap();
+    render(inputs.to_configuration().unwrap(),"all-add-ons").unwrap();
+  }
+
+  #[test]
+  fn snapshot_cluster_autoscaler() {
+    let inputs = Inputs {
+      compute_scaling: compute::ScalingType::ClusterAutoscaler,
+      ..Inputs::default()
+    };
+
+    render(inputs.to_configuration().unwrap(),"cluster-autoscaler").unwrap();
+  }
+
+  #[test]
+  fn snapshot_nvidia_no_efa() {
+    // GPU node without EFA — tests node_repair_config outside EFA conditional
+    let inputs = Inputs {
+      accelerator: compute::AcceleratorType::Nvidia,
+      ami_type: ami::AmiType::AL2023_x86_64_NVIDIA,
+      compute_scaling: compute::ScalingType::None,
+      require_efa: false,
+      instance_types: vec!["g6e.2xlarge".to_owned()],
+      ..Inputs::default()
+    };
+
+    render(inputs.to_configuration().unwrap(),"nvidia-no-efa").unwrap();
+  }
+
+  #[test]
+  fn snapshot_bottlerocket_nvidia() {
+    let inputs = Inputs {
+      accelerator: compute::AcceleratorType::Nvidia,
+      ami_type: ami::AmiType::BOTTLEROCKET_x86_64_NVIDIA,
+      compute_scaling: compute::ScalingType::None,
+      instance_types: vec!["g6e.2xlarge".to_owned()],
+      ..Inputs::default()
+    };
+
+    render(inputs.to_configuration().unwrap(),"bottlerocket-nvidia").unwrap();
+  }
+
+  #[test]
+  fn snapshot_neuron_odcr() {
+    let inputs = Inputs {
+      accelerator: compute::AcceleratorType::Neuron,
+      ami_type: ami::AmiType::AL2023_x86_64_NEURON,
+      compute_scaling: compute::ScalingType::None,
+      require_efa: true,
+      instance_storage_supported: true,
+      instance_types: vec!["trn1n.32xlarge".to_owned()],
+      reservation: compute::ReservationType::OnDemandCapacityReservation,
+      ..Inputs::default()
+    };
+
+    render(inputs.to_configuration().unwrap(),"neuron-odcr").unwrap();
   }
 }

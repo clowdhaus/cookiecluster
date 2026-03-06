@@ -2,10 +2,11 @@ pub(crate) mod add_on;
 pub(crate) mod ami;
 pub(crate) mod compute;
 pub(crate) mod instance;
+pub mod validate;
 pub(crate) mod version;
 
 pub use add_on::AddOn;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use dialoguer::{Confirm, Input, MultiSelect, Select, theme::ColorfulTheme};
 use serde::{Deserialize, Serialize};
 
@@ -68,10 +69,10 @@ impl Inputs {
   pub fn collect(self) -> Result<Configuration> {
     let inputs = self
       .collect_cluster_settings()?
+      .collect_compute_scaling_type()?
       .collect_accelerator_type()?
       .collect_require_efa()?
       .collect_reservation_type()?
-      .collect_compute_scaling_type()?
       .collect_add_on_types()?
       .collect_networking_settings()?
       .collect_cpu_arch()?
@@ -80,7 +81,7 @@ impl Inputs {
       .collect_storage_settings()?
       .collect_default_node_group_settings()?;
 
-    let configuration = inputs.to_configuration();
+    let configuration = inputs.to_configuration()?;
 
     Ok(configuration)
   }
@@ -88,6 +89,7 @@ impl Inputs {
   fn collect_cluster_settings(mut self) -> Result<Inputs> {
     self.name = Input::with_theme(&ColorfulTheme::default())
       .with_prompt("Cluster name")
+      .validate_with(|input: &String| validate::name(input.as_str()))
       .interact_text()?;
 
     let cluster_versions = version::ClusterVersion::versions();
@@ -152,7 +154,7 @@ impl Inputs {
   fn collect_compute_scaling_type(mut self) -> Result<Inputs> {
     let scaling_types = compute::get_compute_scaling_types(&self.reservation);
     let idx = Select::with_theme(&ColorfulTheme::default())
-      .with_prompt("Compute autoscaling")
+      .with_prompt("Compute scaling")
       .items(&scaling_types[..])
       .default(0)
       .interact()?;
@@ -182,22 +184,26 @@ impl Inputs {
     self.vpc_name = Input::with_theme(&ColorfulTheme::default())
       .with_prompt("VPC name")
       .with_initial_text("example".to_string())
+      .validate_with(|input: &String| validate::name(input.as_str()))
       .interact_text()?;
 
     self.control_plane_subnet_filter = Input::with_theme(&ColorfulTheme::default())
       .with_prompt("Control plane subnet filter")
       .with_initial_text("*-private-*".to_string())
+      .validate_with(|input: &String| validate::filter(input.as_str()))
       .interact_text()?;
 
     self.data_plane_subnet_filter = Input::with_theme(&ColorfulTheme::default())
       .with_prompt("Data plane subnet filter")
       .with_initial_text("*-private-*".to_string())
+      .validate_with(|input: &String| validate::filter(input.as_str()))
       .interact_text()?;
 
     if self.reservation != compute::ReservationType::None && self.compute_scaling != compute::ScalingType::Karpenter {
       self.reservation_availability_zone = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("EC2 capacity reservation availability zone")
         .with_initial_text("us-west-2a".to_string())
+        .validate_with(|input: &String| validate::availability_zone(input.as_str()))
         .interact_text()?;
     }
 
@@ -278,19 +284,28 @@ impl Inputs {
     Ok(self)
   }
 
-  pub fn to_configuration(self) -> Configuration {
-    Configuration {
+  pub fn to_configuration(self) -> Result<Configuration> {
+    let add_ons: Vec<add_on::AddOn> = self
+      .add_on_types
+      .iter()
+      .map(|a| add_on::get_add_on(a).with_context(|| format!("Unknown add-on type: {}", a)))
+      .collect::<Result<Vec<_>>>()?;
+
+    let enable_pod_identity = add_ons.iter().any(|a| {
+      a.configuration
+        .as_ref()
+        .and_then(|c| c.pod_identity_role_arn.as_ref())
+        .is_some()
+    });
+
+    Ok(Configuration {
       enable_accelerator: self.accelerator != compute::AcceleratorType::None,
       enable_nvidia_gpus: self.accelerator == compute::AcceleratorType::Nvidia,
       enable_neuron_devices: self.accelerator == compute::AcceleratorType::Neuron,
       enable_efa: self.require_efa,
 
       enable_add_ons: !self.add_on_types.is_empty(),
-      enable_pod_identity: self
-        .add_on_types
-        .iter()
-        .map(|a| add_on::get_add_on(a).unwrap())
-        .any(|a| a.configuration.is_some() && a.configuration.as_ref().unwrap().pod_identity_role_arn.is_some()),
+      enable_pod_identity,
       enable_helm: should_enable_helm(&self.accelerator, &self.compute_scaling, self.require_efa),
       enable_public_ecr_helm: should_enable_public_ecr_helm(&self.accelerator, &self.compute_scaling),
 
@@ -301,11 +316,7 @@ impl Inputs {
       enable_ml_cbr: self.reservation == compute::ReservationType::MlCapacityBlockReservation,
 
       // Pass through
-      add_ons: self
-        .add_on_types
-        .iter()
-        .map(|a| add_on::get_add_on(a).unwrap())
-        .collect::<Vec<add_on::AddOn>>(),
+      add_ons,
       ami_type: self.ami_type,
       endpoint_public_access: self.endpoint_public_access,
       name: self.name,
@@ -320,7 +331,7 @@ impl Inputs {
       instance_types: self.instance_types,
       reservation_availability_zone: self.reservation_availability_zone,
       vpc_name: self.vpc_name,
-    }
+    })
   }
 }
 
@@ -403,4 +414,88 @@ fn should_enable_public_ecr_helm(accelerator: &compute::AcceleratorType, compute
     return true;
   }
   false
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_should_collect_arch() {
+    // Karpenter and AutoMode skip arch collection
+    assert!(!should_collect_arch(&compute::ScalingType::Karpenter, &compute::AcceleratorType::None));
+    assert!(!should_collect_arch(&compute::ScalingType::AutoMode, &compute::AcceleratorType::None));
+    // Neuron skips arch (x86-64 only)
+    assert!(!should_collect_arch(&compute::ScalingType::None, &compute::AcceleratorType::Neuron));
+    // Normal path collects arch
+    assert!(should_collect_arch(&compute::ScalingType::None, &compute::AcceleratorType::None));
+    assert!(should_collect_arch(&compute::ScalingType::None, &compute::AcceleratorType::Nvidia));
+    assert!(should_collect_arch(&compute::ScalingType::ClusterAutoscaler, &compute::AcceleratorType::None));
+  }
+
+  #[test]
+  fn test_should_enable_helm() {
+    // AutoMode never enables helm
+    assert!(!should_enable_helm(&compute::AcceleratorType::None, &compute::ScalingType::AutoMode, false));
+    assert!(!should_enable_helm(&compute::AcceleratorType::Nvidia, &compute::ScalingType::AutoMode, true));
+    // Karpenter always enables helm
+    assert!(should_enable_helm(&compute::AcceleratorType::None, &compute::ScalingType::Karpenter, false));
+    // Accelerator enables helm
+    assert!(should_enable_helm(&compute::AcceleratorType::Nvidia, &compute::ScalingType::None, false));
+    assert!(should_enable_helm(&compute::AcceleratorType::Neuron, &compute::ScalingType::None, false));
+    // EFA enables helm
+    assert!(should_enable_helm(&compute::AcceleratorType::None, &compute::ScalingType::None, true));
+    // No accelerator, no EFA, no karpenter = no helm
+    assert!(!should_enable_helm(&compute::AcceleratorType::None, &compute::ScalingType::None, false));
+  }
+
+  #[test]
+  fn test_should_enable_public_ecr_helm() {
+    // AutoMode never enables public ECR
+    assert!(!should_enable_public_ecr_helm(&compute::AcceleratorType::None, &compute::ScalingType::AutoMode));
+    assert!(!should_enable_public_ecr_helm(&compute::AcceleratorType::Neuron, &compute::ScalingType::AutoMode));
+    // Karpenter enables public ECR
+    assert!(should_enable_public_ecr_helm(&compute::AcceleratorType::None, &compute::ScalingType::Karpenter));
+    // Neuron enables public ECR
+    assert!(should_enable_public_ecr_helm(&compute::AcceleratorType::Neuron, &compute::ScalingType::None));
+    // Nvidia does not
+    assert!(!should_enable_public_ecr_helm(&compute::AcceleratorType::Nvidia, &compute::ScalingType::None));
+    // None does not
+    assert!(!should_enable_public_ecr_helm(&compute::AcceleratorType::None, &compute::ScalingType::None));
+  }
+
+  #[test]
+  fn test_to_configuration_returns_result() {
+    let inputs = Inputs::default();
+    assert!(inputs.to_configuration().is_ok());
+  }
+
+  #[test]
+  fn test_to_configuration_computed_flags() {
+    let inputs = Inputs {
+      accelerator: compute::AcceleratorType::Nvidia,
+      require_efa: true,
+      compute_scaling: compute::ScalingType::Karpenter,
+      ..Inputs::default()
+    };
+    let config = inputs.to_configuration().unwrap();
+    assert!(config.enable_accelerator);
+    assert!(config.enable_nvidia_gpus);
+    assert!(!config.enable_neuron_devices);
+    assert!(config.enable_efa);
+    assert!(config.enable_karpenter);
+    assert!(config.enable_helm);
+  }
+
+  #[test]
+  fn test_default_node_group_settings_arm64() {
+    let inputs = Inputs {
+      default_ami_type: ami::AmiType::AL2023_ARM_64_STANDARD,
+      default_instance_types: vec!["m7g.xlarge".to_string(), "m6g.xlarge".to_string()],
+      ..Inputs::default()
+    };
+    // ARM64 should use m7g/m6g instances
+    let config = inputs.to_configuration().unwrap();
+    assert!(config.default_instance_types.contains(&"m7g.xlarge".to_string()));
+  }
 }

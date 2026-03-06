@@ -16,13 +16,12 @@ anstyle = "1.0"
 anyhow.workspace = true
 clap = { version = "4.5", features = ["derive", "color"] }
 clap-verbosity-flag = "3.0"
-config = { version = "0.15", default-features = false, features = ["yaml"] }
 dialoguer = { version = "0.12", default-features = false }
 handlebars =  "6.3"
 rust-embed = { version = "8.9", features = ["compression"] }
 serde.workspace = true
 serde_json = "1.0"
-serde_yaml = "0.9"
+serde_yaml_ng = "0.9"
 strum = "0.28"
 strum_macros = "0.28"
 tracing.workspace = true
@@ -32,6 +31,7 @@ tracing-subscriber.workspace = true
 [dev-dependencies]
 insta = "1.46"
 rstest = "0.26"
+tempfile = "3"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(tarpaulin_include)"] }

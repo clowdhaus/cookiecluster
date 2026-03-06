@@ -188,8 +188,8 @@ static ADD_ONS: LazyLock<BTreeMap<AddOnType, AddOn>> = LazyLock::new(|| {
 
 /// Get all available add-ons
 #[inline]
-#[cfg(not(tarpaulin_include))]
-pub fn _get_all_add_on_types() -> Vec<AddOnType> {
+#[cfg(test)]
+pub fn get_all_add_on_types() -> Vec<AddOnType> {
   ADD_ONS.keys().cloned().collect()
 }
 

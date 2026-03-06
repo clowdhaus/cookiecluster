@@ -56,22 +56,34 @@ pub fn limit_instances_selected(
   // 1. EC2 capacity reservation(s)
   // 2. When using EFA
   if reservation != &ReservationType::None || require_efa {
-    instance_idxs = vec![instance_idxs.last().unwrap().to_owned()];
+    if instance_idxs.len() > 1 {
+      tracing::warn!(
+        "EFA or capacity reservation requires a single instance type. Using last selection only."
+      );
+    }
+    instance_idxs = vec![instance_idxs.last().copied().expect("checked non-empty above")];
   }
 
   let instance_types = instance_idxs
     .iter()
-    .map(|&i| instance_type_names[i].to_string())
-    .collect::<Vec<String>>();
+    .map(|&i| {
+      instance_type_names
+        .get(i)
+        .map(|name| name.to_string())
+        .ok_or_else(|| anyhow::anyhow!("Instance type index {} is out of range", i))
+    })
+    .collect::<Result<Vec<String>>>()?;
 
   Ok(instance_types)
 }
 
 pub fn instance_storage_supported(instance_types: &[String], ami_type: &ami::AmiType) -> bool {
-  let instance_types_support = instance::INSTANCE_TYPES
+  let known_instances: Vec<_> = instance::INSTANCE_TYPES
     .iter()
     .filter(|instance| instance_types.contains(&instance.instance_type.to_string()))
-    .all(|instance| instance.instance_storage_supported);
+    .collect();
+  // If no instance types matched, storage is not supported
+  let instance_types_support = !known_instances.is_empty() && known_instances.iter().all(|i| i.instance_storage_supported);
 
   match ami_type {
     ami::AmiType::AL2023_ARM_64_STANDARD
@@ -370,5 +382,59 @@ mod tests {
   fn snapshot_arm64_efa() {
     let efa_arm64 = get_instance_type_names(&CpuArch::Arm64, true, &AcceleratorType::None, &ReservationType::None);
     insta::assert_debug_snapshot!(efa_arm64);
+  }
+
+  #[test]
+  fn test_limit_instances_selected_empty_input() {
+    let result = limit_instances_selected(&ReservationType::None, false, vec!["t2.micro"], vec![]);
+    assert!(result.is_err());
+  }
+
+  #[test]
+  fn test_limit_instances_selected_no_efa_no_reservation() {
+    // Multiple instances should be kept
+    let result =
+      limit_instances_selected(&ReservationType::None, false, vec!["t2.micro", "t3.micro", "t3a.micro"], vec![0, 1, 2])
+        .unwrap();
+    assert_eq!(result, vec!["t2.micro", "t3.micro", "t3a.micro"]);
+  }
+
+  #[test]
+  fn test_limit_instances_selected_reservation() {
+    // Reservation should limit to single instance
+    let result = limit_instances_selected(
+      &ReservationType::OnDemandCapacityReservation,
+      false,
+      vec!["t2.micro", "t3.micro"],
+      vec![0, 1],
+    )
+    .unwrap();
+    assert_eq!(result, vec!["t3.micro"]);
+  }
+
+  #[test]
+  fn test_instance_storage_supported_unknown_types() {
+    // Unknown instance types should return false (not true from empty .all())
+    let result = instance_storage_supported(
+      &["fake.xlarge".to_string()],
+      &ami::AmiType::AL2023_x86_64_STANDARD,
+    );
+    assert!(!result);
+  }
+
+  #[test]
+  fn test_instance_storage_supported_empty_types() {
+    let result = instance_storage_supported(&[], &ami::AmiType::AL2023_x86_64_STANDARD);
+    assert!(!result);
+  }
+
+  #[test]
+  fn test_instance_storage_supported_bottlerocket() {
+    // Bottlerocket always returns false regardless of instance storage
+    let result = instance_storage_supported(
+      &["p4d.24xlarge".to_string()],
+      &ami::AmiType::BOTTLEROCKET_x86_64_NVIDIA,
+    );
+    assert!(!result);
   }
 }

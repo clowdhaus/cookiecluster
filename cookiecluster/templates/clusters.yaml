@@ -172,7 +172,7 @@ clusters:
 
   - name: enable-all
     description: |
-      # EKS cluster with all features enabled
+      # EKS cluster with custom networking and access settings
     params:
       endpoint_public_access: true
       compute_scaling: None

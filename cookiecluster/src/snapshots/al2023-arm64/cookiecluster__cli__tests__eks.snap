@@ -36,7 +36,7 @@ module "eks" {
         "m7g.xlarge",
         "m6g.xlarge",
       ]
-
+  
       min_size     = 2
       max_size     = 3
       desired_size = 2
@@ -46,7 +46,10 @@ module "eks" {
         xvda = {
           device_name = "/dev/xvda"
           ebs = {
-            volume_size = 24
+            volume_size           = 24
+            volume_type           = "gp3"
+            encrypted             = true
+            delete_on_termination = true
           }
         }
       }

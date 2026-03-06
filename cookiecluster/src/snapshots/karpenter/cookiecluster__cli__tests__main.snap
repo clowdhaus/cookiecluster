@@ -70,12 +70,22 @@ data "aws_vpc" "this" {
 
 data "aws_subnets" "control_plane" {
   filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.this.id]
+  }
+
+  filter {
     name   = "tag:Name"
     values = ["*-private-*"]
   }
 }
 
 data "aws_subnets" "data_plane" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.this.id]
+  }
+
   filter {
     name   = "tag:Name"
     values = ["*-private-*"]

@@ -29,6 +29,7 @@ resource "helm_release" "karpenter" {
   namespace  = "kube-system"
   repository = "oci://public.ecr.aws/karpenter"
   chart      = "karpenter"
+  # Update to the latest compatible version: https://github.com/aws/karpenter-provider-aws/releases
   version    = "1.8.3"
   wait       = false
 
@@ -55,6 +56,7 @@ resource "helm_release" "nvidia_device_plugin" {
   name             = "nvidia-device-plugin"
   repository       = "https://nvidia.github.io/k8s-device-plugin"
   chart            = "nvidia-device-plugin"
+  # Update to the latest compatible version: https://github.com/NVIDIA/k8s-device-plugin/releases
   version          = "0.18.1"
   namespace        = "nvidia-device-plugin"
   create_namespace = true
@@ -67,6 +69,7 @@ resource "helm_release" "neuron" {
   name             = "neuron"
   repository       = "oci://public.ecr.aws/neuron"
   chart            = "neuron-helm-chart"
+  # Update to the latest compatible version: https://github.com/aws-neuron/neuron-helm-charts
   version          = "1.4.0"
   namespace        = "neuron"
   create_namespace = true

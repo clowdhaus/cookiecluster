@@ -13,12 +13,19 @@ fn main() -> Result<()> {
     .finish();
   tracing::subscriber::set_global_default(subscriber).expect("Setting default subscriber failed");
 
+  if cli.list_templates {
+    return cookiecluster::template::list_templates();
+  }
+
   if let Some(config) = &cli.config {
     return cookiecluster::config::generate_cluster_configurations(config);
   }
 
   if let Some(template) = &cli.template {
-    return cookiecluster::template::generate_from_template(template);
+    if !cli.force {
+      cookiecluster::check_existing_tf_files(&cli.output_dir)?;
+    }
+    return cookiecluster::template::generate_from_template(template, &cli.output_dir);
   }
 
   let output = Inputs::new().collect()?;

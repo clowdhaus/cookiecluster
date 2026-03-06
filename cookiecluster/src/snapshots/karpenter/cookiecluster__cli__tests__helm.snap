@@ -31,6 +31,7 @@ resource "helm_release" "karpenter" {
   namespace  = "kube-system"
   repository = "oci://public.ecr.aws/karpenter"
   chart      = "karpenter"
+  # Update to the latest compatible version: https://github.com/aws/karpenter-provider-aws/releases
   version    = "1.8.3"
   wait       = false
 

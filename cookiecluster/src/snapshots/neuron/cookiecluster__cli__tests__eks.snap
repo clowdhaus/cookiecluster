@@ -37,7 +37,7 @@ module "eks" {
         "m7a.xlarge",
         "m7i.xlarge",
       ]
-
+  
       min_size     = 2
       max_size     = 3
       desired_size = 2
@@ -59,15 +59,20 @@ module "eks" {
           ebs = {
             volume_size           = 256
             volume_type           = "gp3"
+            encrypted             = true
             delete_on_termination = true
           }
         }
       }
 
+      node_repair_config = {
+        enabled = true
+      }
+
       labels = {
         "aws.amazon.com/neuron.present" = "true"
       }
-
+    
       taints = {
         # Ensure only Neuron workloads are scheduled on this node group
         neuron = {

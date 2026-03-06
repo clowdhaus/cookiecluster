@@ -46,16 +46,17 @@ neuron = {
       ebs = {
         volume_size           = 256
         volume_type           = "gp3"
+        encrypted             = true
         delete_on_termination = true
       }
     }
   }
   {{ /if }}
-  {{ #if inputs.enable_efa}}
 
   node_repair_config = {
     enabled = true
   }
+  {{ #if inputs.enable_efa}}
 
   # Add security group rules on the node group security group to
   # allow EFA traffic

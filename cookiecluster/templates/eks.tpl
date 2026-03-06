@@ -31,7 +31,7 @@ module "eks" {
   addons = {
   {{ #each inputs.add_ons as |a| }}
     {{ a.name }} = {{ #if a.configuration.pod_identity_role_arn }}{
-      pod_identity_role_arn = [{
+      pod_identity_association = [{
         role_arn        = {{ a.configuration.pod_identity_role_arn }}
         service_account = "{{ a.configuration.pod_identity_service_account }}"
       }]

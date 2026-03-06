@@ -10,3 +10,6 @@ target/
 *.pdb
 
 /*.tf
+
+# Insta snapshot review artifacts
+*.snap.new
