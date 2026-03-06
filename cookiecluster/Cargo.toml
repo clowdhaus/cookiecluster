@@ -17,11 +17,11 @@ anyhow.workspace = true
 clap = { version = "4.5", features = ["derive", "color"] }
 clap-verbosity-flag = "3.0"
 dialoguer = { version = "0.12", default-features = false }
-handlebars =  "6.3"
-rust-embed = { version = "8.9", features = ["compression"] }
+handlebars =  "6.4"
+rust-embed = { version = "8.11", features = ["compression"] }
 serde.workspace = true
 serde_json = "1.0"
-serde_yaml_ng = "0.9"
+serde_yaml_ng = "0.10"
 strum = "0.28"
 strum_macros = "0.28"
 tracing.workspace = true
