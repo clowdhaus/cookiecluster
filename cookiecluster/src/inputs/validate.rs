@@ -14,9 +14,7 @@ pub fn name(input: &str) -> Result<(), String> {
     .chars()
     .all(|c| c.is_alphanumeric() || c == '-' || c == '_' || c == '.')
   {
-    return Err(
-      "Name must contain only alphanumeric characters, hyphens, underscores, and dots".to_string(),
-    );
+    return Err("Name must contain only alphanumeric characters, hyphens, underscores, and dots".to_string());
   }
   Ok(())
 }
@@ -31,8 +29,7 @@ pub fn filter(input: &str) -> Result<(), String> {
     .all(|c| c.is_alphanumeric() || c == '-' || c == '_' || c == '*' || c == '.')
   {
     return Err(
-      "Filter must contain only alphanumeric characters, hyphens, underscores, dots, and wildcards (*)"
-        .to_string(),
+      "Filter must contain only alphanumeric characters, hyphens, underscores, dots, and wildcards (*)".to_string(),
     );
   }
   Ok(())
@@ -43,13 +40,8 @@ pub fn availability_zone(input: &str) -> Result<(), String> {
   if input.is_empty() {
     return Err("Availability zone cannot be empty".to_string());
   }
-  if !input
-    .chars()
-    .all(|c| c.is_alphanumeric() || c == '-')
-  {
-    return Err(
-      "Availability zone must contain only alphanumeric characters and hyphens".to_string(),
-    );
+  if !input.chars().all(|c| c.is_alphanumeric() || c == '-') {
+    return Err("Availability zone must contain only alphanumeric characters and hyphens".to_string());
   }
   Ok(())
 }
@@ -59,13 +51,8 @@ pub fn instance_type(input: &str) -> Result<(), String> {
   if input.is_empty() {
     return Err("Instance type cannot be empty".to_string());
   }
-  if !input
-    .chars()
-    .all(|c| c.is_alphanumeric() || c == '.' || c == '-')
-  {
-    return Err(
-      "Instance type must contain only alphanumeric characters, dots, and hyphens".to_string(),
-    );
+  if !input.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
+    return Err("Instance type must contain only alphanumeric characters, dots, and hyphens".to_string());
   }
   Ok(())
 }

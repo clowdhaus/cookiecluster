@@ -5,8 +5,8 @@ use anyhow::Result;
 use crate::config;
 
 fn load_embedded_templates() -> Result<config::Configuration> {
-  let embed = crate::Templates::get("clusters.yaml")
-    .ok_or_else(|| anyhow::anyhow!("Missing embedded clusters.yaml template"))?;
+  let embed =
+    crate::Templates::get("clusters.yaml").ok_or_else(|| anyhow::anyhow!("Missing embedded clusters.yaml template"))?;
   let config: config::Configuration = serde_yaml_ng::from_slice(embed.data.as_ref())?;
   Ok(config)
 }
@@ -52,7 +52,10 @@ pub fn generate_from_template(template_name: &str, output_dir: &Path) -> Result<
       None => crate::inputs::Inputs::default(),
     };
     crate::write_cluster_configs(output_dir, &inputs.to_configuration()?)?;
-    println!("Generated Terraform files in {}", std::fs::canonicalize(output_dir)?.display());
+    println!(
+      "Generated Terraform files in {}",
+      std::fs::canonicalize(output_dir)?.display()
+    );
   }
 
   Ok(())

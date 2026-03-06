@@ -423,45 +423,109 @@ mod tests {
   #[test]
   fn test_should_collect_arch() {
     // Karpenter and AutoMode skip arch collection
-    assert!(!should_collect_arch(&compute::ScalingType::Karpenter, &compute::AcceleratorType::None));
-    assert!(!should_collect_arch(&compute::ScalingType::AutoMode, &compute::AcceleratorType::None));
+    assert!(!should_collect_arch(
+      &compute::ScalingType::Karpenter,
+      &compute::AcceleratorType::None
+    ));
+    assert!(!should_collect_arch(
+      &compute::ScalingType::AutoMode,
+      &compute::AcceleratorType::None
+    ));
     // Neuron skips arch (x86-64 only)
-    assert!(!should_collect_arch(&compute::ScalingType::None, &compute::AcceleratorType::Neuron));
+    assert!(!should_collect_arch(
+      &compute::ScalingType::None,
+      &compute::AcceleratorType::Neuron
+    ));
     // Normal path collects arch
-    assert!(should_collect_arch(&compute::ScalingType::None, &compute::AcceleratorType::None));
-    assert!(should_collect_arch(&compute::ScalingType::None, &compute::AcceleratorType::Nvidia));
-    assert!(should_collect_arch(&compute::ScalingType::ClusterAutoscaler, &compute::AcceleratorType::None));
+    assert!(should_collect_arch(
+      &compute::ScalingType::None,
+      &compute::AcceleratorType::None
+    ));
+    assert!(should_collect_arch(
+      &compute::ScalingType::None,
+      &compute::AcceleratorType::Nvidia
+    ));
+    assert!(should_collect_arch(
+      &compute::ScalingType::ClusterAutoscaler,
+      &compute::AcceleratorType::None
+    ));
   }
 
   #[test]
   fn test_should_enable_helm() {
     // AutoMode never enables helm
-    assert!(!should_enable_helm(&compute::AcceleratorType::None, &compute::ScalingType::AutoMode, false));
-    assert!(!should_enable_helm(&compute::AcceleratorType::Nvidia, &compute::ScalingType::AutoMode, true));
+    assert!(!should_enable_helm(
+      &compute::AcceleratorType::None,
+      &compute::ScalingType::AutoMode,
+      false
+    ));
+    assert!(!should_enable_helm(
+      &compute::AcceleratorType::Nvidia,
+      &compute::ScalingType::AutoMode,
+      true
+    ));
     // Karpenter always enables helm
-    assert!(should_enable_helm(&compute::AcceleratorType::None, &compute::ScalingType::Karpenter, false));
+    assert!(should_enable_helm(
+      &compute::AcceleratorType::None,
+      &compute::ScalingType::Karpenter,
+      false
+    ));
     // Accelerator enables helm
-    assert!(should_enable_helm(&compute::AcceleratorType::Nvidia, &compute::ScalingType::None, false));
-    assert!(should_enable_helm(&compute::AcceleratorType::Neuron, &compute::ScalingType::None, false));
+    assert!(should_enable_helm(
+      &compute::AcceleratorType::Nvidia,
+      &compute::ScalingType::None,
+      false
+    ));
+    assert!(should_enable_helm(
+      &compute::AcceleratorType::Neuron,
+      &compute::ScalingType::None,
+      false
+    ));
     // EFA enables helm
-    assert!(should_enable_helm(&compute::AcceleratorType::None, &compute::ScalingType::None, true));
+    assert!(should_enable_helm(
+      &compute::AcceleratorType::None,
+      &compute::ScalingType::None,
+      true
+    ));
     // No accelerator, no EFA, no karpenter = no helm
-    assert!(!should_enable_helm(&compute::AcceleratorType::None, &compute::ScalingType::None, false));
+    assert!(!should_enable_helm(
+      &compute::AcceleratorType::None,
+      &compute::ScalingType::None,
+      false
+    ));
   }
 
   #[test]
   fn test_should_enable_public_ecr_helm() {
     // AutoMode never enables public ECR
-    assert!(!should_enable_public_ecr_helm(&compute::AcceleratorType::None, &compute::ScalingType::AutoMode));
-    assert!(!should_enable_public_ecr_helm(&compute::AcceleratorType::Neuron, &compute::ScalingType::AutoMode));
+    assert!(!should_enable_public_ecr_helm(
+      &compute::AcceleratorType::None,
+      &compute::ScalingType::AutoMode
+    ));
+    assert!(!should_enable_public_ecr_helm(
+      &compute::AcceleratorType::Neuron,
+      &compute::ScalingType::AutoMode
+    ));
     // Karpenter enables public ECR
-    assert!(should_enable_public_ecr_helm(&compute::AcceleratorType::None, &compute::ScalingType::Karpenter));
+    assert!(should_enable_public_ecr_helm(
+      &compute::AcceleratorType::None,
+      &compute::ScalingType::Karpenter
+    ));
     // Neuron enables public ECR
-    assert!(should_enable_public_ecr_helm(&compute::AcceleratorType::Neuron, &compute::ScalingType::None));
+    assert!(should_enable_public_ecr_helm(
+      &compute::AcceleratorType::Neuron,
+      &compute::ScalingType::None
+    ));
     // Nvidia does not
-    assert!(!should_enable_public_ecr_helm(&compute::AcceleratorType::Nvidia, &compute::ScalingType::None));
+    assert!(!should_enable_public_ecr_helm(
+      &compute::AcceleratorType::Nvidia,
+      &compute::ScalingType::None
+    ));
     // None does not
-    assert!(!should_enable_public_ecr_helm(&compute::AcceleratorType::None, &compute::ScalingType::None));
+    assert!(!should_enable_public_ecr_helm(
+      &compute::AcceleratorType::None,
+      &compute::ScalingType::None
+    ));
   }
 
   #[test]

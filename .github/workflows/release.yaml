@@ -5,6 +5,8 @@ on:
     tags:
       - "v*.*.*"
 
+permissions: {}
+
 jobs:
   changelog:
     name: create-release
@@ -16,7 +18,7 @@ jobs:
       release_body: ${{ steps.git-cliff.outputs.content }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
@@ -25,10 +27,10 @@ jobs:
         if: env.COOKIECLUSTER_VERSION == ''
         run: |
           echo "COOKIECLUSTER_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-          echo "version is: ${{ env.COOKIECLUSTER_VERSION }}"
+          echo "version is: ${COOKIECLUSTER_VERSION}"
 
       - name: Generate a changelog
-        uses: orhun/git-cliff-action@v4
+        uses: orhun/git-cliff-action@c93ef52f3d0ddcdcc9bd5447d98d458a11cd4f72 # v4
         id: git-cliff
         with:
           config: cliff.toml
@@ -79,10 +81,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@master
+      uses: dtolnay/rust-toolchain@0f1b44df7e9cbb178d781a242338dfa5e243ad7f # master
       with:
         toolchain: ${{ matrix.rust }}
         target: ${{ matrix.target }}
@@ -97,9 +99,9 @@ jobs:
 
     - name: Show command used for Cargo
       run: |
-        echo "cargo command is: ${{ env.CARGO }}"
-        echo "target flag is: ${{ env.TARGET_FLAGS }}"
-        echo "target dir is: ${{ env.TARGET_DIR }}"
+        echo "cargo command is: ${CARGO}"
+        echo "target flag is: ${TARGET_FLAGS}"
+        echo "target dir is: ${TARGET_DIR}"
 
     - name: Build release binary
       run: ${{ env.CARGO }} build --package cookiecluster --verbose --release ${{ env.TARGET_FLAGS }}
@@ -107,23 +109,25 @@ jobs:
     - name: Build archive
       shell: bash
       run: |
-        STAGING="cookiecluster-${{ needs.changelog.outputs.cookiecluster_version }}-${{ matrix.target }}"
+        VERSION="${{ needs.changelog.outputs.cookiecluster_version }}"
+        TARGET="${{ matrix.target }}"
+        STAGING="cookiecluster-${VERSION}-${TARGET}"
         mkdir -p "${STAGING}"
 
         cp {README.md,LICENSE} "${STAGING}/"
 
         if [ "${{ matrix.os }}" = "windows-2022" ]; then
-          cp "target/${{ matrix.target }}/release/cookiecluster.exe" "${STAGING}/"
+          cp "target/${TARGET}/release/cookiecluster.exe" "${STAGING}/"
           7z a "${STAGING}.zip" "${STAGING}"
           echo "ASSET=${STAGING}.zip" >> $GITHUB_ENV
         else
-          cp "target/${{ matrix.target }}/release/cookiecluster" "${STAGING}/"
+          cp "target/${TARGET}/release/cookiecluster" "${STAGING}/"
           tar czf "${STAGING}.tar.gz" "${STAGING}"
           echo "ASSET=${STAGING}.tar.gz" >> $GITHUB_ENV
         fi
 
     - name: Upload binaries to release
-      uses: svenstaro/upload-release-action@v2
+      uses: svenstaro/upload-release-action@b98a3b12e86552593f3e4e577ca8a62aa2f3f22b # v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: ${{ env.ASSET }}

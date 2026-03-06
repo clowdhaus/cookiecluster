@@ -37,8 +37,7 @@ fn register_handlebars() -> Result<Handlebars<'static>> {
   let templates = HashSet::from(["eks.tpl", "helm.tpl", "main.tpl", "variables.tpl"]);
   for tpl in &templates {
     trace!("Registering template: {}", tpl.as_str());
-    let embed = Templates::get(tpl.as_str())
-      .ok_or_else(|| anyhow::anyhow!("Missing embedded template: {}", tpl))?;
+    let embed = Templates::get(tpl.as_str()).ok_or_else(|| anyhow::anyhow!("Missing embedded template: {}", tpl))?;
     let name = tpl.replace(".tpl", "");
     handlebars.register_template_string(&name, std::str::from_utf8(embed.data.as_ref())?)?;
   }
@@ -49,8 +48,7 @@ fn register_handlebars() -> Result<Handlebars<'static>> {
     .collect::<Vec<_>>()
   {
     trace!("Registering partial: {}", tpl.as_str());
-    let embed = Templates::get(tpl.as_str())
-      .ok_or_else(|| anyhow::anyhow!("Missing embedded partial: {}", tpl))?;
+    let embed = Templates::get(tpl.as_str()).ok_or_else(|| anyhow::anyhow!("Missing embedded partial: {}", tpl))?;
     let name = format!("tpl_{}", tpl.replace(".tpl", "").replace("-", "_"));
     handlebars.register_template_string(&name, std::str::from_utf8(embed.data.as_ref())?)?;
   }
@@ -87,11 +85,8 @@ fn write_cluster_configs(dir: &Path, configuration: &inputs::Configuration) -> R
   fs::write(&eks_path, render_template("eks", configuration, &handlebars)?)
     .with_context(|| format!("Failed to write {}", eks_path.display()))?;
   let main_path = dir.join("main.tf");
-  fs::write(
-    &main_path,
-    render_template("main", configuration, &handlebars)?,
-  )
-  .with_context(|| format!("Failed to write {}", main_path.display()))?;
+  fs::write(&main_path, render_template("main", configuration, &handlebars)?)
+    .with_context(|| format!("Failed to write {}", main_path.display()))?;
 
   let helm = render_template("helm", configuration, &handlebars)?;
   if !helm.is_empty() {
@@ -107,10 +102,7 @@ fn write_cluster_configs(dir: &Path, configuration: &inputs::Configuration) -> R
 
   match std::process::Command::new("terraform").arg("fmt").arg(dir).output() {
     Ok(output) if output.status.success() => tracing::trace!("Terraform files have been formatted"),
-    Ok(output) => tracing::warn!(
-      "terraform fmt failed: {}",
-      String::from_utf8_lossy(&output.stderr)
-    ),
+    Ok(output) => tracing::warn!("terraform fmt failed: {}", String::from_utf8_lossy(&output.stderr)),
     Err(_) => match std::process::Command::new("tofu").arg("fmt").arg(dir).output() {
       Ok(output) if output.status.success() => tracing::trace!("Terraform files have been formatted with tofu"),
       _ => tracing::info!("Neither terraform nor tofu found in PATH. Skipping formatting."),

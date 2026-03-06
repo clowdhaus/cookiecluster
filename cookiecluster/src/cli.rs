@@ -97,7 +97,7 @@ mod tests {
     // Defaults to AL2023
     let inputs = Inputs::default();
 
-    render(inputs.to_configuration().unwrap(),"default").unwrap();
+    render(inputs.to_configuration().unwrap(), "default").unwrap();
   }
 
   #[test]
@@ -107,7 +107,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"al2023-x86-64").unwrap();
+    render(inputs.to_configuration().unwrap(), "al2023-x86-64").unwrap();
   }
 
   #[test]
@@ -119,7 +119,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"al2023-arm64").unwrap();
+    render(inputs.to_configuration().unwrap(), "al2023-arm64").unwrap();
   }
 
   #[test]
@@ -130,7 +130,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"bottlerocket-x86-64").unwrap();
+    render(inputs.to_configuration().unwrap(), "bottlerocket-x86-64").unwrap();
   }
 
   #[test]
@@ -142,7 +142,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"bottlerocket-arm64").unwrap();
+    render(inputs.to_configuration().unwrap(), "bottlerocket-arm64").unwrap();
   }
 
   #[test]
@@ -155,7 +155,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"nvidia").unwrap();
+    render(inputs.to_configuration().unwrap(), "nvidia").unwrap();
   }
 
   #[test]
@@ -170,7 +170,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"nvidia_efa").unwrap();
+    render(inputs.to_configuration().unwrap(), "nvidia_efa").unwrap();
   }
 
   #[test]
@@ -186,7 +186,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"nvidia-efa-odcr").unwrap();
+    render(inputs.to_configuration().unwrap(), "nvidia-efa-odcr").unwrap();
   }
 
   #[test]
@@ -202,7 +202,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"nvidia-efa-cbr").unwrap();
+    render(inputs.to_configuration().unwrap(), "nvidia-efa-cbr").unwrap();
   }
 
   #[test]
@@ -218,7 +218,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"nvidia-cbr").unwrap();
+    render(inputs.to_configuration().unwrap(), "nvidia-cbr").unwrap();
   }
 
   #[test]
@@ -231,7 +231,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"neuron").unwrap();
+    render(inputs.to_configuration().unwrap(), "neuron").unwrap();
   }
 
   #[test]
@@ -246,7 +246,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"neuron-efa").unwrap();
+    render(inputs.to_configuration().unwrap(), "neuron-efa").unwrap();
   }
 
   #[test]
@@ -262,7 +262,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"neuron-cbr").unwrap();
+    render(inputs.to_configuration().unwrap(), "neuron-cbr").unwrap();
   }
 
   #[test]
@@ -275,7 +275,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"al2023-instance-storage").unwrap();
+    render(inputs.to_configuration().unwrap(), "al2023-instance-storage").unwrap();
   }
 
   #[test]
@@ -285,7 +285,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"karpenter").unwrap();
+    render(inputs.to_configuration().unwrap(), "karpenter").unwrap();
   }
 
   #[test]
@@ -300,7 +300,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"karpenter-odcr").unwrap();
+    render(inputs.to_configuration().unwrap(), "karpenter-odcr").unwrap();
   }
 
   #[test]
@@ -311,7 +311,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"auto-mode").unwrap();
+    render(inputs.to_configuration().unwrap(), "auto-mode").unwrap();
   }
 
   #[test]
@@ -323,7 +323,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"auto-mode-nvidia").unwrap();
+    render(inputs.to_configuration().unwrap(), "auto-mode-nvidia").unwrap();
   }
 
   #[test]
@@ -335,7 +335,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"auto-mode-neuron").unwrap();
+    render(inputs.to_configuration().unwrap(), "auto-mode-neuron").unwrap();
   }
 
   #[test]
@@ -347,7 +347,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"auto-mode-efa").unwrap();
+    render(inputs.to_configuration().unwrap(), "auto-mode-efa").unwrap();
   }
 
   #[test]
@@ -363,7 +363,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"enable-all").unwrap();
+    render(inputs.to_configuration().unwrap(), "enable-all").unwrap();
   }
 
   #[test]
@@ -374,7 +374,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"all-add-ons").unwrap();
+    render(inputs.to_configuration().unwrap(), "all-add-ons").unwrap();
   }
 
   #[test]
@@ -384,7 +384,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"cluster-autoscaler").unwrap();
+    render(inputs.to_configuration().unwrap(), "cluster-autoscaler").unwrap();
   }
 
   #[test]
@@ -399,7 +399,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"nvidia-no-efa").unwrap();
+    render(inputs.to_configuration().unwrap(), "nvidia-no-efa").unwrap();
   }
 
   #[test]
@@ -412,7 +412,7 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"bottlerocket-nvidia").unwrap();
+    render(inputs.to_configuration().unwrap(), "bottlerocket-nvidia").unwrap();
   }
 
   #[test]
@@ -428,6 +428,6 @@ mod tests {
       ..Inputs::default()
     };
 
-    render(inputs.to_configuration().unwrap(),"neuron-odcr").unwrap();
+    render(inputs.to_configuration().unwrap(), "neuron-odcr").unwrap();
   }
 }

@@ -51,8 +51,8 @@ pub(crate) fn load_cluster_specifications(config_path: &Path) -> Result<Configur
   let path = config_path
     .canonicalize()
     .with_context(|| format!("Failed to resolve config path: {}", config_path.display()))?;
-  let file = std::fs::File::open(path.as_os_str())
-    .with_context(|| format!("Failed to open config file: {}", path.display()))?;
+  let file =
+    std::fs::File::open(path.as_os_str()).with_context(|| format!("Failed to open config file: {}", path.display()))?;
   let config: Configuration = serde_yaml_ng::from_reader(file).context("Failed to parse YAML config file")?;
   tracing::trace!("Loaded configuration file: {:#?}", config);
 
@@ -120,8 +120,13 @@ pub(crate) fn update_default_inputs(params: ConfigInputs, name: String) -> Resul
     inputs.kubernetes_version = kubernetes_version;
   }
   if let Some(control_plane_subnet_filter) = params.control_plane_subnet_filter {
-    validate::filter(&control_plane_subnet_filter)
-      .map_err(|e| anyhow::anyhow!("Invalid control_plane_subnet_filter '{}': {}", control_plane_subnet_filter, e))?;
+    validate::filter(&control_plane_subnet_filter).map_err(|e| {
+      anyhow::anyhow!(
+        "Invalid control_plane_subnet_filter '{}': {}",
+        control_plane_subnet_filter,
+        e
+      )
+    })?;
     inputs.control_plane_subnet_filter = control_plane_subnet_filter;
   }
   if let Some(compute_scaling) = params.compute_scaling {
@@ -143,8 +148,7 @@ pub(crate) fn update_default_inputs(params: ConfigInputs, name: String) -> Resul
   }
   if let Some(instance_types) = params.instance_types {
     for it in &instance_types {
-      validate::instance_type(it)
-        .map_err(|e| anyhow::anyhow!("Invalid instance type '{}': {}", it, e))?;
+      validate::instance_type(it).map_err(|e| anyhow::anyhow!("Invalid instance type '{}': {}", it, e))?;
     }
     inputs.instance_types = instance_types;
   }
@@ -154,13 +158,17 @@ pub(crate) fn update_default_inputs(params: ConfigInputs, name: String) -> Resul
     inputs.reservation = reservation;
   }
   if let Some(reservation_availability_zone) = params.reservation_availability_zone {
-    validate::availability_zone(&reservation_availability_zone)
-      .map_err(|e| anyhow::anyhow!("Invalid reservation_availability_zone '{}': {}", reservation_availability_zone, e))?;
+    validate::availability_zone(&reservation_availability_zone).map_err(|e| {
+      anyhow::anyhow!(
+        "Invalid reservation_availability_zone '{}': {}",
+        reservation_availability_zone,
+        e
+      )
+    })?;
     inputs.reservation_availability_zone = reservation_availability_zone;
   }
   if let Some(vpc_name) = params.vpc_name {
-    validate::name(&vpc_name)
-      .map_err(|e| anyhow::anyhow!("Invalid vpc_name '{}': {}", vpc_name, e))?;
+    validate::name(&vpc_name).map_err(|e| anyhow::anyhow!("Invalid vpc_name '{}': {}", vpc_name, e))?;
     inputs.vpc_name = vpc_name;
   }
 
