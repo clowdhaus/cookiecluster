@@ -8,7 +8,7 @@ expression: rendered
 
 module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 21.14"
+  version = "~> 21.24"
 
   cluster_name = module.eks.cluster_name
 
@@ -32,7 +32,7 @@ resource "helm_release" "karpenter" {
   repository = "oci://public.ecr.aws/karpenter"
   chart      = "karpenter"
   # Update to the latest compatible version: https://github.com/aws/karpenter-provider-aws/releases
-  version    = "1.8.3"
+  version    = "1.14.0"
   wait       = false
 
   values = [
