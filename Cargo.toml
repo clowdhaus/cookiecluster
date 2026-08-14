@@ -24,6 +24,12 @@ tracing = { version = "0.1", default-features = false, features = ["log-always"]
 tracing-log = "0.2"
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std", "ansi"] }
 
+[profile.dev]
+# Cargo defaults to full debuginfo, the largest single component of target/.
+# Line tables keep backtraces readable while dropping the variable and type
+# information a debugger would use.
+debug = "line-tables-only"
+
 [profile.release]
 strip = true
 lto = true
