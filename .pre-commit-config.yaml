@@ -1,13 +1,19 @@
 repos:
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.108.0
+    rev: v1.109.1
     hooks:
       - id: terraform_fmt
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: check-merge-conflict
+      # The insta snapshots are byte-exact fixtures of rendered Terraform, and the
+      # rendered output carries trailing whitespace. Rewriting it here would break
+      # every snapshot assertion.
       - id: end-of-file-fixer
+        exclude: ^cookiecluster/src/snapshots/
       - id: trailing-whitespace
+        exclude: ^cookiecluster/src/snapshots/
       - id: mixed-line-ending
         args: [--fix=lf]
+        exclude: ^cookiecluster/src/snapshots/

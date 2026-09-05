@@ -396,10 +396,7 @@ fn should_enable_helm(
     _ => {}
   }
 
-  if accelerator != &compute::AcceleratorType::None || require_efa {
-    return true;
-  }
-  false
+  accelerator != &compute::AcceleratorType::None || require_efa
 }
 
 // Public ECR Helm resources are:

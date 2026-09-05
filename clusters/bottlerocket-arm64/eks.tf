@@ -4,7 +4,7 @@
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 21.24"
+  version = "~> 21.25"
 
   name               = "bottlerocket-arm64"
   kubernetes_version = "1.34"

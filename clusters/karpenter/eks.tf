@@ -4,7 +4,7 @@
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 21.24"
+  version = "~> 21.25"
 
   name               = "karpenter"
   kubernetes_version = "1.34"
