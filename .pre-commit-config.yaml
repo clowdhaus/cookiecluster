@@ -1,6 +1,7 @@
+exclude: ^cookiecluster/src/snapshots/
 repos:
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.108.0
+    rev: v1.109.1
     hooks:
       - id: terraform_fmt
   - repo: https://github.com/pre-commit/pre-commit-hooks

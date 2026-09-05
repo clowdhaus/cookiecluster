@@ -4,7 +4,7 @@
 
 module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 21.24"
+  version = "~> 21.25"
 
   cluster_name = module.eks.cluster_name
 
@@ -27,7 +27,7 @@ resource "helm_release" "karpenter" {
   namespace  = "kube-system"
   repository = "oci://public.ecr.aws/karpenter"
   chart      = "karpenter"
-  version    = "1.14.0"
+  version    = "1.14.1"
   wait       = false
 
   values = [

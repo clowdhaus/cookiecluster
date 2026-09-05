@@ -6,7 +6,7 @@ resource "helm_release" "neuron" {
   name             = "neuron"
   repository       = "oci://public.ecr.aws/neuron"
   chart            = "neuron-helm-chart"
-  version          = "1.9.0"
+  version          = "1.10.0"
   namespace        = "neuron"
   create_namespace = true
   wait             = false
