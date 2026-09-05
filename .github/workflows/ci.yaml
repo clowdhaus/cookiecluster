@@ -83,3 +83,41 @@ jobs:
 
       - name: Run audit
         run: cargo audit
+
+  # The 17 workspaces under clusters/ are the CLI's own rendered output, checked in. They
+  # pin registry modules, providers and Helm chart versions, and nothing else here ever
+  # resolves them, so a stale or broken constraint was only ever caught by hand.
+  terraform:
+    name: terraform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+
+      # No backend and no credentials: init resolves modules and providers, validate
+      # checks each configuration against them. `plan` needs AWS credentials and reads
+      # real infrastructure, so it stays out. Every directory is reported before the job
+      # fails, so one broken workspace does not hide the rest.
+      - name: Init and validate every cluster
+        run: |
+          set -u
+          failed=0
+          for dir in clusters/*/; do
+            if terraform -chdir="$dir" init -upgrade -input=false -backend=false >/dev/null &&
+               terraform -chdir="$dir" validate -no-color >/dev/null; then
+              echo "ok   $dir"
+            else
+              echo "FAIL $dir"
+              terraform -chdir="$dir" validate -no-color || true
+              failed=1
+            fi
+          done
+          exit "$failed"
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive clusters/
