@@ -30,7 +30,7 @@ tracing-subscriber.workspace = true
 
 [dev-dependencies]
 insta = "1.48"
-rstest = "0.26"
+rstest = "0.27"
 tempfile = "3"
 
 [lints.rust]
